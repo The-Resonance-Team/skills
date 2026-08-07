@@ -29,7 +29,11 @@ Applies to every project in the organization. Include this file in `opencode.jso
 
 7. **Validate input at trust boundaries** — Any handler receiving `@Body()`, or multiple `@Query()`/`@Param()` values, must use a DTO class with `class-validator` decorators. Validation lives in the DTO, not in the service/controller. Inline/mapped types (`{ x: string }`, `Omit<Dto, K>`, `Record<string, unknown>`) as a body param bypass the ValidationPipe (the `Object` metatype is excluded from validation) — for the pipe to run, the param must be a DTO class (it may `extends` another DTO to inherit metadata).
 
+## Rule maintenance
+
+10. **Suggest rule updates** — These rules are a living document, not a fixed contract. When a rule is wrong, outdated, or missing for the task at hand, say so and suggest an update. Ask the user whether to update the rules, then edit `rules/*.md` in the `The-Resonance-Team/skills` repo and push to `main` when allowed. Do not silently deviate from a rule — propose the change instead.
+
 ## Conventions (repo-level)
 
-8. **DTOs pass intact through the controller→service seam** — DTOs (`@Body()`/`@Query()`) pass intact into the service (`service.method(dto)`), imported with `import type`; no field-by-field destructuring in the controller. Exceptions: service→service calls and transport composites (cookies + body) still use primitives.
-9. **Time handling uses date-fns** — All time processing (parse, arithmetic, boundary, relative, display) uses `date-fns` + `@date-fns/tz`. Sole exception: serialization to the wire format keeps `toISOString()`. Boundaries (`startOfDay`/`startOfMonth`) always go through `new TZDate(d, TZ)` — never `new Date(y, m, d)` constructor arithmetic.
+11. **DTOs pass intact through the controller→service seam** — DTOs (`@Body()`/`@Query()`) pass intact into the service (`service.method(dto)`), imported with `import type`; no field-by-field destructuring in the controller. Exceptions: service→service calls and transport composites (cookies + body) still use primitives.
+12. **Time handling uses date-fns** — All time processing (parse, arithmetic, boundary, relative, display) uses `date-fns` + `@date-fns/tz`. Sole exception: serialization to the wire format keeps `toISOString()`. Boundaries (`startOfDay`/`startOfMonth`) always go through `new TZDate(d, TZ)` — never `new Date(y, m, d)` constructor arithmetic.
