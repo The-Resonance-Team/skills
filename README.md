@@ -17,7 +17,7 @@ Add the modules you need to `opencode.json` (per project) or `~/.config/opencode
 }
 ```
 
-Remote instructions are fetched with a 5-second timeout; the repo must stay public for anonymous fetch to work.
+Remote instructions are fetched with a 5-second timeout; the repo must stay public for anonymous fetch to work. Simplest wiring: add **only** `CONTEXT.md` to `instructions` — it is the rule router and lists every module with its fetch URL.
 
 ## Rule modules
 
