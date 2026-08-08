@@ -18,7 +18,7 @@ node scripts/install.mjs --client claude
 
 The script installs both halves in one command:
 
-- **Skills** — fetches and copies into each client's discovery dirs: mattpocock engineering set, ponytail, context-mode skills (from their git repos, pinned at latest commit), and firecrawl's set via `npx firecrawl init` (CLI-managed).
+- **Skills** — via `npx skills@latest add <github-url> -g` for mattpocock, ponytail, and context-mode: **global scope**, **symlinked** by default, and the CLI **prompts you to choose the agent(s)**. Firecrawl's set installs via `npx firecrawl init` (CLI-managed).
 - **MCP servers** — merges the `mcp.json` servers into each client's config (`opencode.json` `mcp`, `~/.claude.json` `mcpServers`), skipping entries that already exist. The client config is backed up to `*.resonance.bak` before writing.
 
 State is recorded in `~/.config/team-skills/installed.json`.
