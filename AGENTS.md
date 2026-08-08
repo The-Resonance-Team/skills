@@ -2,7 +2,7 @@
 
 Guide for AI agents contributing to this repo. This file is read locally (by agents cloning the repo) — it may use lazy `@`-references. The `rules/*.md` files are consumed remotely and must stay self-contained. The repo is also the **resonance plugin package** (Agent Plugins 1.0.0): `plugin.json` + `skills/` + `mcp.json` at root.
 
-- **Never edit installed skills** in client discovery dirs — `scripts/install.mjs` owns them and re-copies from upstream; `skills/` holds team-authored skills only.
+- **Never edit installed skills** in client discovery dirs — installed skills are owned by their upstream repos and client loaders; `skills/` holds team-authored skills only.
 - **Never commit secrets** — `mcp.json` holds `${VAR}` placeholders only.
 - Run `node scripts/validate.mjs` before committing; the package must stay valid.
 

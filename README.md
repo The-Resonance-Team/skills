@@ -8,32 +8,19 @@ The repo root is the plugin root. `plugin.json` identifies it; `mcp.json` declar
 
 Validate the package with `node scripts/validate.mjs`.
 
-### One-command install
+### Install
 
-```sh
-node scripts/install.mjs            # skills + MCP servers, for every client present
-node scripts/install.mjs --dry-run  # preview without changing anything
-node scripts/install.mjs --client claude
-```
+The install link for every client is the repo URL: **`https://github.com/The-Resonance-Team/skills`**
 
-The script installs both halves in one command:
-
-- **Skills** — via `npx skills@latest add <github-url> -g` for mattpocock, ponytail, and context-mode: **global scope**, **symlinked** by default, and the CLI **prompts you to choose the agent(s)**. Firecrawl's set installs via `npx firecrawl init` (CLI-managed).
-- **MCP servers** — merges the `mcp.json` servers into each client's config (`opencode.json` `mcp`, `~/.claude.json` `mcpServers`), skipping entries that already exist. The client config is backed up to `*.resonance.bak` before writing.
-- **Plugin package** — clones this repo into `~/.cursor/plugins/local/resonance` when Cursor is present; for VS Code it prints the "Install Plugin From Source" URL (manual step). Codex (cloud store) is deferred.
-
-State is recorded in `~/.config/team-skills/installed.json`.
-
-**Secrets**: `mcp.json` holds `${GITHUB_TOKEN}` and `${FIRECRAWL_API_KEY}` placeholders only; the script translates them to each client's env syntax (opencode `{env:VAR}`, Claude Code `${VAR}`). Never commit real keys.
-
-### Client installs (plugin itself)
-
-| Client | Install |
+| Client | Install method |
 |---|---|
-| VS Code | Chat → "Install Plugin From Source" → `https://github.com/The-Resonance-Team/skills` |
-| Cursor | Copy/symlink into `~/.cursor/plugins/local/resonance` |
-| opencode, Claude Code, Antigravity | `node scripts/install.mjs` |
+| VS Code | Chat → "Install Plugin From Source" → paste the repo URL |
+| Cursor | Clone or copy the repo into `~/.cursor/plugins/local/resonance` |
 | Codex | Cloud store publish (manual, deferred) |
+
+opencode, Claude Code, and Antigravity do not load `plugin.json` natively. For them, add the MCP servers from `mcp.json` to the client config (`opencode.json` `mcp` / `~/.claude.json` `mcpServers`), translating `${VAR}` placeholders per client env rules (opencode `{env:VAR}`, Claude Code `${VAR}`) — never real keys. Team-authored skills in `skills/` drop into the client discovery dirs when they land.
+
+**Secrets**: `mcp.json` holds `${GITHUB_TOKEN}` and `${FIRECRAWL_API_KEY}` placeholders only. Never commit real keys.
 
 ## Usage (rule modules)
 
