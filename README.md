@@ -27,6 +27,7 @@ Remote instructions are fetched with a 5-second timeout; the repo must stay publ
 | `rules/nestjs.md`   | NestJS API         | Working in a NestJS backend (`apps/api`)                         |
 | `rules/frontend.md` | Web/portal/miniapp | Working in a browser client                                      |
 | `rules/linting.md`  | All TS/JS projects | Lint & format — Prettier, Oxlint, ESLint (Next.js only)          |
+| `rules/libraries.md` | All TS/JS projects | One library per concern — axios, zod, RHF, TanStack Query, class-validator, date-fns |
 
 Machine-readable tool configs (Prettier, Oxlint, ESLint-for-Next.js) ship in [`configs/`](./configs/) and are copied into consumer repos per `rules/linting.md`.
 
