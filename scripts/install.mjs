@@ -86,6 +86,24 @@ if (!active.length) {
   }
 }
 
+// ---------- plugin package (native loaders) ----------
+
+const pluginRepo = "https://github.com/The-Resonance-Team/skills"; // repo root = plugin root (plugin.json)
+
+const cursorPlugins = path.join(home, ".cursor/plugins/local");
+if (fs.existsSync(cursorPlugins)) {
+  const target = path.join(cursorPlugins, "resonance");
+  if (fs.existsSync(target)) {
+    log(`plugin: ${target} already present — skipped`);
+  } else {
+    log(`plugin: git clone --depth 1 ${pluginRepo} -> ${target}`);
+    if (!dryRun) execSync(`git clone --depth 1 ${pluginRepo} ${target}`, { stdio: "pipe" });
+  }
+} else {
+  log("plugin: no ~/.cursor/plugins/local — Cursor install skipped");
+}
+log(`plugin: VS Code — "Install Plugin From Source" -> ${pluginRepo} (manual)`);
+
 // ---------- state ----------
 
 const stateDir = path.join(home, ".config/team-skills");
