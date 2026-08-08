@@ -1,0 +1,57 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "react_perf", "import", "jest", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "perf": "error",
+    "suspicious": "warn"
+  },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
+  },
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "no-console": "warn",
+    "no-debugger": "warn",
+    "no-explicit-any": "error",
+    "no-non-null-assertion": "warn",
+    "react/no-array-index-key": "warn",
+    "import/no-duplicates": ["error", { "prefer-inline": true }],
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.{test,spec}.{ts,tsx}"],
+      "plugins": ["jest", "vitest"],
+      "rules": {
+        "no-explicit-any": "off",
+        "jest/expect-expect": "off",
+        "vitest/expect-expect": "off",
+        "jest/no-conditional-expect": "off",
+        "vitest/no-conditional-expect": "off",
+        "jest/valid-title": "off",
+        "vitest/valid-title": "off",
+        "vitest/require-mock-type-parameters": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules/**",
+    "dist/**",
+    ".next/**",
+    ".turbo/**",
+    "coverage/**",
+    "build/**",
+    ".expo/**",
+    "www/**"
+  ]
+}

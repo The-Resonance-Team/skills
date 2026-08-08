@@ -35,6 +35,7 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 ## Linting (when applicable)
 
 10. **Decorated classes** — oxlint sets `typescript/no-extraneous-class: ["warn", {"allowWithDecorator": true}]` (see `rules/linting.md`): NestJS entities, providers, and controllers are decorated classes and must not trip the rule.
+11. **DI-injected properties use `!:`** — Constructor-less dependency injection writes `private service!: Service` (definite assignment) and keeps `strict: true`. `no-non-null-assertion` does not flag `!:` property declarations, only expression-position `x!` (verified against oxlint). Do not "fix" `!:` to `:` by disabling `strictPropertyInitialization` — that removes the compiler guarantee. No `@ts-ignore` on DI properties.
 
 ## Uploads (when applicable)
 
