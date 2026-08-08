@@ -52,6 +52,24 @@ Remote instructions are fetched with a 5-second timeout; the repo must stay publ
 
 Machine-readable tool configs (Prettier, Oxlint, ESLint-for-Next.js) ship in [`configs/`](./configs/) and are copied into consumer repos per `rules/linting.md`.
 
+## Skills & plugins in use
+
+Skills installed in client discovery dirs (`~/.agents/skills`, `~/.claude/skills`), by source:
+
+| Source | Skills installed |
+|---|---|
+| [mattpocock/skills](https://github.com/mattpocock/skills) (35/35) | ask-matt, code-review, codebase-design, diagnosing-bugs, domain-modeling, grill-with-docs, implement, improve-codebase-architecture, prototype, research, resolving-merge-conflicts, setup-matt-pocock-skills, tdd, to-spec, to-tickets, triage, wayfinder, wizard, grill-me, grilling, handoff, teach, to-questionnaire, wait-what, writing-for-agents, claude-handoff, loop-me, setup-ts-deep-modules, writing-beats, writing-fragments, writing-shape, git-guardrails-claude-code, migrate-to-shoehorn, scaffold-exercises, setup-pre-commit |
+| [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) (0/6 installed) | `ponytail` mode runs via injected config (`.ponytail-active`), not a skill dir: ponytail, ponytail-audit, ponytail-debt, ponytail-gain, ponytail-help, ponytail-review |
+| [mksglu/context-mode](https://github.com/mksglu/context-mode) (0/9 installed) | Only the MCP server runs (no skill dirs): context-mode, ctx-doctor, ctx-index, ctx-insight, ctx-purge, ctx-search, ctx-stats, ctx-upgrade, context-mode-ops |
+| [firecrawl](https://github.com/firecrawl/firecrawl) (32) | Installed via `npx firecrawl init` (CLI-managed): firecrawl, firecrawl-agent, firecrawl-build, firecrawl-build-interact, firecrawl-build-onboarding, firecrawl-build-scrape, firecrawl-build-search, firecrawl-company-directories, firecrawl-competitive-intel, firecrawl-crawl, firecrawl-dashboard-reporting, firecrawl-deep-research, firecrawl-demo-walkthrough, firecrawl-download, firecrawl-interact, firecrawl-knowledge-base, firecrawl-knowledge-ingest, firecrawl-lead-gen, firecrawl-lead-research, firecrawl-map, firecrawl-market-research, firecrawl-monitor, firecrawl-parse, firecrawl-qa, firecrawl-research-index, firecrawl-research-papers, firecrawl-scrape, firecrawl-search, firecrawl-seo-audit, firecrawl-shop, firecrawl-website-design-clone, firecrawl-workflows |
+
+MCP servers (plugins) by client config:
+
+| Client | Servers |
+|---|---|
+| opencode (`~/.config/opencode/opencode.json`) | github, context7, chrome-devtools, firecrawl, xcode, notion, google-sheets |
+| Claude Code (`~/.claude.json`) | notion, firecrawl, claude-config, codegraph, obsidian-vault, stitch, tolaria |
+
 ## Contributing
 
 See [AGENTS.md](./AGENTS.md) for the rule-file format contract. Commits go directly to `main` (trunk-based).
