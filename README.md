@@ -4,20 +4,18 @@ Public, cross-project rules for opencode, consumed via remote `instructions` URL
 
 ## Usage
 
-Add the modules you need to `opencode.json` (per project) or `~/.config/opencode/opencode.json` (global). Each file is **self-contained** — include only the modules your project needs.
+Add **one instruction** — `CONTEXT.md` — to `opencode.json` (per project) or `~/.config/opencode/opencode.json` (global). It is the router: agents fetch only the rule modules their project needs, by URL.
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
-    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md",
-    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md",
-    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md"
+    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md"
   ]
 }
 ```
 
-Remote instructions are fetched with a 5-second timeout; the repo must stay public for anonymous fetch to work. Simplest wiring: add **only** `CONTEXT.md` to `instructions` — it is the rule router and lists every module with its fetch URL.
+Remote instructions are fetched with a 5-second timeout; the repo must stay public for anonymous fetch to work.
 
 ## Rule modules
 
