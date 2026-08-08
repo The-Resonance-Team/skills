@@ -4,7 +4,7 @@ Applies to `apps/api`-style NestJS services in the organization. Include this fi
 
 ## Scope
 
-This module encodes the NestJS coding standards: DTO validation, folder layout, import discipline, and time handling. Consumers not running NestJS should omit this file from `instructions`.
+This module encodes the NestJS coding standards: DTO validation, folder layout, import discipline, time handling, and the repository seam. Consumers not running NestJS should omit this file from `instructions`.
 
 ## DTO validation (mandatory)
 
@@ -39,6 +39,11 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 ## Time handling (mandatory)
 
 8. **date-fns only** — All time processing (parse, arithmetic, boundary, relative, display) uses `date-fns` + `@date-fns/tz`. Sole exception: serialization to the wire format keeps `toISOString()`. Display uses fixed timezone wrappers (`dateVi`/`formatVi`, timezone `Asia/Ho_Chi_Minh`); boundaries (`startOfDay`/`startOfMonth`) always go through `new TZDate(d, TZ)` — never `new Date(y, m, d)` constructor arithmetic.
+
+## Repository seam (mandatory for Prisma-backed services)
+
+9. **Domain-verb repos, never raw Prisma in services** — A Prisma-backed service does not inject `PrismaService` for its own queries. Each module owns one `<module>.repo.ts` that exposes domain verbs (`createFeedbackReport`, `raceSafeTransition`, `findCloseCandidates(now)`) — never Prisma query shapes. The repo is the only persistence surface; the repo→Prisma mapping is thin and untested. Specs fake the repo (`makeFakeRepo()`) instead of Prisma call shapes, so they assert on behavior and survive Prisma refactors. One repo per module; split at ~400 lines (precedent: `feedback.repo` / `appointments.repo`). Existing Prisma-level specs are migrated to the fake when a module adopts the seam — the constructor swap forces the spec rewrite anyway, and behavior-level assertions are the payoff. Adopting the seam on a module with heavy working specs is a recorded trade-off: do it once, not piecemeal (see XaDaoXa ADR-0040). Where filters are genuinely DTO-driven, a `where` argument of the Prisma input type may cross the seam (precedent: `feedback.repo.listManage`) — the verb still owns the select and the pagination shape.
+10. **In-tx side-effects ride callbacks or client handles — never a leaked tx** — When a domain side-effect must commit atomically with a repo transition (outbox enqueue, notification broadcast), one of two shapes: (a) the repo verb runs its own `$transaction` and takes a `(tx, row) => Promise<unknown>` callback it invokes inside it (`transitionWithBroadcast`); (b) the caller owns the transaction and the service method takes a `PrismaTx` client handle scoped to that one insert (`enqueueInTx(client, ...)`). The service never issues arbitrary queries against a leaked tx. Race-safe claims use `updateMany` with the expected status (plus an extra predicate like `closedNotificationSentAt: null`) in WHERE; `count === 0` means a concurrent actor won — skip or throw `STATE_CHANGED_CONCURRENTLY`, never re-read blindly.
 
 ## Linting (when applicable)
 
