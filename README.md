@@ -1,8 +1,40 @@
-# skills — opencode remote rules for The Resonance Team
+# skills — The Resonance Team library
 
-Public, cross-project rules for opencode, consumed via remote `instructions` URLs. Sibling of the `skills/` directory pattern in `business-skills`, but **rules-only**: plain markdown fetched into context, no skill packs.
+The Resonance Team library: remote **rule modules** for opencode (plain markdown fetched via `instructions` URLs) and the **resonance plugin package** (Agent Plugins 1.0.0) carrying workflow skills and MCP servers.
 
-## Usage
+## Resonance plugin
+
+The repo root is the plugin root. `plugin.json` identifies it; `mcp.json` declares the team's MCP servers (context7, chrome-devtools, context-mode, github, firecrawl); `skills/` holds team-authored skills (empty until the first one lands); `rules/` and `configs/` are extra files clients ignore.
+
+Validate the package with `node scripts/validate.mjs`.
+
+### One-command install
+
+```sh
+node scripts/install.mjs            # skills + MCP servers, for every client present
+node scripts/install.mjs --dry-run  # preview without changing anything
+node scripts/install.mjs --client claude
+```
+
+The script installs both halves in one command:
+
+- **Skills** — fetches and copies into each client's discovery dirs: mattpocock engineering set, ponytail, context-mode skills (from their git repos, pinned at latest commit), and firecrawl's set via `npx firecrawl init` (CLI-managed).
+- **MCP servers** — merges the `mcp.json` servers into each client's config (`opencode.json` `mcp`, `~/.claude.json` `mcpServers`), skipping entries that already exist. The client config is backed up to `*.resonance.bak` before writing.
+
+State is recorded in `~/.config/team-skills/installed.json`.
+
+**Secrets**: `mcp.json` holds `${GITHUB_TOKEN}` and `${FIRECRAWL_API_KEY}` placeholders only; the script translates them to each client's env syntax (opencode `{env:VAR}`, Claude Code `${VAR}`). Never commit real keys.
+
+### Client installs (plugin itself)
+
+| Client | Install |
+|---|---|
+| VS Code | Chat → "Install Plugin From Source" → `https://github.com/The-Resonance-Team/skills` |
+| Cursor | Copy/symlink into `~/.cursor/plugins/local/resonance` |
+| opencode, Claude Code, Antigravity | `node scripts/install.mjs` |
+| Codex | Cloud store publish (manual, deferred) |
+
+## Usage (rule modules)
 
 Add the modules you need to `opencode.json` (per project) or `~/.config/opencode/opencode.json` (global). Each file is **self-contained** — include only the modules your project needs.
 

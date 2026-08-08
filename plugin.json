@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "resonance",
+  "version": "0.1.0",
+  "description": "The Resonance Team library: workflow skills, MCP servers, and rule modules.",
+  "author": {
+    "name": "The Resonance Team",
+    "url": "https://github.com/The-Resonance-Team"
+  },
+  "repository": "https://github.com/The-Resonance-Team/skills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "workflow",
+    "team",
+    "mcp"
+  ]
+}
