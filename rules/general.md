@@ -33,6 +33,14 @@ Applies to every project in the organization. Include this file in `opencode.jso
 
 10. **Suggest rule updates** — These rules are a living document, not a fixed contract. When a rule is wrong, outdated, or missing for the task at hand, say so and suggest an update. Ask the user whether to update the rules, then edit `rules/*.md` in the `The-Resonance-Team/skills` repo and push to `main` when allowed. Do not silently deviate from a rule — propose the change instead.
 
+## GitHub Actions
+
+11. **Cancel in-progress runs on new push** — Every workflow sets a `concurrency` block with `cancel-in-progress: true`. A newer push to the same ref cancels the stale run; CI time is never spent on superseded commits.
+
+12. **CI keys the group on `github.ref`** — `group: ci-${{ github.ref }}`. `github.ref` is the fully-qualified ref (`refs/heads/main`, `refs/tags/v1.0.0`, `refs/pull/42/merge`) — unique per trigger context. CI fires on both `push` and `pull_request`, so `ref` keeps a branch push, a tag push, and a PR run in separate groups; a PR run is never cancelled by an unrelated push. `github.ref_name` is unsafe here: `42/merge` (a PR's short name) collides with a branch literally named `42/merge`.
+
+13. **CD keys the group on `github.ref_name`** — `group: cd-${{ github.ref_name }}`. Deployment is tracked per ref _name_ (`main`, `v1.0.0`) in the deploy-environments UI: same branch/tag → same deployment slot → a newer push cancels the stale deploy. `github.ref` would treat a tag and a same-named branch as different slots, allowing two deploys of the same target to run concurrently.
+
 ## Conventions (repo-level)
 
 11. **DTOs pass intact through the controller→service seam** — DTOs (`@Body()`/`@Query()`) pass intact into the service (`service.method(dto)`), imported with `import type`; no field-by-field destructuring in the controller. Exceptions: service→service calls and transport composites (cookies + body) still use primitives.
