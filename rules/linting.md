@@ -6,17 +6,17 @@ Applies to every TypeScript/JavaScript project in the organization. Include this
 
 Strict tool split — three tools, non-overlapping jobs:
 
-| Tool     | Applies to                                                             | Job             |
-| -------- | ---------------------------------------------------------------------- | --------------- |
-| Prettier | all projects                                                           | formatting only |
-| Oxlint   | every non-Next.js project (web, miniapp, Vite/React, plain TS, NestJS) | linting         |
-| ESLint   | Next.js apps only (`eslint-config-next`)                               | linting         |
+| Tool | Applies to | Job |
+|---|---|---|
+| Prettier | all projects | formatting only |
+| Oxlint | every non-Next.js project (web, miniapp, Vite/React, plain TS, NestJS) | linting |
+| ESLint | Next.js apps only (`eslint-config-next`) | linting |
 
 Formatting is never linted; linting is never formatted (no stylistic rules in either linter). A TS/JS project without this tooling must set it up.
 
 ## Prettier baseline (all projects)
 
-1. **One root config, no app-level overrides** — copy `configs/prettier.config.mjs` into the repo root. Settings: `semi: true`, `singleQuote: true`, `trailingComma: "all"`, `printWidth: 100`, `tabWidth: 2`, `arrowParens: "always"`, `endOfLine: "lf"`.
+1. **One root config, no app-level overrides** — copy `configs/prettier.config.mjs` into the repo root. Settings: `semi: false`, `singleQuote: true`, `trailingComma: "all"`, `printWidth: 100`, `tabWidth: 2`, `arrowParens: "always"`, `endOfLine: "lf"`.
 2. **No per-app `.prettierrc`** — an app-level config is a stale fork that silently contradicts the standard (config drift). When found, delete it and reformat with the root config; do not accommodate it.
 3. **Tailwind projects** add `prettier-plugin-tailwindcss` to `plugins` — nothing else.
 

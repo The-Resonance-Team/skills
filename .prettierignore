@@ -1,0 +1,2 @@
+# Docs/rules are hand-maintained — prettier must not reformat them.
+*.md
