@@ -31,7 +31,12 @@ Client-side standards: API consumption, uploads, styling. Backend-only repos sho
 
 Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tanstack/react-query). The wiring below is the structure every web app follows:
 
-5. **Axios client** — exactly one instance in `lib/client.ts`: baseURL from env, credentials/auth-header injection, and a response interceptor that unwraps the `{ data: T }` envelope. Endpoint functions live in `lib/api.ts` and call `api.get<T>()` etc. — never `fetch`, never a second instance.
+5. **Axios client** — exactly one instance in `lib/client.ts`: `axios.create({ baseURL, headers })` with:
+   - a **request interceptor** injecting auth (Bearer token or Basic from storage — never inline in call sites, never `localStorage` for passwords),
+   - a **response error interceptor** normalizing error messages to `` `${method} ${path} → ${status}` `` so callers and error UI read a consistent shape,
+   - an unwrap interceptor **only if the API wraps responses** in `{ data: T }` — if the API returns payloads directly, no unwrap.
+     Endpoint functions live in `lib/api.ts` and call `api.get<T>()` / `api.post<T>()` / `api.patch<T>()` / `api.delete<T>()` with the response generic, returning `r.data` (`api.get<SessionDto>(...).then((r) => r.data)`). Never `fetch`, never a second instance.
+   - **Exception — SSE streams**: axios in the browser is XHR-based with no streaming-reader API, and `EventSource` cannot set auth headers. Streaming endpoints (SSE/NDJSON) stay on `fetch`, reusing the instance's `baseURL` and the same auth helper (`authHeader()`) the interceptor uses.
 
 6. **Query provider** — `QueryClientProvider` wrapped once at the root layout through a `QueryProvider` component (`lib/query-provider.tsx`). No per-page providers, no new `QueryClient` per render (create it in `useState(() => new QueryClient())`).
 
