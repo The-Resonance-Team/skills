@@ -26,3 +26,15 @@ Client-side standards: API consumption, uploads, styling. Backend-only repos sho
 ## Barrel imports (mandatory)
 
 4. **Barrels** — A folder with ≥2 non-test files (`components/`, `lib/`, `hooks/`, `features/`, ...) gets an `index.ts` `export *`-ing all members. New files added to a folder are added to its `index.ts` manually. Cross-folder imports go through the barrel (e.g. `@/components/ui`), never a deep file path. Imports **within the same folder** stay relative — never import the folder's own barrel (self-barrel cycles).
+
+## Data fetching & forms setup (mandatory)
+
+Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tanstack/react-query). The wiring below is the structure every web app follows:
+
+5. **Axios client** — exactly one instance in `lib/client.ts`: baseURL from env, credentials/auth-header injection, and a response interceptor that unwraps the `{ data: T }` envelope. Endpoint functions live in `lib/api.ts` and call `api.get<T>()` etc. — never `fetch`, never a second instance.
+
+6. **Query provider** — `QueryClientProvider` wrapped once at the root layout through a `QueryProvider` component (`lib/query-provider.tsx`). No per-page providers, no new `QueryClient` per render (create it in `useState(() => new QueryClient())`).
+
+7. **Query/mutation hooks** — typed hooks in `lib/use-<resource>.ts`, one per resource. Queries: `useQuery({ queryKey: ['resource', id], queryFn })`. Mutations: `useMutation({ mutationFn, onSuccess: () => invalidateQueries({ queryKey: [...] }) })`. Set `retry: false` on auth/session queries (401s must surface immediately, not retry 3×). Errors render from the hook's `error` — never swallowed into `useState`.
+
+8. **Forms** — react-hook-form + `zodResolver`, one zod schema as the single source of truth (typed via `z.infer`). `useForm({ resolver: zodResolver(schema) })`, inputs via `{...register('field')}`, errors from `formState.errors`. No hand-rolled `useState` per field, no validation logic inside `onSubmit`.
