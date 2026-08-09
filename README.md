@@ -30,6 +30,10 @@ Remote instructions are fetched with a 5-second timeout; the repo must stay publ
 
 Machine-readable tool configs (Prettier, Oxlint, ESLint-for-Next.js) ship in [`configs/`](./configs/) and are copied into consumer repos per `rules/linting.md`.
 
+## Known gaps
+
+- **Dart/Flutter** — no rule module. TaxEasy-Platform runs a `dart-mcp-server`; create `rules/dart.md` when a repo carries Dart application code, not before.
+
 ## Contributing
 
 See [AGENTS.md](./AGENTS.md) for the rule-file format contract. Commits go directly to `main` (trunk-based).

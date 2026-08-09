@@ -23,12 +23,12 @@ Formatting is never linted; linting is never formatted (no stylistic rules in ei
 ## Oxlint baseline (non-Next.js projects)
 
 4. **Config** — copy `configs/.oxlintrc.json` (file must be named `.oxlintrc.json`). Structure:
-   - `categories`: `correctness: "error"`, `perf: "error"`, `suspicious: "warn"`.
+   - `categories`: `correctness: "error"`, `suspicious: "warn"`, `perf: "warn"`.
    - `plugins`: `typescript`, `react`, `react_perf`, `import`, `jest`, `vitest`.
-   - `ignorePatterns`: `node_modules`, `dist`, `.next`, `.turbo`, `coverage`, `build`, `.expo`, `www`.
-5. **Type-aware linting (mandatory)** — install `oxlint-tsgolint`, set `options.typeAware: true` and `options.typeCheck: true`. This runs typescript-eslint's semantic rules at ~20-40x the speed of eslint+tseslint. The high-impact rules are `typescript/no-floating-promises: "error"` and `typescript/no-misused-promises: "error"`.
+   - `ignorePatterns`: `node_modules`, `dist`, `.next`, `.turbo`, `coverage`, `build`, `.expo`, `www`, `test-results`.
+5. **No type-aware linting** — `typeAware`/`typeCheck` are off. Semantic type checking is the project's own `tsc` job; lint stays a fast save-time pass. Rules that require type info (`typescript/no-floating-promises`, `typescript/no-misused-promises`) are not part of the baseline.
 6. **`_`-prefix convention** — `no-unused-vars` is `"error"` with `varsIgnorePattern`/`argsIgnorePattern`/`caughtErrorsIgnorePattern` all `"^_"`. Intentionally-unused bindings are named with a leading underscore, never deleted or lint-suppressed.
-7. **Discipline rules**: `no-console: "warn"`, `no-debugger: "warn"`, `no-explicit-any: "error"`, `no-non-null-assertion: "warn"`, `react/no-array-index-key: "warn"`, `import/no-duplicates: ["error", {"prefer-inline": true}]` (parity with the Next.js ESLint config; this rule is **not** on by default in oxlint — it must be listed explicitly).
+7. **Discipline rules**: `no-console: ["warn", {"allow": ["warn", "error"]}]`, `no-debugger: "warn"`, `no-explicit-any: "error"`, `eslint/no-underscore-dangle: "off"`, `react/no-array-index-key: "warn"`, `react/react-in-jsx-scope: "off"`, `import/no-duplicates: ["error", {"prefer-inline": true}]`, `import/no-named-as-default-member: "off"`, `import/no-unassigned-import: "off"`.
 8. **Test leniency is scoped, never global** — test files (`**/*.{test,spec}.{ts,tsx}`) get an `overrides` block that adds `jest`/`vitest` plugins and turns off their noise rules (`expect-expect`, `no-conditional-expect`, `valid-title`, `require-mock-type-parameters`) plus `no-explicit-any: "off"`. App code never inherits test leniency.
 9. **NestJS** additionally sets `typescript/no-extraneous-class: ["warn", {"allowWithDecorator": true}]` — see `rules/nestjs.md`.
 
@@ -39,6 +39,7 @@ Formatting is never linted; linting is never formatted (no stylistic rules in ei
     - `_`-prefix convention: `@typescript-eslint/no-unused-vars` with the three `^_` ignore patterns.
     - `import/no-duplicates: ["error", {"prefer-inline": true}]`.
     - `eslint-config-prettier` last — turns off every stylistic rule; Prettier owns formatting.
+    - **Monorepos place the config at the Next app level** (`apps/<app>/eslint.config.mjs`), where `next` resolves; the repo root keeps the oxlint baseline for non-Next apps.
 11. **`react-hooks` rules stay ON** — `react-hooks/set-state-in-effect`, `react-hooks/immutability`, `react-hooks/refs` are not disabled in the baseline. Disable a rule per-project only with a `// ponytail:` comment naming the pervasive pattern, and only after re-running the lint to confirm the rule genuinely fails.
 
 ## Pre-commit

@@ -1,14 +1,10 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "react", "react_perf", "import", "jest", "vitest"],
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "plugins": ["react", "react_perf", "typescript", "import", "jest", "vitest"],
   "categories": {
     "correctness": "error",
-    "perf": "error",
-    "suspicious": "warn"
-  },
-  "options": {
-    "typeAware": true,
-    "typeCheck": true
+    "suspicious": "warn",
+    "perf": "warn"
   },
   "rules": {
     "no-unused-vars": [
@@ -19,14 +15,15 @@
         "caughtErrorsIgnorePattern": "^_"
       }
     ],
-    "no-console": "warn",
-    "no-debugger": "warn",
     "no-explicit-any": "error",
-    "no-non-null-assertion": "warn",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-debugger": "warn",
+    "react/react-in-jsx-scope": "off",
     "react/no-array-index-key": "warn",
+    "eslint/no-underscore-dangle": "off",
     "import/no-duplicates": ["error", { "prefer-inline": true }],
-    "typescript/no-floating-promises": "error",
-    "typescript/no-misused-promises": "error"
+    "import/no-named-as-default-member": "off",
+    "import/no-unassigned-import": "off"
   },
   "overrides": [
     {
@@ -48,10 +45,11 @@
     "node_modules/**",
     "dist/**",
     ".next/**",
-    ".turbo/**",
     "coverage/**",
+    ".turbo/**",
     "build/**",
-    ".expo/**",
-    "www/**"
+    "www/**",
+    "test-results/**",
+    ".expo/**"
   ]
 }
