@@ -23,6 +23,10 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 
 5. **DTOs pass intact** — DTOs (`@Body()`/`@Query()`) pass **intact** into the service (`service.method(dto)`), imported with `import type`; no field-by-field destructuring in the controller. Exceptions: service→service calls and transport composites (cookies + body) still use primitives.
 
+## Module composition (mandatory)
+
+17. **`@Global` infra modules are imported once — never re-imported** — A module decorated `@Global()` (PrismaInfraModule, ClsModule, `ConfigModule.forRoot({ isGlobal: true })`) exposes its exports app-wide; listing it in a child module's `imports` adds nothing. `AppModule` is the single import site. Do not re-import a `@Global` module in `common.module.ts` or any feature module — import only modules whose exports the module actually re-exports or whose load order matters.
+
 ## DTO owns the wire contract (mandatory)
 
 12. **Normalization is a DTO concern** — Case transforms (`.toUpperCase()` for DB enums), CSV→array splits, `@Type(() => Number)` coercion, and wire-label→DB-value maps (e.g. `active` → `PUBLISHED_VENDOR`) all live in the DTO via `@Transform`/`@Type`. The service receives values already in DB shape: no `toEnum` identity calls, no manual `.toUpperCase()`, no `isNaN` guards, no redundant format checks.
