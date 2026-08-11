@@ -16,7 +16,7 @@ Formatting is never linted; linting is never formatted (no stylistic rules in ei
 
 ## Prettier baseline (all projects)
 
-1. **One root config, no app-level overrides** — copy `configs/prettier.config.mjs` into the repo root. Settings: `semi: false`, `singleQuote: true`, `trailingComma: "all"`, `printWidth: 100`, `tabWidth: 2`, `arrowParens: "always"`, `endOfLine: "lf"`.
+1. **One root config, no app-level overrides** — copy `configs/prettier.config.mjs` into the repo root. Settings: `semi: true`, `singleQuote: true`, `trailingComma: "all"`, `printWidth: 100`, `tabWidth: 2`, `arrowParens: "always"`, `endOfLine: "lf"`.
 2. **No per-app `.prettierrc`** — an app-level config is a stale fork that silently contradicts the standard (config drift). When found, delete it and reformat with the root config; do not accommodate it.
 3. **Tailwind projects** add `prettier-plugin-tailwindcss` to `plugins` — nothing else.
 4. **Docs are never formatted** — copy `configs/.prettierignore` into the repo root (it ignores `*.md`): markdown documents (rules, ADRs, specs, tickets, READMEs) are hand-maintained prose, not code. Prettier must skip them — auto-formatting churns history and fights hand-wrapping. lint-staged's `prettier --write` and the `format` script already respect the ignore.
