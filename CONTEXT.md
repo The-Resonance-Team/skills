@@ -4,14 +4,15 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 
 ## Rule modules
 
-| Module | Scope | Fetch URL |
-|---|---|---|
-| `rules/general.md` | All projects | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md` |
-| `rules/nestjs.md` | NestJS API | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md` |
-| `rules/frontend.md` | Web/portal/miniapp | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md` |
-| `rules/linting.md` | All TS/JS projects | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md` |
-| `rules/libraries.md` | All TS/JS projects | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md` |
-| `rules/upload.md` | APIs with uploads | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md` |
+| Module               | Scope                       | Fetch URL                                                                             |
+| -------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
+| `rules/general.md`   | All projects                | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md`   |
+| `rules/nestjs.md`    | NestJS API                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`    |
+| `rules/prisma.md`    | TS/NestJS repos on Prisma 7 | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`    |
+| `rules/frontend.md`  | Web/portal/miniapp          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`  |
+| `rules/linting.md`   | All TS/JS projects          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`   |
+| `rules/libraries.md` | All TS/JS projects          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md` |
+| `rules/upload.md`    | APIs with uploads           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`    |
 
 Machine-readable tool configs ship in `configs/` of the same repo (`prettier.config.mjs`, `.oxlintrc.json`, `eslint.config.mjs`).
 
