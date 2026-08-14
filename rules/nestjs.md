@@ -10,6 +10,7 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 
 1. **DTO for every body / multi-param** — A handler receiving `@Body()`, or multiple `@Query()`/`@Param()` values, must use a DTO class with `class-validator` decorators. Validation lives in the DTO, not in the service/controller.
 2. **No inline/mapped types for body** — `{ x: string }`, `Omit<Dto, K>`, `Record<string, unknown>`, or an intersection like `BaseDto & { extra: X }` as a body/query param will **bypass ValidationPipe** (the `Object` metatype is excluded from validation). For the pipe to run, the param must be a DTO class. To extend a base DTO, `extends` it (`AdminListQueryDto extends ListQueryDto` adds properties _with_ their class-validator metadata).
+3. **Route params ride a params DTO — never per-param `@Param('storeId')`** — Nested-route handlers (`/stores/:storeId/departments/:departmentId/positions/:positionId`) declare one `@Param() params: XParamsDto` instead of repeating `@Param('storeId') storeId: string, @Param('departmentId') departmentId: string, ...`. Each property gets a decorator (whitelist strips undecorated props); nest the classes for the route depth (`StoreDepartmentPositionParamsDto extends StoreDepartmentParamsDto extends StoreParamsDto`). Pass the DTO **intact** to the service (rule 5) — the controller never destructures. Shapes shared across modules live in `common/dto/route-params.dto.ts`, module-local ones in the module `dto/`. Caveat: `@Param()` DTOs do not render as path params in the generated OpenAPI spec — the route template still carries the names (precedent: RestoSuite 2026-08).
 
 ## Folder layout (mandatory)
 
@@ -21,7 +22,7 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 
 ## Controller→service seam (mandatory)
 
-5. **DTOs pass intact** — DTOs (`@Body()`/`@Query()`) pass **intact** into the service (`service.method(dto)`), imported with `import type`; no field-by-field destructuring in the controller. Exceptions: service→service calls and transport composites (cookies + body) still use primitives.
+5. **DTOs pass intact** — DTOs (`@Body()`/`@Query()`/`@Param()`) pass **intact** into the service (`service.method(dto)`), imported with `import type`; no field-by-field destructuring in the controller. Exceptions: service→service calls and transport composites (cookies + body) still use primitives.
 
 ## Module composition (mandatory)
 
@@ -69,3 +70,7 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 ## Uploads (when applicable)
 
 9. **Built-in interceptor + allowlists** — Uploads validate with the built-in `FileInterceptor` (multer) and the built-in `file.mimetype`: extension allowlist + declared-mimetype allowlist + canonicalization. Do not hand-roll a separate MIME-validation interceptor. Keep ESM-only deps out of CJS builds.
+
+## CSRF (mandatory)
+
+21. **csrf-csrf is the CSRF library — never csurf** — `csurf` is deprecated and unmaintained (last publish 2020). Configure once via `doubleCsrf()`: `getSecret` returns a boot-validated env secret (`CSRF_SECRET`, `getOrThrow`), `cookieName` + `cookieOptions` (`httpOnly: true, secure: true, sameSite: 'strict'`), `getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token']`. Expose `{ doubleCsrfProtection, generateCsrfToken }` through a provider; the token endpoint calls `generateCsrfToken(req, res)` (sets the cookie, returns the token), enforcement middleware runs `doubleCsrfProtection` only on cookie-authenticated requests. Clients echo the token in the `x-csrf-token` header. Caveat: tokens are HMAC-signed against the secret — rotating the secret invalidates outstanding tokens (precedent: RestoSuite 2026-08).

@@ -11,6 +11,7 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 | Forms              | `react-hook-form`                           | —                                       |
 | Server state       | `@tanstack/react-query`                     | —                                       |
 | Time               | `date-fns` + `@date-fns/tz`                 | `date-fns` + `@date-fns/tz`             |
+| CSRF protection    | — (cookie + `x-csrf-token` header)          | `csrf-csrf` (never csurf — deprecated)  |
 
 ## Rules
 
@@ -21,3 +22,4 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 5. **class-validator + class-transformer are the only validation for NestJS trust boundaries** — DTO classes with decorators, per `rules/nestjs.md` rule 1. `zod` is client-side; it never validates a `@Body()`. The two share no types: the wire contract is the DTO, the client contract is the zod schema.
 6. **date-fns + @date-fns/tz are the only time library** — parse, arithmetic, boundaries, and display per `rules/general.md`. No dayjs, no luxon, no moment. The serialization exception stays `toISOString()`.
 7. **No new library for a covered concern** — a library absent from the table may be proposed for a _new_ concern, never for an existing row. Propose it as a rule update (`rules/general.md` rule 10) instead of adding it silently.
+8. **csrf-csrf is the only CSRF library** — `doubleCsrf()` per `rules/nestjs.md` rule 21. `csurf` is deprecated and unmaintained — a `csurf` import is a violation.
