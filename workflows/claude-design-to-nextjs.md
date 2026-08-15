@@ -113,10 +113,16 @@ Chrome DevTools MCP to confirm design match:
 - Compare against design HTML
 - Fix visual/interaction gaps
 
-Run typecheck + lint:
+Run verification:
 ```bash
-pnpm typecheck
-pnpm lint
+# Typecheck (project-specific — adapt to package manager)
+pnpm typecheck  # or: npm run typecheck, bun run typecheck, yarn typecheck
+
+# Lint
+pnpm lint       # or: npm run lint, bun run lint, yarn lint
+
+# Tests (if applicable)
+pnpm test       # or: npm test, bun test, vitest, jest
 ```
 
 ## Leading words
