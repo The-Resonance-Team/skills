@@ -17,6 +17,11 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 
 Machine-readable tool configs ship in `configs/` of the same repo (`prettier.config.mjs`, `.oxlintrc.json`, `eslint.config.mjs`).
 
+## Language rules (all consumers)
+
+- **Always talk in ASD-STE100 Simplified Technical English.** Use only approved STE100 vocabulary. One meaning per word, short sentences.
+- **Always read `CONTEXT.md` files** and use their ubiquitous language.
+
 ## Terms
 
 - **Rule module** — one file under `rules/` (`general.md`, `nestjs.md`, `frontend.md`, `i18n.md`, `linting.md`), consumed as a unit by agents.
