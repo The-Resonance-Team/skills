@@ -14,6 +14,7 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 | `rules/linting.md`   | All TS/JS projects          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`   |
 | `rules/libraries.md` | All TS/JS projects          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md` |
 | `rules/upload.md`    | APIs with uploads           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`    |
+| `rules/issues.md`    | Repos with a GitHub issue tracker | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md` |
 
 Machine-readable tool configs ship in `configs/` of the same repo (`prettier.config.mjs`, `.oxlintrc.json`, `eslint.config.mjs`).
 
@@ -24,7 +25,7 @@ Machine-readable tool configs ship in `configs/` of the same repo (`prettier.con
 
 ## Terms
 
-- **Rule module** — one file under `rules/` (`general.md`, `nestjs.md`, `frontend.md`, `i18n.md`, `linting.md`), consumed as a unit by agents.
+- **Rule module** — one file under `rules/` (`general.md`, `nestjs.md`, `frontend.md`, `i18n.md`, `linting.md`, `issues.md`), consumed as a unit by agents.
 - **Consumer** — a repo that lists one of our rule files in its `opencode.json` `instructions` array.
 - **Instruction** — a single URL entry in a consumer's `instructions` array.
 - **Lint baseline** — the standard tool+rule configuration for the org, encoded in `rules/linting.md`. One accepted configuration; alternatives are not accommodated.
