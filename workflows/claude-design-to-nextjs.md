@@ -47,28 +47,42 @@ Apply team rules:
 - **DTOs intact** — pass through controller → service seam
 - **date-fns** — all time processing, never raw `Date` arithmetic
 
-Structure:
+Structure (CRUD pattern):
 ```
-apps/admin/src/app/hrm/
-├── employees/
-│   ├── page.tsx (list)
-│   ├── [id]/
-│   │   ├── page.tsx (detail)
-│   │   └── edit/page.tsx (form)
-│   └── new/page.tsx (form)
-├── departments/
-│   ├── page.tsx (list)
-│   └── [id]/page.tsx (positions)
-└── [feature]/page.tsx
+apps/[app]/src/app/[feature]/
+├── page.tsx (list)
+├── new/page.tsx (create form)
+└── [id]/
+    ├── page.tsx (detail)
+    └── edit/page.tsx (edit form)
 ```
 
-Hooks in `lib/hrm-hooks.ts`:
+For nested resources:
+```
+apps/[app]/src/app/[feature]/
+├── page.tsx (parent list)
+└── [parentId]/
+    ├── page.tsx (parent detail)
+    └── [child]/page.tsx (nested resource)
+```
+
+Hooks pattern (ponytail mock data):
 ```ts
 // ponytail: module-level mutable mock store. Upgrade path: swap for real API.
-const MOCK_ITEMS: Item[] = [...];
+const MOCK_DATA: T[] = [...];
 
-export function useItems() {
-  return useQuery({ queryKey: ["items"], queryFn: async () => MOCK_ITEMS });
+export function useList() {
+  return useQuery({ queryKey: ["resource"], queryFn: async () => MOCK_DATA });
+}
+
+export function useCreate() {
+  return useMutation({
+    mutationFn: async (item: T) => {
+      MOCK_DATA.push({ ...item, id: `id-${Date.now()}` });
+      return item;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["resource"] }),
+  });
 }
 ```
 
