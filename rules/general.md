@@ -33,6 +33,34 @@ Applies to every project in the organization. Include this file in `opencode.jso
 
 7. **Validate input at trust boundaries** — Any handler receiving `@Body()`, or multiple `@Query()`/`@Param()` values, must use a DTO class with `class-validator` decorators. Validation lives in the DTO, not in the service/controller. Inline/mapped types (`{ x: string }`, `Omit<Dto, K>`, `Record<string, unknown>`) as a body param bypass the ValidationPipe (the `Object` metatype is excluded from validation) — for the pipe to run, the param must be a DTO class (it may `extends` another DTO to inherit metadata).
 
+## Mock data (ponytail pattern)
+
+8. **Ponytail mock hooks** — When backend endpoints don't exist yet, use module-level mutable mock data with a `// ponytail:` comment documenting the ceiling and upgrade path. Pattern:
+
+   ```ts
+   // ponytail: module-level mutable mock store. Upgrade path: swap for real API when backend ready.
+   const MOCK_ITEMS: Item[] = [...];
+
+   export function useItems() {
+     return useQuery({
+       queryKey: ["items"],
+       queryFn: async () => MOCK_ITEMS,
+     });
+   }
+
+   export function useCreateItem() {
+     return useMutation({
+       mutationFn: async (item: Item) => {
+         MOCK_ITEMS.push({ ...item, id: `item-${Date.now()}` });
+         return item;
+       },
+       onSuccess: () => queryClient.invalidateQueries({ queryKey: ["items"] }),
+     });
+   }
+   ```
+
+   The `// ponytail:` comment signals this is temporary mock data, not production code. When the real API lands, replace the mock hooks with real API calls — the component interface stays the same.
+
 ## Rule maintenance
 
 10. **Suggest rule updates** — These rules are a living document, not a fixed contract. When a rule is wrong, outdated, or missing for the task at hand, say so and suggest an update. Ask the user whether to update the rules, then edit `rules/*.md` in the `The-Resonance-Team/skills` repo and push to `main` when allowed. Do not silently deviate from a rule — propose the change instead.
