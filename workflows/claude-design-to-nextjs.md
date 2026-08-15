@@ -151,3 +151,113 @@ pnpm test       # or: npm test, bun test, vitest, jest
 - **Implementation** — typecheck + lint pass, pages render
 - **Code review** — findings reported per axis
 - **Verification** — Chrome DevTools confirms design match
+
+## Complex scenarios
+
+### Multi-resource coordination
+
+When pages share data across resources (e.g., employee list → department filter → position detail):
+
+- **Shared query keys** — use consistent queryKey structure: `["resource", parentId, childId]`
+- **Cross-resource invalidation** — when parent mutates, invalidate child queries: `onSuccess: () => queryClient.invalidateQueries({ queryKey: ["child", parentId] })`
+- **Dependent queries** — use `enabled` flag: `enabled: !!parentId` so child query doesn't fire until parent loads
+- **Breadcrumb state** — derive from route params, not component state
+
+### Permission & role modeling
+
+- **PermissionGuard wrapper** — wrap UI elements that require specific permissions: `<PermissionGuard permission={PERMISSIONS.EDIT}><Button>Edit</Button></PermissionGuard>`
+- **Route-level guards** — check permission in `layout.tsx` or `page.tsx` before rendering, redirect to 403 if denied
+- **Hook-level guards** — `usePermission(permission)` returns boolean, use to conditionally render or disable
+- **Permission constants** — centralize in `@restosuite/constants` or similar, never hardcode strings
+
+### Error handling strategy
+
+- **API errors** — surface from hook's `error` field, render in UI, never swallow into `useState`
+- **Form validation errors** — zod schema messages, displayed inline below field
+- **Not found** — if entity missing (404 or empty result), show "Not found" card with back link
+- **Loading states** — skeleton screens (animate-pulse) while `isLoading`, not blank screens
+- **Error boundaries** — wrap page in React ErrorBoundary for unexpected crashes
+
+### Form validation patterns
+
+- **Client + server** — zod schema mirrors API DTO validation rules exactly
+- **Cross-field validation** — zod `.refine()` for rules like `endDate > startDate`
+- **Async validation** — zod `.refine(async (val) => await checkUnique(val))` for uniqueness checks
+- **Dirty tracking** — RHF's `formState.isDirty` to enable/disable save button
+- **Optimistic save** — disable save button while `mutation.isPending`, re-enable on success/error
+
+### Optimistic updates
+
+Use when latency matters and rollback is safe:
+
+```ts
+useMutation({
+  mutationFn: updateItem,
+  onMutate: async (newItem) => {
+    await queryClient.cancelQueries({ queryKey: ["item", id] });
+    const previous = queryClient.getQueryData(["item", id]);
+    queryClient.setQueryData(["item", id], newItem);
+    return { previous };
+  },
+  onError: (err, newItem, context) => {
+    queryClient.setQueryData(["item", id], context.previous);
+  },
+  onSettled: () => queryClient.invalidateQueries({ queryKey: ["item", id] }),
+});
+```
+
+Skip when: data loss risk, concurrent edits likely, or user needs confirmation.
+
+### Cache invalidation strategy
+
+- **After create** — invalidate list query: `invalidateQueries({ queryKey: ["items"] })`
+- **After update** — invalidate both list and detail: `invalidateQueries({ queryKey: ["items"] }), invalidateQueries({ queryKey: ["item", id] })`
+- **After delete** — same as update
+- **Cross-resource** — when department updates, invalidate positions: `invalidateQueries({ queryKey: ["positions", departmentId] })`
+
+### Nested navigation
+
+- **Breadcrumbs** — derive from `useParams()`, render as `<Link>` chain with separator
+- **Back navigation** — `router.back()` for in-app, `router.push(parentPath)` for cross-feature
+- **Deep linking** — preserve query params in URL: `?filter=kitchen&page=2`, read with `useSearchParams()`
+- **Tab state** — use URL search params, not `useState`, so tabs are shareable/bookmarkable
+
+### Responsive design
+
+- **Mobile-first** — default styles for mobile, `md:` / `lg:` breakpoints for larger screens
+- **Breakpoint tokens** — use Tailwind's default: `sm:640px`, `md:768px`, `lg:1024px`, `xl:1280px`, `2xl:1536px`
+- **Responsive tables** — stack on mobile (card layout), grid on desktop (table layout)
+- **Touch targets** — min 44×44px for buttons/links on mobile
+
+### Accessibility checklist
+
+- **Semantic HTML** — `<button>` for actions, `<a>` for navigation, `<input>` for forms
+- **ARIA labels** — `aria-label` for icon-only buttons, `aria-labelledby` for complex widgets
+- **Keyboard navigation** — all interactive elements focusable, logical tab order, Enter/Space activate
+- **Focus management** — after modal opens, focus first input; after closes, return focus to trigger
+- **Color contrast** — WCAG AA: 4.5:1 for text, 3:1 for large text/UI components
+- **Screen reader** — `sr-only` class for visually hidden but screen-reader-visible text
+
+### Performance budget
+
+- **Code splitting** — dynamic `import()` for heavy components (charts, editors)
+- **Image optimization** — Next.js `<Image>` with `width`, `height`, `alt`, `priority` for above-fold
+- **Font loading** — `next/font` with `display: "swap"`, preload critical fonts
+- **Bundle size** — keep under 200KB gzipped per page, use `@next/bundle-analyzer` to audit
+- **Lazy hydration** — for static content, use `"use client"` only where interactivity needed
+
+### Testing strategy
+
+- **Hook tests** — test mock hooks with React Testing Library: render component, assert data appears
+- **Integration tests** — test page renders with mock data, user interactions work
+- **E2E tests** — Playwright/Cypress for critical flows: create → edit → delete
+- **Visual regression** — Chromatic/Loki for UI snapshot tests
+- **Coverage target** — 80% for business logic, 60% for UI components
+
+### Deployment checklist
+
+- **Environment config** — `.env.local` for dev, `.env.production` for prod, never commit secrets
+- **Feature flags** — use `process.env.NEXT_PUBLIC_FEATURE_X` for gradual rollouts
+- **Preview deploys** — Vercel/Netlify auto-deploy PR branches for review
+- **Rollback plan** — keep last 3 deploys available, one-click rollback on critical bug
+- **Monitoring** — Sentry for error tracking, PostHog for analytics, Vercel Analytics for performance
