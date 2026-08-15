@@ -2,6 +2,10 @@
 
 Applies to every project in the organization. Include this file in `opencode.json` `instructions` for any repo.
 
+## Environment
+
+- **Postgres: always Docker, never native install** — Use `docker compose up -d postgres` from the repo's `docker-compose.yml` for any test, migration, or local-DB work; tear down with `docker compose down` when done. Do not suggest `brew install postgresql*`, do not use `/opt/homebrew/bin/psql` for app work, and do not start a Homebrew Postgres service.
+
 ## Language
 
 1. **STE100 Simplified Technical English** — Always talk in ASD-STE100. Use only approved STE100 vocabulary. One meaning per word. Short sentences.
