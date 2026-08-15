@@ -43,7 +43,10 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 7. **Query/mutation hooks** — typed hooks in `lib/use-<resource>.ts`, one per resource. Queries: `useQuery({ queryKey: ['resource', id], queryFn })`. Mutations: `useMutation({ mutationFn, onSuccess: () => invalidateQueries({ queryKey: [...] }) })`. Set `retry: false` on auth/session queries (401s must surface immediately, not retry 3×). Errors render from the hook's `error` — never swallowed into `useState`.
 
 8. **Forms** — react-hook-form + `zodResolver`, one zod schema as the single source of truth (typed via `z.infer`). `useForm({ resolver: zodResolver(schema) })`, inputs via `{...register('field')}`, errors from `formState.errors`. No hand-rolled `useState` per field, no validation logic inside `onSubmit`.
-
    - **Schema mirrors the API DTO** — the zod schema encodes exactly what the backend DTO enforces (same required/optional set, same value constraints). Colocate it as `<form>-schema.ts` next to the form, with a comment pointing at the DTO file path as source of truth; update both whenever either changes. Never invent rules the DTO lacks (e.g. no enum for a backend free-text field).
    - **i18n error messages** — the schema is a factory taking the translator: `const schema = (msg: TranslatorLike) => z.object({ ... })` with messages under `<ns>.errors.*`, wired via `zodResolver(schema(t))`. (Key placement follows `rules/i18n.md`.)
    - **Skip RHF for trivial forms** — a few fields with only `required` checks may stay on native `required` + plain state. Adopt RHF when the first rule beyond `required` lands (pattern, min/max, cross-field, dirty tracking) or when the form must mirror a non-trivial DTO.
+
+## Route editors vs modal forms (mandatory)
+
+9. **Route editor vs modal form** — A full-page create/edit form is a **route editor**: one component split across `/path/new` + `/path/[id]`, deriving `isNew = !id || id === 'new'`. Never gate create vs edit with `useState` on a page. A **modal form** (`*FormModal`, list page + `editId` state → Dialog) is allowed only for inline editing _from_ a list page. New multi-mode flows needing a dedicated page become routes, not state.
