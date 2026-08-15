@@ -41,7 +41,7 @@ Update `CONTEXT.md` inline when terms resolve.
 
 Apply team rules:
 - **Ponytail pattern** — mock data with `// ponytail:` comment + upgrade path
-- **Kumo components** — `<Table>`, `<Button>`, `<Input>`, `<Select>`, `<Badge>`
+- **Component library** — use what the design or user specifies; if neither specifies, default to **shadcn/ui** as the reference standard
 - **JSX escaping** — `&apos;`, `&quot;`, `&lt;`, `&gt;` in text content
 - **Barrel imports** — folder with ≥2 files gets `index.ts`
 - **DTOs intact** — pass through controller → service seam
