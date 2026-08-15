@@ -11,6 +11,7 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 | Forms              | `react-hook-form`                           | —                                       |
 | Server state       | `@tanstack/react-query`                     | —                                       |
 | Time               | `date-fns` + `@date-fns/tz`                 | `date-fns` + `@date-fns/tz`             |
+| Icons              | `lucide-react` (+ `react-icons` only for glyphs lucide lacks) | —                         |
 | CSRF protection    | — (cookie + `x-csrf-token` header)          | `csrf-csrf` (never csurf — deprecated)  |
 
 ## Rules
@@ -23,3 +24,4 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 6. **date-fns + @date-fns/tz are the only time library** — parse, arithmetic, boundaries, and display per `rules/general.md`. No dayjs, no luxon, no moment. The serialization exception stays `toISOString()`.
 7. **No new library for a covered concern** — a library absent from the table may be proposed for a _new_ concern, never for an existing row. Propose it as a rule update (`rules/general.md` rule 10) instead of adding it silently.
 8. **csrf-csrf is the only CSRF library** — `doubleCsrf()` per `rules/nestjs.md` rule 21. `csurf` is deprecated and unmaintained — a `csurf` import is a violation.
+9. **lucide-react is the only icon library** — all UI chrome icons (chevrons, actions, status, nav) come from lucide. `react-icons` is allowed ONLY for glyphs lucide lacks: colored/multi-tone icons, brand logos, and filled/solid styles. When used, import from the subpackage (`react-icons/fc`, `react-icons/fa6`), never the root `react-icons` barrel — it pulls every icon set into the bundle and defeats tree-shaking. Never hand-roll an inline `<svg>` that duplicates a library icon; if the glyph exists in a library, use the library. Miniapp: screens never import react-icons directly — lucide-style glyphs are re-exported through the single indirection point `@/components/ui/icons-react.tsx`; new icons are added there.
