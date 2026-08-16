@@ -42,6 +42,7 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 6. **Query provider** — `QueryClientProvider` wrapped once at the root layout through a `QueryProvider` component (`lib/query-provider.tsx`). No per-page providers, no new `QueryClient` per render (create it in `useState(() => new QueryClient())`).
 
 7. **Query/mutation hooks** — typed hooks in `lib/use-<resource>.ts`, one per resource. Queries: `useQuery({ queryKey: ['resource', id], queryFn })`. Mutations: `useMutation({ mutationFn, onSuccess: () => invalidateQueries({ queryKey: [...] }) })`. Set `retry: false` on auth/session queries (401s must surface immediately, not retry 3×). Errors render from the hook's `error` — never swallowed into `useState`.
+   - **One module per resource** — duplicate API modules for the same resource merge into one (precedent: miniapp `api/booking.ts` + `api/bookings.ts` merged with unified query keys). Query keys centralize in one module (`lib/query-keys.ts`) so invalidation never guesses a key shape (precedent: portal pattern).
 
 8. **Forms** — react-hook-form + `zodResolver`, one zod schema as the single source of truth (typed via `z.infer`). `useForm({ resolver: zodResolver(schema) })`, inputs via `{...register('field')}`, errors from `formState.errors`. No hand-rolled `useState` per field, no validation logic inside `onSubmit`.
    - **Schema mirrors the API DTO** — the zod schema encodes exactly what the backend DTO enforces (same required/optional set, same value constraints). Colocate it as `<form>-schema.ts` next to the form, with a comment pointing at the DTO file path as source of truth; update both whenever either changes. Never invent rules the DTO lacks (e.g. no enum for a backend free-text field).
@@ -54,9 +55,9 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 
 ## File shape & component ownership (mandatory)
 
-10. **Hard cap 300 lines per source file** — `max-lines: 300` is part of the lint baseline (`rules/linting.md`). A file over 300 lines fails lint — split it, never raise the cap.
-11. **One screen = one file** — a screen (page, view, tab) lives in its own file; shared multi-variant components use `cva` + `cn()`. Shared components live **once** in the shared UI package — no per-app copies, no private per-file atoms (`Btn`, `Pill`, class-string constants).
-12. **Data fetching is react-query, never `useEffect` + cancelled-flag** — fetch state lives in hooks via `useQuery`/`useMutation` (rule 7). A cancelled-flag `useEffect` fetch is a bug farm (precedent: portal `lib/hooks.ts` pattern).
+10. **Hard cap 300 lines per source file** — `max-lines: 300` is part of the lint baseline (`rules/linting.md`). A file over 300 lines fails lint — split it, never raise the cap. Components under ~150 lines are extracted on sight — the cap is a ceiling, not a target (ADR-0039).
+11. **One screen = one file** — a screen (page, view, tab) lives in its own file; shared multi-variant components use `cva` + `cn()`. Shared components live **once** in the shared UI package — no per-app copies, no private per-file atoms (`Btn`, `Pill`, class-string constants). **Fold, don't fork** — when the shared package has an equivalent, add a `cva` variant to the shared component (Badge tone for `Pill`, Input `error` for `KYC_INPUT`, `INPUT_CLASS`) and delete the app-local copy; never keep a shim next to the real one.
+12. **Data fetching is react-query, never `useEffect` + cancelled-flag** — web and portal only. Fetch state lives in hooks via `useQuery`/`useMutation` (rule 7). A cancelled-flag `useEffect` fetch is a bug farm (precedent: portal `lib/hooks.ts` pattern). **Miniapp exempt** — the Zalo webview keeps its own fetch client (`api/client.ts`) and local components; only the file cap and v4 rules apply to it (ADR-0039).
 
 ## Colors (mandatory)
 
@@ -66,3 +67,13 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 ## JSX text content (mandatory)
 
 15. **Escape JSX special characters** — JSX text content treats `{`, `}`, `<`, `>`, `'`, and `"` as syntax. The `react/no-unescaped-entities` lint rule flags them. Always escape in visible text: `'` → `&apos;`, `"` → `&quot;`, `<` → `&lt;`, `>` → `&gt;`, `{` → `&lbrace;`, `}` → `&rbrace;`. Example: `Today&apos;s Attendance`, `Save &amp; Exit`, `A &lt; B`. Strings rendered via `{expr}` don't need escaping; the rule applies only to literal text between JSX tags.
+
+## Splitting a monolith (mandatory)
+
+16. **Monolith split pattern** — splitting a >300-line file follows fixed targets (proven in ADR-0039's 47K-line componentization):
+
+- **Multi-view screens** → a thin shell (tab/layout state) + one file per view, each under the cap (precedent: portal `seller-views.tsx` 2800 → shell + 19 view files; web `simulator` 2329 → 272, `pricebank` 1877 → 195).
+- **Hooks split by domain** — a `hooks.ts` monolith becomes one `use-<resource>.ts` per domain (precedent: portal 1579 lines → 13 files).
+- **Data modules split by domain** — `lib/data` becomes one `<domain>.ts` per module (precedent: web → 19 modules); dead exports and mock layers are deleted during the split, not carried.
+- **Compatibility barrel** — the old path becomes a barrel (`export *` from the new folder) so call-site imports don't churn; delete the barrel once all call sites move (precedent: `seller-views.tsx`).
+- **Split in place, behavior identical** — never rewrite a screen while splitting it; a split that changes behavior is a feature change and gets its own PR.

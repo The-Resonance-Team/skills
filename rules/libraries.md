@@ -4,15 +4,17 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 
 ## The table
 
-| Concern            | Web/React (portal, web, miniapp, mobile-rn) | NestJS (apps/api)                       |
-| ------------------ | ------------------------------------------- | --------------------------------------- |
-| HTTP client        | `axios`                                     | `axios`                                 |
-| Runtime validation | `zod`                                       | `class-validator` + `class-transformer` |
-| Forms              | `react-hook-form`                           | —                                       |
-| Server state       | `@tanstack/react-query`                     | —                                       |
-| Time               | `date-fns` + `@date-fns/tz`                 | `date-fns` + `@date-fns/tz`             |
-| Icons              | `lucide-react` (+ `react-icons` only for glyphs lucide lacks) | —                         |
-| CSRF protection    | — (cookie + `x-csrf-token` header)          | `csrf-csrf` (never csurf — deprecated)  |
+| Concern            | Web/React (portal, web, mobile-rn)                            | NestJS (apps/api)                       |
+| ------------------ | ------------------------------------------------------------- | --------------------------------------- |
+| HTTP client        | `axios`                                                       | `axios`                                 |
+| Runtime validation | `zod`                                                         | `class-validator` + `class-transformer` |
+| Forms              | `react-hook-form`                                             | —                                       |
+| Server state       | `@tanstack/react-query`                                       | —                                       |
+| Time               | `date-fns` + `@date-fns/tz`                                   | `date-fns` + `@date-fns/tz`             |
+| Icons              | `lucide-react` (+ `react-icons` only for glyphs lucide lacks) | —                                       |
+| CSRF protection    | — (cookie + `x-csrf-token` header)                            | `csrf-csrf` (never csurf — deprecated)  |
+
+**Miniapp is off this table** — the Zalo webview keeps its own `fetch`-based client and local components (`rules/frontend.md` rule 12, ADR-0039 §5); the table's rows apply to it only where stated.
 
 ## Rules
 

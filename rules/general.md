@@ -82,3 +82,12 @@ Applies to every project in the organization. Include this file in `opencode.jso
 ## Imports (TypeScript)
 
 14. **Import specifiers never carry file extensions** — No `.ts`/`.tsx`/`.js`/`.jsx` in import paths: `from './portal'`, never `from './portal/index.ts'` or `from './portal.js'`. Resolvers handle extensionless specifiers; `allowImportingTsExtensions` stays off. Barrel directories import by directory name (`./portal`), not by `./portal/index`.
+
+## Refactoring (mandatory)
+
+The discipline that shipped the 47K-line ADR-0039 frontend componentization. Applies to every refactor, on any surface:
+
+15. **Incremental strangle, never big-bang** — one page/component per PR, each slice reviewable and shippable on its own. A "rewrite everything at once" refactor is unreviewable at scale (ADR-0039 rejected it); the plan is a sequence of slices, not one mega-branch.
+16. **Behavior identical, drift documented** — visual drift (token shifts, one-notch shadow scale) is acceptable only where the ADR/plan says so. A refactor that changes behavior is a feature change and gets its own PR.
+17. **Deletion over addition** — a refactor deletes dead routes (no navigation entry, no roadmap item), dead exports, unused CSS files, and mock layers. A refactor that only moves code and deletes nothing carries its debt forward.
+18. **Zero suppression debt** — a refactor leaves no lint suppression for the rules it was meant to satisfy: no `oxlint-disable max-lines` in any split file. Complete means complete.
