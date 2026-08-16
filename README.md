@@ -17,7 +17,7 @@ Per project:
 }
 ```
 
-Or globally:
+Or globally — instruction plus a reference to this repo:
 
 ```jsonc
 // ~/.config/opencode/opencode.jsonc
@@ -25,7 +25,13 @@ Or globally:
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
     "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md"
-  ]
+  ],
+  "references": {
+    "skills": {
+      "repository": "The-Resonance-Team/skills",
+      "description": "Use for rule modules, configs, and the README of the rules repo"
+    }
+  }
 }
 ```
 
@@ -40,23 +46,6 @@ These compose — pick per source by size and relevance:
 - **Skills** for complex procedures worth progressive disclosure.
 
 Rule of thumb: small + always-needed → instructions; big + sometimes-needed → references. Don't put large content in instructions; it burns tokens on every request.
-
-Install a reference in the same `opencode.jsonc` as the instruction:
-
-```jsonc
-{
-  "$schema": "https://opencode.ai/config.json",
-  "instructions": [
-    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md"
-  ],
-  "references": {
-    "docs": {
-      "path": "../product-docs",
-      "description": "Use for product behavior and terminology"
-    }
-  }
-}
-```
 
 ## Rule modules
 
