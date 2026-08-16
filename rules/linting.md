@@ -6,11 +6,11 @@ Applies to every TypeScript/JavaScript project in the organization. Include this
 
 Strict tool split — three tools, non-overlapping jobs:
 
-| Tool | Applies to | Job |
-|---|---|---|
-| Prettier | all projects | formatting only |
-| Oxlint | every non-Next.js project (web, miniapp, Vite/React, plain TS, NestJS) | linting |
-| ESLint | Next.js apps only (`eslint-config-next`) | linting |
+| Tool     | Applies to                                                             | Job             |
+| -------- | ---------------------------------------------------------------------- | --------------- |
+| Prettier | all projects                                                           | formatting only |
+| Oxlint   | every non-Next.js project (web, miniapp, Vite/React, plain TS, NestJS) | linting         |
+| ESLint   | Next.js apps only (`eslint-config-next`)                               | linting         |
 
 Formatting is never linted; linting is never formatted (no stylistic rules in either linter). A TS/JS project without this tooling must set it up.
 
@@ -29,9 +29,11 @@ Formatting is never linted; linting is never formatted (no stylistic rules in ei
    - `ignorePatterns`: `node_modules`, `dist`, `.next`, `.turbo`, `coverage`, `build`, `.expo`, `www`, `test-results`.
 6. **No type-aware linting** — `typeAware`/`typeCheck` are off. Semantic type checking is the project's own `tsc` job; lint stays a fast save-time pass. Rules that require type info (`typescript/no-floating-promises`, `typescript/no-misused-promises`) are not part of the baseline.
 7. **`_`-prefix convention** — `no-unused-vars` is `"error"` with `varsIgnorePattern`/`argsIgnorePattern`/`caughtErrorsIgnorePattern` all `"^_"`. Intentionally-unused bindings are named with a leading underscore, never deleted or lint-suppressed.
+   - **`_` is a signature placeholder, never a silencer** — a `_` that swallowed real input (a DTO, a param, a state setter) is a **suppressed binding**: real input silently discarded, a bug in hiding. Wire it or remove it, never leave it `_`-prefixed. Valid uses are interface-required placeholders only: guard params, `validate(_value, args)` in class-validator constraints, react-query `(_data, ...)` callbacks, `getNextPageParam` placeholders, test stubs.
 8. **Discipline rules**: `no-console: ["warn", {"allow": ["warn", "error"]}]`, `no-debugger: "warn"`, `no-explicit-any: "error"`, `eslint/no-underscore-dangle: "off"`, `react/no-array-index-key: "warn"`, `react/react-in-jsx-scope: "off"`, `import/no-duplicates: ["error", {"prefer-inline": true}]`, `import/no-named-as-default-member: "off"`, `import/no-unassigned-import: "off"`.
 9. **Test leniency is scoped, never global** — test files (`**/*.{test,spec}.{ts,tsx}`) get an `overrides` block that adds `jest`/`vitest` plugins and turns off their noise rules (`expect-expect`, `no-conditional-expect`, `valid-title`, `require-mock-type-parameters`) plus `no-explicit-any: "off"`. App code never inherits test leniency.
-10. **NestJS** additionally sets `typescript/no-extraneous-class: ["warn", {"allowWithDecorator": true}]` — see `rules/nestjs.md`.
+10. **300-line cap per file** — `max-lines: ["error", 300]` is part of the baseline (see `configs/.oxlintrc.json`). A source file over 300 lines fails lint. Split the file — never raise the cap, never ignore the file.
+11. **NestJS** additionally sets `typescript/no-extraneous-class: ["warn", {"allowWithDecorator": true}]` — see `rules/nestjs.md`.
 
 ## ESLint baseline (Next.js apps only)
 
