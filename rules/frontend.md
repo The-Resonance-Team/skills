@@ -77,3 +77,28 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 - **Data modules split by domain** — `lib/data` becomes one `<domain>.ts` per module (precedent: web → 19 modules); dead exports and mock layers are deleted during the split, not carried.
 - **Compatibility barrel** — the old path becomes a barrel (`export *` from the new folder) so call-site imports don't churn; delete the barrel once all call sites move (precedent: `seller-views.tsx`).
 - **Split in place, behavior identical** — never rewrite a screen while splitting it; a split that changes behavior is a feature change and gets its own PR.
+
+## Data-driven JSX & array methods (mandatory)
+
+17. **Data-drive repeated JSX; prefer array methods over accumulator loops** —
+
+- **Repeated JSX blocks** (option rows, field rows, tab lists) render from a module-level data array via `.map`, never as pasted copies. Options carry `value` + `labelKey`, translated at render time:
+  ```tsx
+  const STATUS_FILTER_OPTIONS = [
+    { value: "ALL", labelKey: "common.all" },
+    { value: "PENDING", labelKey: "verification.status.pending" },
+  ] as const;
+  // ...
+  {
+    STATUS_FILTER_OPTIONS.map((o) => (
+      <option key={o.value} value={o.value}>
+        {t(o.labelKey)}
+      </option>
+    ));
+  }
+  ```
+  (Precedent: portal `verification-queue.tsx` status filter.)
+- **Collection-building loops** — `const out: T[] = []; for (...) { out.push(...) }` — become `.map` / `.flatMap` / `Array.from({ length }, ...)` / `Object.fromEntries`. Set/Map fills become `new Set(xs.map(...))` / `new Map(xs.map((x) => [k, v]))`. Nested hour/minute grids use `Array.from` + `flatMap` (precedent: `date-time-picker.tsx` `timeOptions`).
+- **Two identical loop bodies in one file = one helper**, then both call sites `.map` over it (precedent: `worldcup-bracket.ts` `chunkPairs` de-duplicating two pairwise-pairing loops; `schedule-model.ts` `slotHours` shared by `patternFromCourt` + `pricesFromCourt`).
+- **Not every loop is an accumulator — keep it when it is not**: early-exit scans use `.find`/`.some`; sequential-state generation (voucher codes, hash strings) stays on `for`/`while`; DOM/side-effect appends stay on `for...of`. A loop that mutates state with early returns (`worldcup-bracket.ts` `buildBracket`) stays as-is.
+- **Behavior must be identical** — a refactor that changes semantics is a feature change, not a cleanup (bye-detection by reference equality, id numbering, boundary clipping all preserved).
