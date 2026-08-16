@@ -4,9 +4,23 @@ Public, cross-project rules for opencode, consumed via remote `instructions` URL
 
 ## Usage
 
-Add **one instruction** — `CONTEXT.md` — to `opencode.json` (per project) or `~/.config/opencode/opencode.json` (global). It is the router: agents fetch only the rule modules their project needs, by URL.
+Add **one instruction** — `CONTEXT.md` — to `opencode.jsonc` (per project) or `~/.config/opencode/opencode.jsonc` (global). It is the router: agents fetch only the rule modules their project needs, by URL.
 
-```json
+Per project:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md"
+  ]
+}
+```
+
+Or globally:
+
+```jsonc
+// ~/.config/opencode/opencode.jsonc
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
@@ -17,32 +31,19 @@ Add **one instruction** — `CONTEXT.md` — to `opencode.json` (per project) or
 
 Remote instructions are fetched with a 5-second timeout; the repo must stay public for anonymous fetch to work.
 
-## Rule modules
-
-| File                | Scope              | Include when                                                     |
-| ------------------- | ------------------ | ---------------------------------------------------------------- |
-| `rules/general.md`  | All projects       | Always — language, axios generics, Tailwind v4, trust boundaries |
-| `rules/nestjs.md`   | NestJS API         | Working in a NestJS backend (`apps/api`)                         |
-| `rules/frontend.md` | Web/portal/miniapp | Working in a browser client                                      |
-| `rules/linting.md`  | All TS/JS projects | Lint & format — Prettier, Oxlint, ESLint (Next.js only)          |
-| `rules/libraries.md` | All TS/JS projects | One library per concern — axios, zod, RHF, TanStack Query, class-validator, date-fns |
-| `rules/upload.md`    | APIs with uploads  | Inline multipart + S3 — mediaUpload interceptor, StorageService, URL-shaped DTOs |
-
-Machine-readable tool configs (Prettier, Oxlint, ESLint-for-Next.js) ship in [`configs/`](./configs/) and are copied into consumer repos per `rules/linting.md`.
-
-## Mixing instructions, references, skills
+### Mixing instructions, references, skills
 
 These compose — pick per source by size and relevance:
 
 - **Instructions** (`AGENTS.md` + this repo's URLs) for what's always relevant: rules, conventions, build/test commands. Small, standing context shown every request.
-- **References** (`references` in `opencode.json`) for large external trees needed only sometimes: product docs, shared libraries, another repo. Attach via `@alias` when needed; without a `description` they are not advertised to the agent. Zero context cost until pulled. References grant no extra permissions — outside-`Location` access still needs the `external_directory` / edit permissions.
+- **References** (`references` in `opencode.jsonc`) for large external trees needed only sometimes: product docs, shared libraries, another repo. Attach via `@alias` when needed; without a `description` they are not advertised to the agent. Zero context cost until pulled. References grant no extra permissions — outside-`Location` access still needs the `external_directory` / edit permissions.
 - **Skills** for complex procedures worth progressive disclosure.
 
 Rule of thumb: small + always-needed → instructions; big + sometimes-needed → references. Don't put large content in instructions; it burns tokens on every request.
 
-Install a reference in the same `opencode.json` as the instruction:
+Install a reference in the same `opencode.jsonc` as the instruction:
 
-```json
+```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
@@ -56,6 +57,19 @@ Install a reference in the same `opencode.json` as the instruction:
   }
 }
 ```
+
+## Rule modules
+
+| File                | Scope              | Include when                                                     |
+| ------------------- | ------------------ | ---------------------------------------------------------------- |
+| `rules/general.md`  | All projects       | Always — language, axios generics, Tailwind v4, trust boundaries |
+| `rules/nestjs.md`   | NestJS API         | Working in a NestJS backend (`apps/api`)                         |
+| `rules/frontend.md` | Web/portal/miniapp | Working in a browser client                                      |
+| `rules/linting.md`  | All TS/JS projects | Lint & format — Prettier, Oxlint, ESLint (Next.js only)          |
+| `rules/libraries.md` | All TS/JS projects | One library per concern — axios, zod, RHF, TanStack Query, class-validator, date-fns |
+| `rules/upload.md`    | APIs with uploads  | Inline multipart + S3 — mediaUpload interceptor, StorageService, URL-shaped DTOs |
+
+Machine-readable tool configs (Prettier, Oxlint, ESLint-for-Next.js) ship in [`configs/`](./configs/) and are copied into consumer repos per `rules/linting.md`.
 
 ## Known gaps
 
