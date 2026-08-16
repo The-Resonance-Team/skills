@@ -105,15 +105,46 @@ Two-axis review against fixed point (commit SHA):
 
 Report per file/hunk. Cite rule or spec line.
 
-### 6. Verification
+### 6. Verification & UX refinement
 
-Chrome DevTools MCP to confirm design match:
-- Open page in browser
-- Take snapshot
-- Compare against design HTML
-- Fix visual/interaction gaps
+**Pixel-perfect match** — UI must match design 100% unless user explicitly requires deviation:
 
-Run verification:
+1. **Visual comparison** — Open page in browser via Chrome DevTools MCP
+2. **Take snapshot** — `take_snapshot` to get page structure, `take_screenshot` for visual
+3. **Compare against design** — open design HTML in adjacent tab, compare:
+   - Spacing (margins, padding, gaps)
+   - Typography (font size, weight, line height, color)
+   - Colors (backgrounds, borders, text)
+   - Component sizes (button height, input width, icon size)
+   - Layout (flex/grid alignment, responsive behavior)
+4. **Fix gaps** — adjust CSS until pixel-perfect match
+5. **Iterate** — repeat snapshot → compare → fix until no visual differences
+
+**UX improvement opportunities** — during verification, look for:
+
+- **Missing feedback** — button clicks should show loading state, form submissions should show success/error
+- **Empty states** — what happens when list is empty? Show helpful message + action button
+- **Error recovery** — can user undo accidental delete? Show confirmation dialog
+- **Keyboard shortcuts** — Enter submits form, Escape closes modal, Tab navigates logically
+- **Focus management** — after modal opens, focus first input; after closes, return to trigger
+- **Progressive disclosure** — hide advanced options behind "Show more" if they clutter the UI
+- **Micro-interactions** — hover states, transitions, animations for state changes
+- **Accessibility** — can user navigate entire flow with keyboard only?
+
+**UX improvements are mandatory** — don't just match the design, make it better if obvious improvements exist. Document what you improved and why.
+
+**Chrome DevTools MCP workflow**:
+```
+1. navigate_page(url) → open page
+2. take_snapshot() → get a11y tree with uids
+3. take_screenshot() → visual comparison
+4. Click elements → verify interactions work
+5. Fill forms → verify validation
+6. Resize viewport → verify responsive behavior
+7. Repeat until pixel-perfect + UX-improved
+```
+
+**Run verification**:
 ```bash
 # Typecheck (project-specific — adapt to package manager)
 pnpm typecheck  # or: npm run typecheck, bun run typecheck, yarn typecheck
@@ -150,7 +181,7 @@ pnpm test       # or: npm test, bun test, vitest, jest
 - **Domain modeling** — terms resolved, CONTEXT.md updated
 - **Implementation** — typecheck + lint pass, pages render
 - **Code review** — findings reported per axis
-- **Verification** — Chrome DevTools confirms design match
+- **Verification** — Chrome DevTools confirms pixel-perfect design match + UX improvements applied
 
 ## Complex scenarios
 
