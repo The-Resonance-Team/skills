@@ -15,6 +15,22 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 | `rules/libraries.md` | All TS/JS projects          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md` |
 | `rules/upload.md`    | APIs with uploads           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`    |
 | `rules/issues.md`    | Repos with a GitHub issue tracker | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md` |
+| `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
+
+**Condition trigger for workflow**: Use `workflows/claude-design-to-nextjs.md` when:
+- User provides Claude Design HTML export and asks to convert to Next.js/React
+- User asks to implement feature from design spec
+- User asks to review design against spec for missing/partial/wrong features
+- User asks for pixel-perfect implementation from design
+
+**Suggested tools/skills for workflow**:
+- `/code-review` — two-axis code review (Standards + Spec) after implementation
+- `/tdd` — test-driven development for critical business logic
+- `/domain-modeling` — challenge terms, sharpen glossary, test edge cases
+- `/codebase-design` — design deep modules, find clean seams
+- `/implement` — execute implementation plan from spec
+- Chrome DevTools MCP — visual verification, pixel-perfect comparison
+- PostHog MCP — analytics integration, user behavior tracking (optional)
 
 Machine-readable tool configs ship in `configs/` of the same repo (`prettier.config.mjs`, `.oxlintrc.json`, `eslint.config.mjs`).
 

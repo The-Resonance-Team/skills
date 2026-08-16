@@ -12,6 +12,8 @@ Read the Claude Design HTML export. Extract:
 - **Interactions** — click handlers, state transitions, navigation
 - **Data shapes** — what fields appear, what's required, what's optional
 
+**Tools**: Chrome DevTools MCP to open design HTML, `take_snapshot()` to inspect structure.
+
 Output: component inventory + data model sketch.
 
 ### 2. Spec alignment
@@ -20,6 +22,8 @@ Compare design against spec (e.g. `docs/specs/hrm/hrm-v1.md`):
 - **Missing** — spec requires, design lacks
 - **Partial** — design shows some but not all spec behavior
 - **Wrong** — design contradicts spec
+
+**Tools**: Read spec file, diff against design inventory. Use `/code-review` skill with Spec axis to formalize gap report.
 
 Report gaps. Don't implement yet — get alignment first.
 
@@ -35,7 +39,7 @@ Test edge cases:
 - What if availability request is approved then rejected?
 - What if pay band min > max?
 
-Update `CONTEXT.md` inline when terms resolve.
+**Tools**: `/domain-modeling` skill to challenge terms, sharpen glossary, test edge cases. Update `CONTEXT.md` inline when terms resolve.
 
 ### 4. Implementation
 
@@ -46,6 +50,8 @@ Apply team rules:
 - **Barrel imports** — folder with ≥2 files gets `index.ts`
 - **DTOs intact** — pass through controller → service seam
 - **date-fns** — all time processing, never raw `Date` arithmetic
+
+**Tools**: `/implement` skill to execute plan. `/codebase-design` skill to find clean seams for complex modules. `/tdd` skill for critical business logic.
 
 Structure (CRUD pattern):
 ```
@@ -89,6 +95,8 @@ export function useCreate() {
 ### 5. Code review
 
 Two-axis review against fixed point (commit SHA):
+
+**Tools**: `/code-review` skill with Standards + Spec axes. Provide fixed point (commit SHA or branch name).
 
 **Standards axis** — team rules + Fowler smells:
 - Mysterious Name — function/variable name doesn't reveal purpose
