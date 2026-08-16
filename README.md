@@ -6,17 +6,6 @@ Public, cross-project rules for opencode, consumed via remote `instructions` URL
 
 Add **one instruction** — `CONTEXT.md` — to `opencode.jsonc` (per project) or `~/.config/opencode/opencode.jsonc` (global). It is the router: agents fetch only the rule modules their project needs, by URL.
 
-Per project:
-
-```jsonc
-{
-  "$schema": "https://opencode.ai/config.json",
-  "instructions": [
-    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md"
-  ]
-}
-```
-
 Or globally — instruction plus a reference to this repo:
 
 ```jsonc
