@@ -61,6 +61,14 @@ Applies to every project in the organization. Include this file in `opencode.jso
 
    The `// ponytail:` comment signals this is temporary mock data, not production code. When the real API lands, replace the mock hooks with real API calls — the component interface stays the same.
 
+## Cross-app impact
+
+9. **Check affected apps before edit** — In a monorepo, a backend change may break a frontend consumer and vice versa. Before any code edit, grep the other apps for the affected symbol, endpoint, type, or field name. Checklist:
+   - **Backend edit** → search `apps/web/`, `apps/portal/`, `apps/miniapp/`, `packages/api-client/` for the changed route, response shape, field name, or error code.
+   - **Frontend edit** → check `apps/api/` for the endpoint the component calls, the DTO shape it sends, and the error codes it catches.
+   - **Shared package edit** (`packages/utils`, `packages/ui`) → search all `apps/` for imports of the changed export.
+   - If the grep finds a consumer, verify the edit does not break it. If it does, fix both sides in the same PR or document the break in the PR description.
+
 ## Rule maintenance
 
 10. **Suggest rule updates** — These rules are a living document, not a fixed contract. When a rule is wrong, outdated, or missing for the task at hand, say so and suggest an update. Ask the user whether to update the rules, then edit `rules/*.md` in the `The-Resonance-Team/skills` repo and push to `main` when allowed. Do not silently deviate from a rule — propose the change instead.
