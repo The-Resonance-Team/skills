@@ -102,3 +102,22 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 - **Two identical loop bodies in one file = one helper**, then both call sites `.map` over it (precedent: `worldcup-bracket.ts` `chunkPairs` de-duplicating two pairwise-pairing loops; `schedule-model.ts` `slotHours` shared by `patternFromCourt` + `pricesFromCourt`).
 - **Not every loop is an accumulator — keep it when it is not**: early-exit scans use `.find`/`.some`; sequential-state generation (voucher codes, hash strings) stays on `for`/`while`; DOM/side-effect appends stay on `for...of`. A loop that mutates state with early returns (`worldcup-bracket.ts` `buildBracket`) stays as-is.
 - **Behavior must be identical** — a refactor that changes semantics is a feature change, not a cleanup (bye-detection by reference equality, id numbering, boundary clipping all preserved).
+
+## Next.js conventions (mandatory)
+
+18. **Proxy file, never middleware** — Next.js 16 renamed `middleware.ts` to `proxy.ts`. The file lives at `src/proxy.ts` (same level as `app/` or `pages/`) and exports a function named `proxy`:
+
+    ```ts
+    import { NextRequest, NextResponse } from "next/server";
+
+    export function proxy(request: NextRequest) {
+      // ...
+      return NextResponse.next();
+    }
+
+    export const config = {
+      matcher: ["/((?!api|_next|...).*)"],
+    };
+    ```
+
+    NEVER name the file `middleware.ts` or the function `middleware` — Next.js 16 ignores it. The old convention is deprecated and will be removed in a future major.
