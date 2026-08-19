@@ -61,6 +61,12 @@ Applies to every project in the organization. Include this file in `opencode.jso
 
    The `// ponytail:` comment signals this is temporary mock data, not production code. When the real API lands, replace the mock hooks with real API calls — the component interface stays the same.
 
+## Ponytail audit (mandatory)
+
+19. **Ladder: delete → stdlib → native → installed dep → one-liner → minimal code** — Stop at the first rung that holds. No speculative abstractions (interface with one impl, factory for one product), no `slugify`/`react-paginate`/`framer-motion` for what `String.normalize`/`getPageItems()`/CSS already does. Deletion over addition; shortest diff wins. Mark deliberate simplifications with `// ponytail: <ceiling>, <upgrade if ...>` — every shortcut names its ceiling and upgrade path; a marker without `if/when/Upgrade` is `no-trigger` debt that rots (harvest with `grep -rnE '(#|//) ?ponytail:' . --exclude-dir=node_modules/.git/.next/dist` and ledger it).
+
+20. **Debt ledger** — Every `ponytail:` comment is tech debt. Harvest the whole tree before merge, group by file `<file>:<line> — <what>. ceiling: <limit> upgrade: <trigger>`, tag `no-trigger` if no `if/when/Upgrade`. 0 no-trigger before ship. DTOs must not re-add `@ApiProperty` when NestJS swagger plugin `classValidatorShim` is on (see `rules/nestjs.md` #22).
+
 ## Cross-app impact
 
 9. **Check affected apps before edit** — In a monorepo, a backend change may break a frontend consumer and vice versa. Before any code edit, grep the other apps for the affected symbol, endpoint, type, or field name. Checklist:
