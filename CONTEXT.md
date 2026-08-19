@@ -4,26 +4,29 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 
 ## Rule modules
 
-| Module               | Scope                       | Fetch URL                                                                             |
-| -------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
-| `rules/general.md`   | All projects                | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md`   |
-| `rules/nestjs.md`    | NestJS API                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`    |
-| `rules/prisma.md`    | TS/NestJS repos on Prisma 7 | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`    |
-| `rules/frontend.md`  | Web/portal/miniapp          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`  |
-| `rules/i18n.md`      | Projects with i18n (message catalogs, multi-locale UI) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md` |
-| `rules/linting.md`   | All TS/JS projects          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`   |
-| `rules/libraries.md` | All TS/JS projects          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md` |
-| `rules/upload.md`    | APIs with uploads           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`    |
-| `rules/issues.md`    | Repos with a GitHub issue tracker | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md` |
-| `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
+| Module                                 | Scope                                                  | Fetch URL                                                                                               |
+| -------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `rules/general.md`                     | All projects                                           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md`                     |
+| `rules/nestjs.md`                      | NestJS API                                             | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`                      |
+| `rules/prisma.md`                      | TS/NestJS repos on Prisma 7                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`                      |
+| `rules/frontend.md`                    | Web/portal/miniapp                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`                    |
+| `rules/i18n.md`                        | Projects with i18n (message catalogs, multi-locale UI) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                        |
+| `rules/linting.md`                     | All TS/JS projects                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`                     |
+| `rules/libraries.md`                   | All TS/JS projects                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`                   |
+| `rules/upload.md`                      | APIs with uploads                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
+| `rules/issues.md`                      | Repos with a GitHub issue tracker                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`                      |
+| `rules/github-workflows.md`            | CI/CD on self-hosted runners                           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-workflows.md`            |
+| `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
 **Condition trigger for workflow**: Use `workflows/claude-design-to-nextjs.md` when:
+
 - User provides Claude Design HTML export and asks to convert to Next.js/React
 - User asks to implement feature from design spec
 - User asks to review design against spec for missing/partial/wrong features
 - User asks for pixel-perfect implementation from design
 
 **Suggested tools/skills for workflow**:
+
 - `/code-review` — two-axis code review (Standards + Spec) after implementation
 - `/tdd` — test-driven development for critical business logic
 - `/domain-modeling` — challenge terms, sharpen glossary, test edge cases
