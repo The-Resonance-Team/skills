@@ -16,9 +16,14 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 | `rules/upload.md`                      | APIs with uploads                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
 | `rules/issues.md`                      | Repos with a GitHub issue tracker                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`                      |
 | `rules/github-workflows.md`            | CI/CD on self-hosted runners                           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-workflows.md`            |
+| `rules/audit.md`                       | Any repo under audit                                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                       |
+| `workflows/codebase-audit.md`          | Full-codebase audit with subagent slices               | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
 | `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
-**Condition trigger for workflow**: Use `workflows/claude-design-to-nextjs.md` when:
+**Condition triggers for workflows**:
+
+- Use `workflows/codebase-audit.md` when the user asks to audit the codebase, check team-rule compliance repo-wide, find and remove AI slop and dead code across the repo, or scan for leaked secrets and risky dependencies.
+- Use `workflows/claude-design-to-nextjs.md` when:
 
 - User provides Claude Design HTML export and asks to convert to Next.js/React
 - User asks to implement feature from design spec
@@ -55,3 +60,6 @@ Machine-readable tool configs ship in `configs/` of the same repo (`prettier.con
 - **Media lifecycle** — create/replace/delete of stored media in `rules/upload.md`; replaces persist new URLs first, then fire-and-forget `deleteDropped` (a failed GC never fails the update); orphaned objects from failed mid-update writes are accepted until a GC job exists.
 - **`_`-prefix convention** — intentionally-unused bindings are named with a leading underscore and exempted from unused-variable rules via the three `^_` ignore patterns.
 - **Suppressed binding** — a `_`-prefixed binding that swallowed real input (a DTO, a param, a state setter): real input silently discarded, a bug in hiding. The `_` is valid only for signature-required placeholders (guard params, validator args, react-query callbacks, test stubs) — otherwise wire it or remove it (`rules/linting.md`).
+- **Slop** — an AI-generation artifact flagged by `rules/audit.md`: narrating comments, defensive checks on trusted paths, type-bypass casts, single-use abstractions, deep nesting, style inconsistent with the surrounding file, suppression directives, and value-free tests (no assertions, tautologies, mock-echoes).
+- **Verdict** — a file's audit outcome: `clean` or one or more findings. A slice audit completes when every file in the slice carries a verdict.
+- **Slice** — the unit of partitioning in `workflows/codebase-audit.md`: a group of paths small enough for one subagent's context; every source path sits in exactly one slice.

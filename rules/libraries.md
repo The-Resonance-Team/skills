@@ -1,6 +1,6 @@
 # Library Baseline — one library per concern, chosen by framework
 
-Applies to every TypeScript/JavaScript project. One library per concern, fixed by framework. A substitute library is a violation, not a preference. Cross-project rules on usage (`axios` generics, `date-fns` time handling) live in `rules/general.md`.
+Applies to every TypeScript/JavaScript project. One library per concern, fixed by framework. A substitute library is a violation, not a preference. This table is the index: reach here first, then research the chosen library via rule 7's gate. Usage rules live in the owning module named in the row; cross-project rules (`axios` generics, `date-fns` time handling) live in `rules/general.md`.
 
 ## The table
 
@@ -14,6 +14,19 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 | Icons              | `lucide-react` (+ `react-icons` only for glyphs lucide lacks) | —                                       |
 | CSRF protection    | — (cookie + `x-csrf-token` header)                            | `csrf-csrf` (never csurf — deprecated)  |
 | Slug generation    | `slugify`                                                     | `slugify`                               |
+| Styling            | Tailwind v4 utilities only (`rules/frontend.md` rule 4)       | —                                       |
+| UI primitives      | shadcn/ui — multi-variant components via `cva` + shared `cn()` (`rules/frontend.md` rule 11) | —       |
+| i18n               | `next-intl` (`rules/i18n.md`; miniapp keeps its `useI18n`)    | —                                       |
+| Tests              | `vitest`                                                      | `vitest`                                |
+| ORM                | —                                                             | Prisma 7 — `prisma-client` generator, imports via `@prisma/client` alias (`rules/prisma.md`) |
+| API docs           | —                                                             | `@nestjs/swagger` plugin with `classValidatorShim: true` (`rules/nestjs.md` rule 22)        |
+| Animation          | CSS transitions — JS animation libraries fail the ladder (`rules/general.md` rule 19) | —                   |
+| Authentication    | —                                                             | `@nestjs/passport` + `passport`, one strategy per scheme (`passport-jwt`, `passport-google-oauth20`, …) |
+| Password hashing  | —                                                             | `argon2`                                  |
+| JWT               | —                                                             | `@nestjs/jwt` — signs/verifies alongside the `passport-jwt` strategy |
+| Rate limiting     | —                                                             | `@nestjs/throttler`                       |
+| Security headers  | —                                                             | `helmet`                                  |
+| Object storage    | — (uploads ride `axios` `postForm`)                           | `@aws-sdk/client-s3` behind the single `StorageService` (`rules/upload.md`) |
 
 **Miniapp is off this table** — the Zalo webview keeps its own `fetch`-based client and local components (`rules/frontend.md` rule 12, ADR-0039 §5); the table's rows apply to it only where stated.
 
