@@ -33,7 +33,9 @@ Formatting is never linted; linting is never formatted (no stylistic rules in ei
 8. **Discipline rules**: `no-console: ["warn", {"allow": ["warn", "error"]}]`, `no-debugger: "warn"`, `no-explicit-any: "error"`, `eslint/no-underscore-dangle: "off"`, `react/no-array-index-key: "warn"`, `react/react-in-jsx-scope: "off"`, `import/no-duplicates: ["error", {"prefer-inline": true}]`, `import/no-named-as-default-member: "off"`, `import/no-unassigned-import: "off"`.
 9. **Test leniency is scoped, never global** — test files (`**/*.{test,spec}.{ts,tsx}`) get an `overrides` block that adds `jest`/`vitest` plugins and turns off their noise rules (`expect-expect`, `no-conditional-expect`, `valid-title`, `require-mock-type-parameters`) plus `no-explicit-any: "off"`. App code never inherits test leniency.
 10. **300-line cap per file** — `max-lines: ["error", 300]` is part of the baseline (see `configs/.oxlintrc.json`). A source file over 300 lines fails lint. Split the file — never raise the cap, never ignore the file.
+    - **Leave headroom** — lint-staged runs Prettier on staged files before the cap is checked, and a reflow can add lines. Editing a file near the cap lands it over the limit at commit time. Finish near-cap edits ≤290 lines: extract a section to a sibling instead of squeezing whitespace.
 11. **NestJS** additionally sets `typescript/no-extraneous-class: ["warn", {"allowWithDecorator": true}]` — see `rules/nestjs.md`.
+12. **Suppression comments are dead code** — the baseline oxlint does not honor inline disables (`eslint-disable-next-line`, `oxlint-ignore-next-line`, `oxlint-disable-next-line`: all ignored, warning still fires). A finding is resolved in code or in rule config (scoped `overrides` block / rule options like `allowWithDecorator`) — never as a comment. Grep for `disable-next-line\|oxlint-ignore` before claiming zero findings; hits are unfixed findings wearing a comment.
 
 ## ESLint baseline (Next.js apps only)
 
@@ -48,3 +50,4 @@ Formatting is never linted; linting is never formatted (no stylistic rules in ei
 ## Pre-commit
 
 13. **lint-staged** runs `prettier --write` + `oxlint --fix` (`eslint --fix` in Next.js apps) on staged files. A commit that fails lint must be fixed, not pushed around the hook.
+14. **Workspace-owned formatters scope their lint-staged command to the workspace** — a command like `"*.prisma": "prisma format"` runs from the repo root, where no `schema.prisma` exists in a monorepo, and every commit touching that file type fails. Point it at the owning workspace and swallow lint-staged's appended paths: `"*.prisma": "bash -c 'pnpm --filter @acme/api exec prisma format' --"`. Run the formatter after hand-editing config files (`.prisma` alignment drift fails CI's `format --check` otherwise).

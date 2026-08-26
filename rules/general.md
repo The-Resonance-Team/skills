@@ -105,3 +105,8 @@ The discipline that shipped the 47K-line ADR-0039 frontend componentization. App
 16. **Behavior identical, drift documented** — visual drift (token shifts, one-notch shadow scale) is acceptable only where the ADR/plan says so. A refactor that changes behavior is a feature change and gets its own PR.
 17. **Deletion over addition** — a refactor deletes dead routes (no navigation entry, no roadmap item), dead exports, unused CSS files, and mock layers. A refactor that only moves code and deletes nothing carries its debt forward.
 18. **Zero suppression debt** — a refactor leaves no lint suppression for the rules it was meant to satisfy: no `oxlint-disable max-lines` in any split file. Complete means complete.
+
+## Subagents (orchestration)
+
+19. **Partition subagents by path, never by rule within one directory** — two agents editing the same directory concurrently overwrite each other: corrupted syntax from mid-file merges, duplicate imports, and restores-from-HEAD that discard a sibling agent's work. One directory, one owner; batch agents by route group or module.
+20. **Run the gates yourself after every agent returns** — an agent's "done" report is a claim, not evidence. Re-run the full gate suite (`lint --max-warnings=0`, `typecheck`, targeted tests) on the merged tree before building on the result; agents have reported clean trees holding syntax errors, type errors, and cap overruns. A dropped brace survives `tsc` when the file sits outside its tsconfig — lint the tree, not the project graph alone.
