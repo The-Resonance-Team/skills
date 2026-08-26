@@ -1,0 +1,24 @@
+name: check-router-links
+
+on:
+  push:
+    branches: [main]
+    paths: [CONTEXT.md, .github/workflows/check-router-links.yml]
+  pull_request:
+    paths: [CONTEXT.md]
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch every URL in CONTEXT.md
+        run: |
+          fail=0
+          for url in $(grep -oE 'https://raw\.githubusercontent\.com/[^ `|)]+' CONTEXT.md | sort -u); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$url")
+            if [ "$code" != 200 ]; then echo "BROKEN ($code): $url"; fail=1; fi
+          done
+          exit $fail
