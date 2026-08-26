@@ -38,17 +38,11 @@ Rule of thumb: small + always-needed → instructions; big + sometimes-needed �
 
 ## Rule modules
 
-| File                | Scope              | Include when                                                     |
-| ------------------- | ------------------ | ---------------------------------------------------------------- |
-| `rules/general.md`  | All projects       | Always — language, axios generics, Tailwind v4, trust boundaries |
-| `rules/nestjs.md`   | NestJS API         | Working in a NestJS backend (`apps/api`)                         |
-| `rules/frontend.md` | Web/portal/miniapp | Working in a browser client                                      |
-| `rules/linting.md`  | All TS/JS projects | Lint & format — Prettier, Oxlint, ESLint (Next.js only)          |
-| `rules/libraries.md` | All TS/JS projects | One library per concern — axios, zod, RHF, TanStack Query, class-validator, date-fns, Tailwind v4, shadcn/ui, next-intl, vitest, Prisma 7, passport/argon2/@nestjs/jwt auth stack |
-| `rules/upload.md`    | APIs with uploads  | Inline multipart + S3 — mediaUpload interceptor, StorageService, URL-shaped DTOs |
-| `rules/audit.md`     | Any repo under audit | Full-codebase audits — slop, dead code, test slop, production risk (secrets, deps, PII), slice-type checklists |
+The module index lives in [`CONTEXT.md`](./CONTEXT.md) — the same file consumers fetch, so it can never drift from what agents actually see. Do not duplicate the table here.
 
 Machine-readable tool configs (Prettier, Oxlint, ESLint-for-Next.js) ship in [`configs/`](./configs/) and are copied into consumer repos per `rules/linting.md`.
+
+Agent-facing skills (progressive-disclosure packs with `SKILL.md`) live in [`skills/`](./skills/); long procedures live in [`workflows/`](./workflows/).
 
 ## Known gaps
 

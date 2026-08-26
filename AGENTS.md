@@ -14,7 +14,7 @@ Guide for AI agents contributing to this repo. This file is read locally (by age
 ## Editing workflow
 
 1. Edit `rules/*.md` directly, commit directly to `main` (trunk-based, no PR workflow for this repo).
-2. When you add or rename a rule file, update the index table in `README.md` in the same commit.
+2. `CONTEXT.md` is the single source of truth for the module index — update its table in the same commit when you add or rename a rule file. Never duplicate the table elsewhere (README points to it).
 3. Keep commit messages in the repo's existing conventional style (`feat:`, `fix:`, `chore:`).
 
 ## Vocabulary
