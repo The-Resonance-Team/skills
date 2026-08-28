@@ -11,6 +11,7 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 | `rules/prisma.md`                      | TS/NestJS repos on Prisma 7                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`                      |
 | `rules/frontend.md`                    | Web/portal/miniapp                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`                    |
 | `rules/i18n.md`                        | Projects with i18n (message catalogs, multi-locale UI) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                        |
+| `rules/e2e-testing.md`                 | Repos with Playwright e2e tests against a real API     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`                 |
 | `rules/linting.md`                     | All TS/JS projects                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`                     |
 | `rules/libraries.md`                   | All TS/JS projects                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`                   |
 | `rules/upload.md`                      | APIs with uploads                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
