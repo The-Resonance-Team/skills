@@ -15,7 +15,7 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 | `rules/libraries.md`                   | All TS/JS projects                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`                   |
 | `rules/upload.md`                      | APIs with uploads                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
 | `rules/issues.md`                      | Repos with a GitHub issue tracker                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`                      |
-| `rules/github-workflows.md`            | CI/CD on self-hosted runners                           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-workflows.md`            |
+| `rules/github-workflows.md`            | All GitHub Actions CI/CD and automation                | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-workflows.md`            |
 | `rules/audit.md`                       | Any repo under audit                                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                       |
 | `workflows/codebase-audit.md`          | Full-codebase audit with subagent slices               | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
 | `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
@@ -63,3 +63,7 @@ Machine-readable tool configs ship in `configs/` of the same repo (`prettier.con
 - **Slop** — an AI-generation artifact flagged by `rules/audit.md`: narrating comments, defensive checks on trusted paths, type-bypass casts, single-use abstractions, deep nesting, style inconsistent with the surrounding file, suppression directives, and value-free tests (no assertions, tautologies, mock-echoes).
 - **Verdict** — a file's audit outcome: `clean` or one or more findings. A slice audit completes when every file in the slice carries a verdict.
 - **Slice** — the unit of partitioning in `workflows/codebase-audit.md`: a group of paths small enough for one subagent's context; every source path sits in exactly one slice.
+- **Reusable workflow** — a workflow file (prefixed with `_` or in `.github/workflows/`) that other workflows call via `uses: ./.github/workflows/<name>.yml` with `workflow_call` trigger. DRY for build/test logic shared across CI, release, and deploy.
+- **Changeset** — a markdown file describing a package version bump and changelog entry, consumed by `changesets/action` to automate library releases.
+- **Ecosystem CI** — downstream testing of dependent projects triggered by a comment command (e.g., `/ecosystem-ci`) on a PR, gated by permission checks.
+- **Autofix command** — a comment-triggered workflow (e.g., `/autofix`) that runs lint fix and pushes the result to the PR branch, gated by permission checks.
