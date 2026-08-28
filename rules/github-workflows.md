@@ -729,7 +729,27 @@ script: |
   docker builder prune -af || true
 ```
 
-### 26. `continue-on-error` hides failures
+### 26. Authenticate docker-pulling actions on self-hosted runners
+
+A third-party action that `docker run`s its own image (e.g. `trufflesecurity/trufflehog@main` pulling `ghcr.io/trufflesecurity/trufflehog`) pulls anonymously by default. GitHub-hosted runners get a fresh pooled IP per job and rarely hit registry rate limits; a self-hosted runner shares one IP across every job in the repo, so anonymous pulls hit the registry's per-IP limit and fail with a bare `denied` — not a rate-limit message, just a pull denial that looks like a real problem with the action.
+
+**Fix**: authenticate the pull with `docker/login-action` before the step, moving it onto the token's own (much higher) limit:
+
+```yaml
+- name: Log in to GHCR
+  uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+
+- name: Scan for leaked secrets (TruffleHog)
+  uses: trufflesecurity/trufflehog@main
+```
+
+`GITHUB_TOKEN` works here even against a public image the repo doesn't own — authenticated pulls get a separate, larger quota than anonymous ones, regardless of the token's access scope to that image. Symptom to recognize: a step that pulls a third-party docker image starts failing on every branch (not just one PR) at the same time, with a bare `denied` from the registry.
+
+### 27. `continue-on-error` hides failures
 
 When using `appleboy/ssh-action` with `continue-on-error: true`, the step shows as passed even when the SSH command fails. Use `steps.<id>.outcome` (not `conclusion`) in downstream `if` conditions to detect actual failures:
 

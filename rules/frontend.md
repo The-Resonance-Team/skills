@@ -103,6 +103,37 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 - **Not every loop is an accumulator — keep it when it is not**: early-exit scans use `.find`/`.some`; sequential-state generation (voucher codes, hash strings) stays on `for`/`while`; DOM/side-effect appends stay on `for...of`. A loop that mutates state with early returns (`worldcup-bracket.ts` `buildBracket`) stays as-is.
 - **Behavior must be identical** — a refactor that changes semantics is a feature change, not a cleanup (bye-detection by reference equality, id numbering, boundary clipping all preserved).
 
+## React hooks (mandatory)
+
+19. **Hooks run before any early return** — every `useState`/`useEffect`/`useMemo`/etc. call sits above every conditional `return` in the component body, never after a loading/error guard. A hook placed after an early return works fine on the render where the guard doesn't fire, then crashes ("Rendered more hooks than during the previous render") the instant the guard's condition flips between renders — a query resolving from loading to loaded is the most common trigger, and it always eventually happens. Compute what the hook needs unconditionally (nullable is fine) and let the hook's own logic handle the null case:
+
+    ```tsx
+    // Bad — crashes once `isLoading` flips
+    function Screen({ id }: { id: string }) {
+      const { data, isLoading } = useQuery(...)
+      if (isLoading) return <Skeleton />
+      const [tab, setTab] = useState(data.defaultTab) // ← hook after early return
+      return ...
+    }
+
+    // Good — hook unconditional, guard after
+    function Screen({ id }: { id: string }) {
+      const { data, isLoading } = useQuery(...)
+      const [tab, setTab] = useState('default')
+      useEffect(() => {
+        if (data) setTab(data.defaultTab)
+      }, [data])
+      if (isLoading) return <Skeleton />
+      return ...
+    }
+    ```
+
+    Proven by a real incident: a tournament live-tracker screen had `const [seg, setSeg] = useState(...)` after two early returns (loading, error) — every real navigation to the screen crashed once the underlying query resolved.
+
+20. **A dispatch table's `params: unknown` is not checked against its callers** — a screen/route registry keyed by string (`Record<string, (params: unknown) => ...>`) hides caller/handler shape mismatches from the type checker: the handler casts `params as { x: T }` and the compiler trusts it, whether or not any real caller ever produces that shape. Before trusting a handler's assumed param shape, grep every real call site (`go('screenName', ...)`, `push('screenName', ...)`, `dispatch({ type: 'screenName', ... })`) for what it actually passes — do not assume the handler's cast is correct just because it type-checks.
+
+    Proven by a real incident: a screen registry expected `go('trainerProfile', { trainer: summary })`, but every real caller did `go('trainerProfile', summary)` — the bare object, matching a sibling registry entry's own convention in the same file. The handler's `params?.trainer` read was always `undefined`, and the screen was permanently blank in production; the mismatch never surfaced in review or `tsc` because `params` was typed `unknown`.
+
 ## Next.js conventions (mandatory)
 
 18. **Proxy file, never middleware** — Next.js 16 renamed `middleware.ts` to `proxy.ts`. The file lives at `src/proxy.ts` (same level as `app/` or `pages/`) and exports a function named `proxy`:
