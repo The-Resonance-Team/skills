@@ -152,3 +152,15 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
     ```
 
     NEVER name the file `middleware.ts` or the function `middleware` — Next.js 16 ignores it. The old convention is deprecated and will be removed in a future major.
+
+## Icon-font glyphs (mandatory)
+
+21. **An icon-font glyph rendered as literal text becomes part of its container's accessible name — hide it.** A `<span className="material-symbols-rounded">upload_file</span>` (or any icon-font pattern that renders a glyph via a literal ligature word) puts the text "upload_file" in the DOM even though it displays as a graphic. That text is read by screen readers and silently prepends/appends onto a sibling button's computed accessible name — `"upload_file Nộp hồ sơ trực tuyến"` instead of `"Nộp hồ sơ trực tuyến"` — breaking both real assistive-tech semantics and any test asserting an exact accessible name (`getByRole('button', {name: '...', exact: true})`). Give every purely decorative icon span `aria-hidden="true"`. Exception: if the icon is the *only* content of an otherwise-unlabeled control, don't just hide it — the control needs an `aria-label` instead, or it loses its only name.
+
+## Shared lookup maps (mandatory)
+
+22. **A shared label/color/icon map is a single point of failure — a missing key fails silently, not loudly.** A `TEMPLATE_LABELS` / `STATUS_COLOR` / icon-name-to-component `Record<string, T>` read by more than one screen produces a visible defect — raw enum text, a wrong or default color, literal icon-name text instead of a glyph — for **every** real value the map omits, on **every** screen that reads it, not just the one screen where the gap was first noticed. When you add one missing key because a report named it, enumerate every real value the map's key type can take (the backend enum, every string constant actually passed to it — grep call sites, don't guess from the map's current keys) and confirm all of them resolve before calling it done.
+
+## Modal/dialog confirm actions (mandatory)
+
+23. **Verify a shared modal/dialog library's actual click-handling order before trusting its "confirm" callback runs.** Some overlay component libraries check a declarative `close: true`-style flag on an action *before* invoking that action's own `onClick` — a consumer that sets both `close: true` and `onClick: onConfirm` gets a button that only closes the dialog, silently, functionally identical to Cancel, for every screen using that shared wrapper. This is invisible to code review (the wiring looks correct) and to a test that only checks the dialog is dismissed (dismissal succeeds either way, confirm or cancel). When a "confirm" flow mysteriously has no effect beyond closing, read the library's actual click-handler source rather than assuming the click didn't land or the app logic is wrong.

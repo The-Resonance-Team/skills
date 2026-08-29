@@ -79,3 +79,7 @@ resolve: {
 11. **Transactions** — `$transaction` interactive callbacks are the standard; race-safe transitions use `updateMany` with expected-state predicates (see `rules/nestjs.md` rule 10).
 
 12. **No runtime statutory config in DB** — tax rates/feature thresholds resolve from the hardcoded versioned ledger, not from `prisma` reads (ADR 0042 pattern).
+
+## Diagnosing a blank/wrong client field (mandatory)
+
+13. **A blank or wrong-looking field on the client is often a `select` that never joined the relation — check the server response before patching the client fallback.** A frontend `sellerName: raw.sellerName ?? ''` mapper is a symptom, not a bug, if `raw.sellerName` was never sent because the endpoint's `select` (a shared `MANAGE_SELECT`/`LIST_SELECT` object, or an inline one) never included `seller: { select: { citizen: { select: { fullName: true } } } }` in the first place. Compare against a peer endpoint that renders the same underlying data correctly (a detail vs. list variant of the same entity, an admin vs. public read) before assuming the bug is in the mapper — a `select` shape shared across list/detail/create/update endpoints (`rules/nestjs.md` rule 11) missing one relation produces the identical gap on every consumer of that shape, not just the one screen where it was first noticed.
