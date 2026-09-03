@@ -1,0 +1,31 @@
+name: hygiene
+
+on:
+  push:
+    branches: [main]
+    paths: [configs/**, rules/**, CONTEXT.md, .github/workflows/hygiene.yml]
+  pull_request:
+    paths: [configs/**, rules/**, CONTEXT.md]
+  schedule:
+    - cron: "0 7 * * 1"
+
+jobs:
+  validate-configs:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate dependabot baseline ecosystems
+        run: |
+          fail=0
+          f=configs/dependabot.yml
+          # Values Dependabot accepts (taken from its config validator error output).
+          # Incident 2026-09: `package-manager-versions` shipped and failed a consumer PR.
+          allow='npm bundler composer devcontainers dotnet-sdk maven mix cargo gradle nuget gomod docker docker-compose elm gitsubmodule github-actions pip terraform pub rust-toolchain sbt swift bun uv vcpkg helm conda julia bazel opentofu pre-commit nix deno'
+          for eco in $(grep -oE 'package-ecosystem:.*' "$f" | cut -d: -f2 | tr -d " '\""); do
+            echo " $allow " | grep -q " $eco " || { echo "INVALID ecosystem: $eco"; fail=1; }
+          done
+          # `directories:` takes plain paths, not globs (second half of the same incident).
+          if grep -A5 'directories:' "$f" | grep -q '\*'; then
+            echo 'GLOB in directories:'; grep -A5 'directories:' "$f" | grep '\*'; fail=1;
+          fi
+          exit $fail

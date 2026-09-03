@@ -22,3 +22,10 @@ Guide for AI agents contributing to this repo. This file is read locally (by age
 - **Rule module** — one file under `rules/` (`general.md`, `nestjs.md`, `frontend.md`), consumed as a unit.
 - **Consumer** — a repo that lists one of our rule files in its `opencode.json` `instructions` array.
 - **Instruction** — a single URL entry in a consumer's `instructions` array.
+
+## Rule lifecycle
+
+1. **Extend before you add** — a lesson for an existing audience and surface extends its module. A new `rules/<domain>.md` needs a distinct audience that fetches it without the others; every module is a separate fetch for consumers.
+2. **Deprecate, don't silently delete** — a superseded rule keeps a one-line pointer to its replacement. Delete only content that is factually wrong (wrong fails loudly at consumers, e.g. an invalid config value). Name the dead rule in a `fix:` commit message.
+3. **Renames break consumers** — module URLs sit in consumers' `instructions`. A rename ships three parts same-day: the new files, a stub at the old URL mapping old sections to new ones, and updates to every known consumer. The stub carries a review date; on that date, check whether anything still fetches it.
+4. **Configs move with their rule** — a baseline in `configs/` changes in the same commit as the rule text that documents it, proven by an incident or validator output, not by intent.
