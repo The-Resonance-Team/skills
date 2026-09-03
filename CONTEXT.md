@@ -17,6 +17,7 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 | `rules/upload.md`                      | APIs with uploads                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
 | `rules/issues.md`                      | Repos with a GitHub issue tracker                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`                      |
 | `rules/github-workflows.md`            | All GitHub Actions CI/CD and automation                | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-workflows.md`            |
+| `rules/dependabot.md`                  | Repos with a `.github/dependabot.yml`                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`                  |
 | `rules/audit.md`                       | Any repo under audit                                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                       |
 | `workflows/codebase-audit.md`          | Full-codebase audit with subagent slices               | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
 | `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
@@ -41,7 +42,7 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 - Chrome DevTools MCP — visual verification, pixel-perfect comparison
 - PostHog MCP — analytics integration, user behavior tracking (optional)
 
-Machine-readable tool configs ship in `configs/` of the same repo (`prettier.config.mjs`, `.oxlintrc.json`, `eslint.config.mjs`).
+Machine-readable tool configs ship in `configs/` of the same repo (`prettier.config.mjs`, `eslint.config.mjs`, `dependabot.yml`).
 
 ## Language rules (all consumers)
 
@@ -68,3 +69,4 @@ Machine-readable tool configs ship in `configs/` of the same repo (`prettier.con
 - **Changeset** — a markdown file describing a package version bump and changelog entry, consumed by `changesets/action` to automate library releases.
 - **Ecosystem CI** — downstream testing of dependent projects triggered by a comment command (e.g., `/ecosystem-ci`) on a PR, gated by permission checks.
 - **Autofix command** — a comment-triggered workflow (e.g., `/autofix`) that runs lint fix and pushes the result to the PR branch, gated by permission checks.
+- **Version source** — a place a dependency or toolchain version is declared: `package.json`, a workflow action ref, the `packageManager` field, a Dockerfile `FROM` tag. Each needs a Dependabot ecosystem entry or it drifts manually (`rules/dependabot.md`).

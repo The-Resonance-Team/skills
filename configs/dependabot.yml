@@ -1,0 +1,70 @@
+# Dependabot baseline — copy to .github/dependabot.yml, then drop the
+# ecosystem entries your repo has no version source for (and add any the
+# table in rules/dependabot.md misses for your stack).
+version: 2
+
+updates:
+  # package.json dependencies
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    labels:
+      - 'dependencies'
+      - 'automated'
+    commit-message:
+      prefix: 'chore'
+      prefix-development: 'chore(dev)'
+      include: 'scope'
+    open-pull-requests-limit: 5
+
+  # action refs in .github/workflows (SHA pins stay SHA pins)
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    labels:
+      - 'dependencies'
+      - 'automated'
+    commit-message:
+      prefix: 'ci'
+    open-pull-requests-limit: 5
+
+  # the `packageManager` field (pnpm/yarn/bun binary). The npm ecosystem
+  # does not touch it. Dockerfile `npm i -g <tool>@<ver>` lines, engines/
+  # devEngines, and local toolchains stay manual — see rules/dependabot.md.
+  - package-ecosystem: 'package-manager-versions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'automated'
+    commit-message:
+      prefix: 'chore'
+    open-pull-requests-limit: 5
+
+  # FROM image tags in Dockerfiles
+  - package-ecosystem: 'docker'
+    directories:
+      - '/apps/**/Dockerfile*'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'automated'
+    commit-message:
+      prefix: 'chore'
+    open-pull-requests-limit: 5
