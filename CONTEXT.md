@@ -16,7 +16,11 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 | `rules/libraries.md`                   | All TS/JS projects                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`                   |
 | `rules/upload.md`                      | APIs with uploads                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
 | `rules/issues.md`                      | Repos with a GitHub issue tracker                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`                      |
-| `rules/github-workflows.md`            | All GitHub Actions CI/CD and automation                | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-workflows.md`            |
+| `rules/github-ci.md`                  | Repos running CI on GitHub Actions                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-ci.md`                  |
+| `rules/github-releases.md`             | Repos cutting releases or keeping release branches        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-releases.md`            |
+| `rules/github-vps-deploy.md`           | Self-hosted runners deploying to a VPS                    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-vps-deploy.md`          |
+| `rules/github-pr-automation.md`        | Repos with PR automation (commands, labels, title checks) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-pr-automation.md`       |
+| `rules/github-supply-chain.md`         | Actions + registries (scanning, pinning, toolchain)       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-supply-chain.md`        |
 | `rules/dependabot.md`                  | Repos with a `.github/dependabot.yml`                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`                  |
 | `rules/audit.md`                       | Any repo under audit                                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                       |
 | `workflows/codebase-audit.md`          | Full-codebase audit with subagent slices               | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |

@@ -21,7 +21,7 @@ Anti-pattern: an `npm`-only config. The `npm` ecosystem does **not** touch the `
 There is no `package-manager-versions` ecosystem value (Dependabot rejects it — incident 2026-09: the team baseline shipped it and the config validator failed the PR). Bumping the binary means, by hand, in one PR:
 
 - the `packageManager` field in `package.json` plus `pnpm install --lockfile-only` for the lockfile block;
-- `RUN npm i -g pnpm@<ver>` lines inside Dockerfiles — or better, derive pnpm from `package.json` at build time so nothing manual remains (github-workflows.md §30);
+- `RUN npm i -g pnpm@<ver>` lines inside Dockerfiles — or better, derive pnpm from `package.json` at build time so nothing manual remains (rules/github-vps-deploy.md §8);
 - `engines` / `devEngines` runtime fields if the bump changes the required runtime;
 - the developer's locally installed toolchain — outside the repo, say so in the PR body.
 
