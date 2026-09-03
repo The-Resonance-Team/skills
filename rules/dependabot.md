@@ -47,3 +47,26 @@ Security-update PRs bypass `ignore` conditions anyway, so ignoring a major hides
 ### 5. Keep action SHA pins pinned
 
 Workflow action refs stay pinned to an exact commit hash with the tag in a trailing comment (`uses: owner/repo@<sha> # v1.2.3`). Dependabot updates the SHA and syncs the comment for SHA-pinned refs. Anti-pattern: re-pinning a Dependabot PR back to a tag ref, or letting a tag ref stay a tag ref — tag drift is a supply-chain hazard.
+
+## Safety
+
+### 6. Gate fresh releases with `minimumReleaseAge` (pnpm)
+
+Dependabot proposes the newest matching version, including one published an hour ago — the exact window supply-chain hijacks exploit. pnpm's `minimumReleaseAge` (minutes, in `pnpm-workspace.yaml` — not `.npmrc`: since pnpm v11 only auth/registry settings are read from `.npmrc`) makes every install, including frozen CI installs, fail on versions younger than the cutoff. The default is 1440 (1 day) since v11; an explicit value is strict (fail, never fall back).
+
+```yaml
+# pnpm-workspace.yaml — 10080 minutes = 7 days
+minimumReleaseAge: 10080
+```
+
+Manually-reviewed upgrades exempt themselves with exact-version pins (future releases stay gated); `minimumReleaseAgeExcludePrune` drops stale pins on the next add/update/remove:
+
+```yaml
+minimumReleaseAgeExclude:
+  # manual upgrades, one line per reviewed version
+  - cn@0.2.3
+  - zod@4.5.2
+minimumReleaseAgeExcludePrune: true
+```
+
+Worked incident (2026-09): enabling the gate failed CI on four lockfile entries younger than 7 days (`cn@0.2.3` at 1 day old among them) — the gate doing its job on the first run. Dependabot PRs that resolve to under-age versions now fail the CI install until they mature; no human triage needed.

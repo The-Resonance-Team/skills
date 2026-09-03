@@ -562,6 +562,8 @@ jobs:
       - uses: github/codeql-action/analyze@v3
 ```
 
+Code scanning upload needs Advanced Security enabled on the repo. On a private repo without it, analysis succeeds and the upload fails with `Advanced Security must be enabled ... to use code scanning` — check entitlement before adding this workflow (incident 2026-09: first CodeQL run on a private repo failed exactly there; the workflow was reverted until GHAS is enabled).
+
 ### 18. Pin action versions with SHA
 
 Always pin actions to a full-length commit SHA, not a tag.
@@ -573,6 +575,8 @@ Always pin actions to a full-length commit SHA, not a tag.
 # Good — pinned SHA
 - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 ```
+
+Pin security tooling first: a secret scanner on a mutable ref (`trufflesecurity/trufflehog@main`) lets a tag move under the tool that guards the supply chain (incident 2026-09: pinned to `trufflesecurity/trufflehog@cc1fe982afc515d2991365ce8d4d0dd07170fcad # v3.97.2`).
 
 ## PR Management
 
@@ -764,4 +768,59 @@ When using `appleboy/ssh-action` with `continue-on-error: true`, the step shows 
 - name: Rollback
   if: steps.deploy.outcome == 'failure' # outcome = actual result
   uses: appleboy/ssh-action@v1
+```
+
+### 28. Every job gets `timeout-minutes`
+
+A hung job on a self-hosted runner burns the single shared runner until GitHub's 6-hour default kills it. CI jobs already carry timeouts; deploy and publish jobs need them too.
+
+```yaml
+# Good — bound the worst case per job shape
+jobs:
+  changes:
+    timeout-minutes: 10
+  build-push:
+    timeout-minutes: 30
+  migrate:
+    timeout-minutes: 30 # match the SSH command_timeout below it
+  deploy:
+    timeout-minutes: 30
+```
+
+### 29. Isolate `pnpm/action-setup` per job on shared-HOME runners
+
+`pnpm/action-setup` self-installs to `~/setup-pnpm` by default. Self-hosted runners share `$HOME` across parallel jobs, and concurrent self-installers race linking bins (`ENOENT ... chmod '.../pnpm/pnpm'`, exit 1 — incident 2026-09: lint + typecheck failed while test passed on the same push). Point `dest` at the per-job temp dir. Drop when back on github-hosted runners.
+
+```yaml
+# Bad — shared dest races on parallel self-hosted jobs
+- uses: pnpm/action-setup@v4
+
+# Good — one installer per job
+- uses: pnpm/action-setup@v4
+  with:
+    run_install: false
+    dest: ${{ runner.temp }}/setup-pnpm
+```
+
+### 30. Derive tool versions from the repo, never hardcode them in workflows
+
+A version literal in a workflow is a version source Dependabot cannot see (dependabot.md §1: every source needs an entry, and workflow-inline tool versions have none). Read it from the manifest that owns it and pass it through.
+
+```yaml
+# Bad — rots when apps/api/package.json moves past prisma 7.9.1
+sh -c "npm install -g dotenv prisma@7.9.1 && ..."
+
+# Good — single source is apps/api/package.json
+- name: Resolve Prisma version from repo
+  id: prisma
+  run: echo "version=$(node -p 'require("./apps/api/package.json").dependencies.prisma.replace("^","")')" >> "$GITHUB_OUTPUT"
+
+- name: Run Prisma migrate deploy
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    envs: PRISMA_VER
+    env:
+      PRISMA_VER: ${{ steps.prisma.outputs.version }}
+    script: |
+      sh -c "npm install -g dotenv prisma@$PRISMA_VER && ..."
 ```
