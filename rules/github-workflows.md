@@ -824,3 +824,15 @@ sh -c "npm install -g dotenv prisma@7.9.1 && ..."
     script: |
       sh -c "npm install -g dotenv prisma@$PRISMA_VER && ..."
 ```
+
+### 31. Never use corepack to manage pnpm
+
+Node removed corepack in v25 (it ships in 22/24, gone in 25/26 — verified on installer bins), so any workflow or Dockerfile that calls it breaks the day the image moves past Node 24. Even where it exists, every invocation pays shim overhead. pnpm manages its own version since v10 — use that instead, per surface:
+
+| Surface | Single version source                                                                                  |
+| ------- | ------------------------------------------------------------------------------------------------------ |
+| Dev box | `manage-package-manager-versions` (default-on: any pnpm ≥10 auto-switches to the `packageManager` pin) |
+| CI      | `pnpm/action-setup` with no version input (reads the same field)                                       |
+| Docker  | derive at build time — §30 above                                                                       |
+
+Anti-pattern: `corepack enable`, `corepack prepare`, or documenting corepack as the install path. Incident 2026-09: a repo-wide grep found zero references only because an earlier PR had removed them; anything left would have died on the Node 26 bump.
