@@ -40,25 +40,17 @@ updates:
       prefix: 'ci'
     open-pull-requests-limit: 5
 
-  # the `packageManager` field (pnpm/yarn/bun binary). The npm ecosystem
-  # does not touch it. Dockerfile `npm i -g <tool>@<ver>` lines, engines/
-  # devEngines, and local toolchains stay manual — see rules/dependabot.md.
-  - package-ecosystem: 'package-manager-versions'
-    directory: '/'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-    labels:
-      - 'dependencies'
-      - 'automated'
-    commit-message:
-      prefix: 'chore'
-    open-pull-requests-limit: 5
+  # NOTE: there is no ecosystem for the `packageManager` field
+  # (`package-manager-versions` is not a real value — Dependabot rejects it).
+  # Bump it by hand with the lockfile (`pnpm install --lockfile-only`) in one
+  # PR — see rules/dependabot.md.
 
-  # FROM image tags in Dockerfiles
+  # FROM image tags in Dockerfiles — list every directory holding one
+  # (a file glob is NOT valid here; use plain directory paths).
   - package-ecosystem: 'docker'
     directories:
-      - '/apps/**/Dockerfile*'
+      - '/apps/api'
+      - '/apps/web'
     schedule:
       interval: 'weekly'
       day: 'monday'

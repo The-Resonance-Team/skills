@@ -6,23 +6,23 @@ Rules for keeping every version source in a repo under Dependabot automation. Sc
 
 ### 1. One ecosystem entry per version source in the repo
 
-List every place a version is declared, and give each one an entry in `dependabot.yml`. A typical TS monorepo needs all four:
+List every place a version is declared, and give each one an entry in `dependabot.yml`. A typical TS monorepo needs all three:
 
-| Version source                         | Ecosystem                  |
-| -------------------------------------- | -------------------------- |
-| `package.json` dependencies            | `npm`                      |
-| `.github/workflows/*` action refs      | `github-actions`           |
-| `packageManager` field (pnpm/yarn/bun) | `package-manager-versions` |
-| `FROM <image>:<tag>` in Dockerfiles    | `docker`                   |
+| Version source                      | Ecosystem        |
+| ----------------------------------- | ---------------- |
+| `package.json` dependencies         | `npm`            |
+| `.github/workflows/*` action refs   | `github-actions` |
+| `FROM <image>:<tag>` in Dockerfiles | `docker`         |
 
 Anti-pattern: an `npm`-only config. The `npm` ecosystem does **not** touch the `packageManager` field, and it never reads `RUN npm i -g <tool>@<ver>` lines. The result is CI on the new version while Docker images and the local toolchain build on the old one — drift nobody sees until a lockfile refuses to install.
 
-### 2. The package manager binary needs two updates, not one
+### 2. The package manager binary is manual — no ecosystem covers it
 
-`package-manager-versions` bumps the `packageManager` field and the lockfile `packageManagerDependencies` block. It cannot bump:
+There is no `package-manager-versions` ecosystem value (Dependabot rejects it — incident 2026-09: the team baseline shipped it and the config validator failed the PR). Bumping the binary means, by hand, in one PR:
 
-- `RUN npm i -g pnpm@<ver>` lines inside Dockerfiles — grep for the old version in the same PR;
-- `engines` / `devEngines` runtime fields — update by hand in the same PR;
+- the `packageManager` field in `package.json` plus `pnpm install --lockfile-only` for the lockfile block;
+- `RUN npm i -g pnpm@<ver>` lines inside Dockerfiles — or better, derive pnpm from `package.json` at build time so nothing manual remains (github-workflows.md §30);
+- `engines` / `devEngines` runtime fields if the bump changes the required runtime;
 - the developer's locally installed toolchain — outside the repo, say so in the PR body.
 
 A version bump is landed only when `git grep <old-version>` returns nothing outside the changelog.
