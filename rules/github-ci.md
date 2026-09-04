@@ -185,7 +185,7 @@ A cache hit replays old logs without running the tool. A task whose inputs rarel
 change (typecheck on a stable package) can stay green indefinitely over live
 errors — proven when a branch change forced a real `tsc` run and exposed two
 pre-existing errors main had reported green for days
-(`docs/retro-vitest-5-upgrade.md` §1). Schedule a periodic uncached run of the
+(Incident 2026-09, Ecopick PR #392). Schedule a periodic uncached run of the
 gates so rot surfaces on its own, not on a random branch.
 
 ```yaml
@@ -199,7 +199,7 @@ gates so rot surfaces on its own, not on a random branch.
 Test runners default to one worker per CPU. On a small shared box, with a sibling
 job compiling at the same time, the suite OOMs (`137`) or slows 10×+ — proven on
 an api suite that runs in ~30s locally but timed out at 511s and then OOM-killed
-under `pool:threads` in CI (`docs/retro-vitest-5-upgrade.md` §2). Cap workers in
+under `pool:threads` in CI (Incident 2026-09, Ecopick PR #392). Cap workers in
 CI only; leave local defaults alone.
 
 ```yaml
