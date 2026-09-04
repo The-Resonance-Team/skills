@@ -177,3 +177,32 @@ jobs:
   deploy:
     timeout-minutes: 30
 ```
+
+### 7. Distrust a green cache: force-run gates on a schedule
+
+
+A cache hit replays old logs without running the tool. A task whose inputs rarely
+change (typecheck on a stable package) can stay green indefinitely over live
+errors — proven when a branch change forced a real `tsc` run and exposed two
+pre-existing errors main had reported green for days
+(`docs/retro-vitest-5-upgrade.md` §1). Schedule a periodic uncached run of the
+gates so rot surfaces on its own, not on a random branch.
+
+```yaml
+# Weekly cache-busting gate (or: pass --force to the runner)
+# turbo: pnpm exec turbo run lint typecheck --force
+```
+
+### 8. Cap test workers to the self-hosted box
+
+
+Test runners default to one worker per CPU. On a small shared box, with a sibling
+job compiling at the same time, the suite OOMs (`137`) or slows 10×+ — proven on
+an api suite that runs in ~30s locally but timed out at 511s and then OOM-killed
+under `pool:threads` in CI (`docs/retro-vitest-5-upgrade.md` §2). Cap workers in
+CI only; leave local defaults alone.
+
+```yaml
+# CI only — local runs keep the default worker count
+- run: pnpm exec turbo run test --concurrency=1 -- --maxWorkers=2
+```
