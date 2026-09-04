@@ -74,18 +74,23 @@ Node removed corepack in v25 (it ships in 22/24, gone in 25/26 — verified on i
 
 Anti-pattern: `corepack enable`, `corepack prepare`, or documenting corepack as the install path. Incident 2026-09: a repo-wide grep found zero references only because an earlier PR had removed them; anything left would have died on the Node 26 bump.
 
-### 5. Use `curl | sh` for pnpm in CI
+### 5. Fetch the pnpm binary directly from GitHub Releases
 
-Favor the official pnpm installer over `npm install -g pnpm` or `pnpm/action-setup`:
+Favor a direct binary fetch over `npm install -g pnpm`, `pnpm/action-setup`, or `curl | sh https://get.pnpm.io/install.sh`:
 
 ```yaml
-# Good — fetches the pnpm binary directly; survives an npm registry outage
 - name: Install pnpm
-  run: curl -fsSL https://get.pnpm.io/install.sh | sh -
+  shell: bash
+  run: |
+    set -euo pipefail
+    PNPM_VERSION="$(node -p "require('./package.json').packageManager.split('@')[1]")"
+    mkdir -p "$HOME/.local/bin"
+    curl -fsSL "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-x64" \
+      -o "$HOME/.local/bin/pnpm"
+    chmod +x "$HOME/.local/bin/pnpm"
 - name: Add pnpm to PATH
-  run: echo "$HOME/.local/share/pnpm" >> "$GITHUB_PATH"
+  shell: bash
+  run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 ```
 
-`get.pnpm.io/install.sh` downloads a pre-built binary from GitHub Releases — it never touches the npm registry, so it stays up when the audit endpoint or package registry is down (incident 2026-09: `pnpm/setup` fetches its own tarball from `registry.npmjs.org`; when the registry is degraded, CI fails even though the binary itself is healthy). The script auto-reads the `packageManager` field from `package.json` in the checked-out repo, so no explicit version is needed.
-
-Avoid `npm install -g pnpm` — it adds an npm dependency resolution layer, is slower, and is the first thing to break when npm is degraded. Avoid `pnpm/action-setup` for the same reason (it too fetches from the npm registry). If you must use `pnpm/action-setup`, pass `version: <exact>` so the action resolves the tarball URL at GitHub Releases rather than querying the npm registry; combine with `dest: ${{ runner.temp }}/setup-pnpm` on shared-home runners to avoid the race described in §3.
+`get.pnpm.io/install.sh` is now a Node ESM script (it self-downloads the real installer) — it requires Node 18+ and fails on older self-hosted runners. A direct binary fetch from GitHub Releases works regardless of the runner's Node version and never touches the npm registry at all.
