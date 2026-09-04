@@ -74,3 +74,5 @@ Machine-readable tool configs ship in `configs/` of the same repo (`prettier.con
 - **Ecosystem CI** — downstream testing of dependent projects triggered by a comment command (e.g., `/ecosystem-ci`) on a PR, gated by permission checks.
 - **Autofix command** — a comment-triggered workflow (e.g., `/autofix`) that runs lint fix and pushes the result to the PR branch, gated by permission checks.
 - **Version source** — a place a dependency or toolchain version is declared: `package.json`, a workflow action ref, the `packageManager` field, a Dockerfile `FROM` tag. Each needs a Dependabot ecosystem entry or it drifts manually (`rules/dependabot.md`).
+- **Encapsulated resource component** — a child component that scopes an external resource's allocation and cleanup (`URL.createObjectURL` / `URL.revokeObjectURL`) to its own React lifecycle (`rules/frontend.md`).
+- **Bounded in-memory map** — a `Map` instance with an explicit maximum entry capacity (`MAX_ENTRIES`), TTL pruning, and FIFO eviction on overflow (`rules/nestjs.md`).

@@ -35,25 +35,26 @@ AI-generated slop patterns. Each item states the target state; flag files that m
 15. **Dependencies carry current risk ratings** — flag known CVEs, deprecated packages, duplicate versions of one library, and licenses incompatible with the repo's. Category `risk`.
 16. **Failures surface** — empty catches, swallowed promise rejections, and log-and-continue handlers on money and data paths are findings. Category `risk`.
 17. **Logs stay free of personal data** — emails, tokens, and personal identifiers never reach log lines, telemetry payloads, or error reporters. Category `risk`.
+18. **Resources clean up and state stays bounded** — flag unbounded in-memory `Map`/`Set` collections, missing disconnect listeners on streaming responses (`res.once('close')`), dangling stream readers/intervals, and `URL.createObjectURL` without component-lifecycle revocation. Category `risk`.
 
 ## Dead code checklist
 
-18. **Every export has a consumer** — search imports/usages before flagging; a hit anywhere in the repo keeps it alive.
-19. **Every branch is reachable** — trace the callers; flag conditions no caller can satisfy.
-20. **Commented-out code is deleted** — git history remembers; the working tree stays clean.
-21. **Config references resolve** — every env var, script name, and path referenced in code exists in the environment (`package.json`, `.env.example`, configs). Flag stale references.
+19. **Every export has a consumer** — search imports/usages before flagging; a hit anywhere in the repo keeps it alive.
+20. **Every branch is reachable** — trace the callers; flag conditions no caller can satisfy.
+21. **Commented-out code is deleted** — git history remembers; the working tree stays clean.
+22. **Config references resolve** — every env var, script name, and path referenced in code exists in the environment (`package.json`, `.env.example`, configs). Flag stale references.
 
 ## Team-rule compliance checklist
 
-22. **Apply the loaded rule modules** — fetch the modules this project needs via the `CONTEXT.md` router URLs, then check every file in the slice against every rule they contain. A rule violated anywhere in the slice is a finding under category `rule`.
-23. **Configs match the baseline** — compare local lint/format configs against `configs/` of the skills repo. Drift resolves by unification, never by accommodation.
-24. **Libraries match the baseline** — a concern covered by `rules/libraries.md` uses its assigned library; substitutes are findings.
+23. **Apply the loaded rule modules** — fetch the modules this project needs via the `CONTEXT.md` router URLs, then check every file in the slice against every rule they contain. A rule violated anywhere in the slice is a finding under category `rule`.
+24. **Configs match the baseline** — compare local lint/format configs against `configs/` of the skills repo. Drift resolves by unification, never by accommodation.
+25. **Libraries match the baseline** — a concern covered by `rules/libraries.md` uses its assigned library; substitutes are findings.
 
 ## Slice-type checklists
 
 Each slice applies the entry matching its dominant type; a mixed slice applies every matching entry.
 
-25. **Frontend slices** — interactive elements carry accessible names, flows complete by keyboard, focus order follows reading order, contrast passes WCAG AA.
-26. **Prisma slices** — migrations reviewed for destructive operations, queried columns carry indexes, schema matches the deployed state.
-27. **API slices** — every route enforces authorization, every trust boundary validates input against a schema.
-28. **i18n slices** — user-facing strings come from message catalogs; literals inside components are findings.
+26. **Frontend slices** — interactive elements carry accessible names, flows complete by keyboard, focus order follows reading order, contrast passes WCAG AA, object URLs revoked on unmount.
+27. **Prisma slices** — migrations reviewed for destructive operations, queried columns carry indexes, schema matches the deployed state.
+28. **API slices** — every route enforces authorization, every trust boundary validates input against a schema, stateful maps bounded with FIFO/TTL eviction, streaming endpoints handle client disconnect.
+29. **i18n slices** — user-facing strings come from message catalogs; literals inside components are findings.

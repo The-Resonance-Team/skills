@@ -14,7 +14,7 @@ Applies to every project with file uploads (NestJS APIs + web clients). File upl
    })
    ```
 
-2. **No eager upload** — the selected `File` travels with the form submit. There is no upload endpoint to pre-upload to; a component that fires an upload on pick is building a dead round-trip. Preview via `URL.createObjectURL`, revoke on clear.
+2. **No eager upload** — the selected `File` travels with the form submit. There is no upload endpoint to pre-upload to; a component that fires an upload on pick is building a dead round-trip. Preview via `URL.createObjectURL`, revoke on clear or component unmount. Multi-file preview grids encapsulate the URL lifecycle in a child thumbnail component (`PhotoThumbnail`) so each blob URL is revoked automatically on thumbnail removal or form unmount (never allocate `URL.createObjectURL` during render).
 3. **Client pre-check mirrors the server allowlist** (type + size) for UX only — the server is the trust boundary; the client check is never the security decision.
 
 ## Server (NestJS)

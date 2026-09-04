@@ -165,3 +165,38 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 ## Modal/dialog confirm actions (mandatory)
 
 23. **Verify a shared modal/dialog library's actual click-handling order before trusting its "confirm" callback runs.** Some overlay component libraries check a declarative `close: true`-style flag on an action _before_ invoking that action's own `onClick` — a consumer that sets both `close: true` and `onClick: onConfirm` gets a button that only closes the dialog, silently, functionally identical to Cancel, for every screen using that shared wrapper. This is invisible to code review (the wiring looks correct) and to a test that only checks the dialog is dismissed (dismissal succeeds either way, confirm or cancel). When a "confirm" flow mysteriously has no effect beyond closing, read the library's actual click-handler source rather than assuming the click didn't land or the app logic is wrong.
+
+## Resource lifecycle & memory cleanup (mandatory)
+
+24. **Object URL previews must use encapsulated child components — never allocate during render.** Creating an object URL inside JSX mapping (`urlFor(file)` calling `URL.createObjectURL(file)`) is a render-phase side effect that produces duplicate URLs across re-renders and breaks in React StrictMode. Storing URLs in a parent `useRef(Map)` with array-diffing effects leaks memory when the form submits or navigates away before clearing.
+
+    Encapsulate multi-file previews in an isolated thumbnail component where `useEffect` allocates the URL and revokes it on unmount or file change:
+
+    ```tsx
+    // Good — lifecycle bound to thumbnail mounting/unmounting
+    export const PhotoThumbnail: React.FC<{
+      file: File;
+      onRemove: () => void;
+    }> = ({ file, onRemove }) => {
+      const [url, setUrl] = useState<string>('');
+
+      useEffect(() => {
+        const objectUrl = URL.createObjectURL(file);
+        setUrl(objectUrl);
+        return () => {
+          URL.revokeObjectURL(objectUrl);
+        };
+      }, [file]);
+
+      return (
+        <button type="button" onClick={onRemove}>
+          {url && <img src={url} alt={file.name} />}
+        </button>
+      );
+    };
+    ```
+
+    When a photo is removed or the parent screen unmounts, the blob URL is revoked automatically. For single-file inputs (avatar, cover image), track the active object URL and revoke the previous URL upon replacement, plus an unmount cleanup effect to revoke any pending URL when leaving the screen (precedent: XaDaoXa 2026-09 incident — camera preview leaks across report form re-renders and unmounts).
+
+25. **Long-lived streams and timers must abort on unmount.** A component consuming a streaming response (SSE assistant chat, NDJSON log feed) or background timer must register an unmount cleanup effect that calls `stop()` or triggers an `AbortController`. Without an unmount abort, in-flight fetch readers and underlying TCP sockets stay open after route transitions, continuing to process incoming chunks and updating unmounted component state (precedent: XaDaoXa 2026-09 — `useChatbot` dangling fetch reader on navigation).
+

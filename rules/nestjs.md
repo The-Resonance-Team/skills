@@ -90,3 +90,29 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 ## CSRF (mandatory)
 
 21. **csrf-csrf is the CSRF library — never csurf** — `csurf` is deprecated and unmaintained (last publish 2020). Configure once via `doubleCsrf()`: `getSecret` returns a boot-validated env secret (`CSRF_SECRET`, `getOrThrow`), `cookieName` + `cookieOptions` (`httpOnly: true, secure: true, sameSite: 'strict'`), `getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token']`. Expose `{ doubleCsrfProtection, generateCsrfToken }` through a provider; the token endpoint calls `generateCsrfToken(req, res)` (sets the cookie, returns the token), enforcement middleware runs `doubleCsrfProtection` only on cookie-authenticated requests. Clients echo the token in the `x-csrf-token` header. Caveat: tokens are HMAC-signed against the secret — rotating the secret invalidates outstanding tokens (precedent: RestoSuite 2026-08).
+
+## Memory bounds & stream lifecycle (mandatory)
+
+29. **Every in-memory cache and tracking map must have a hard bound and TTL pruning.** An unbounded `Map` (failed login tracking, rate-limiting buckets, ephemeral session/context caches) leaks memory under sustained traffic or brute-force scanning. Every stateful service map must define:
+    - a maximum entry capacity (`MAX_ENTRIES`),
+    - stale entry pruning by TTL,
+    - FIFO eviction (delete oldest key: `map.delete(map.keys().next().value)`) when capacity is reached.
+
+    ```ts
+    // Good — bounded map with FIFO eviction
+    const MAX_ENTRIES = 2_000;
+    if (this.cache.size >= MAX_ENTRIES) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey !== undefined) this.cache.delete(oldestKey);
+    }
+    this.cache.set(key, value);
+    ```
+
+    (Precedent: XaDaoXa 2026-09 — unbounded `loginFailures` and `contextCache` maps).
+
+30. **SSE/streaming endpoints must listen to client disconnect (`res.once('close')`) and stream registries must implement `OnModuleDestroy`.** A server-sent events (SSE) chunk loop that only waits for data without listening to the client socket keeps running when the client disconnects, leaking the Express response, TCP socket, and waiter closures:
+    - Attach `res.once('close', () => abortController.abort())` to exit wait loops immediately upon client abort.
+    - Pass an `AbortSignal` to stream registry waiters so listeners are unregistered if aborted before data arrives.
+    - Services holding background intervals or active streams must implement `OnModuleDestroy` to clear timers and abort open streams on shutdown.
+    (Precedent: XaDaoXa 2026-09 — hanging SSE resume sockets and waiter closures).
+
