@@ -51,29 +51,39 @@ Pin security tooling first: a secret scanner on a mutable ref (`trufflesecurity/
 
 ## VPS Deploy via Self-Hosted Runners
 
-### 3. Isolate `pnpm/action-setup` per job on shared-HOME runners
+### 3. Never use corepack to manage pnpm
 
-`pnpm/action-setup` self-installs to `~/setup-pnpm` by default. Self-hosted runners share `$HOME` across parallel jobs, and concurrent self-installers race linking bins (`ENOENT ... chmod '.../pnpm/pnpm'`, exit 1 — incident 2026-09: lint + typecheck failed while test passed on the same push). Point `dest` at the per-job temp dir. Drop when back on github-hosted runners.
-
-```yaml
-# Bad — shared dest races on parallel self-hosted jobs
-- uses: pnpm/action-setup@v4
-
-# Good — one installer per job
-- uses: pnpm/action-setup@v4
-  with:
-    run_install: false
-    dest: ${{ runner.temp }}/setup-pnpm
-```
-
-### 4. Never use corepack to manage pnpm
-
-Node removed corepack in v25 (it ships in 22/24, gone in 25/26 — verified on installer bins), so any workflow or Dockerfile that calls it breaks the day the image moves past Node 24. Even where it exists, every invocation pays shim overhead. pnpm manages its own version since v10 — use that instead, per surface:
-
-| Surface | Single version source                                                                                  |
-| ------- | ------------------------------------------------------------------------------------------------------ |
-| Dev box | `manage-package-manager-versions` (default-on: any pnpm ≥10 auto-switches to the `packageManager` pin) |
-| CI      | `pnpm/action-setup` with no version input (reads the same field)                                       |
-| Docker  | derive at build time — rules/github-vps-deploy.md §8                                                   |
+Node removed corepack in v25 (it ships in 22/24, gone in 25/26 — verified on installer bins), so any workflow or Dockerfile that calls it breaks the day the image moves past Node 24. Even where it exists, every invocation pays shim overhead.
 
 Anti-pattern: `corepack enable`, `corepack prepare`, or documenting corepack as the install path. Incident 2026-09: a repo-wide grep found zero references only because an earlier PR had removed them; anything left would have died on the Node 26 bump.
+
+### 4. Fetch the pnpm binary directly from GitHub Releases
+
+Favor a direct release-tarball fetch over `npm install -g pnpm`, a `pnpm` setup action, or `curl | sh https://get.pnpm.io/install.sh`:
+
+```yaml
+- name: Install pnpm
+  shell: bash
+  run: |
+    set -euo pipefail
+    PNPM_VERSION="$(node -p "require('./package.json').packageManager.split('@')[1]")"
+    BIN="$RUNNER_TEMP/pnpm-bin"
+    mkdir -p "$BIN"
+    curl -fsSL "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-x64.tar.gz" \
+      | tar -xz -C "$BIN" pnpm
+    chmod +x "$BIN/pnpm"
+    echo "$BIN" >> "$GITHUB_PATH"
+```
+
+Three traps, all paid for in 2026-09:
+
+- The release asset is a `.tar.gz` with `pnpm` at the top level, not a bare `pnpm-linux-x64` binary — the bare name 404s (`curl: (22)`, exit 22).
+- Extract into `$RUNNER_TEMP`, never `$HOME/.local/bin`. Self-hosted runners share `$HOME` across parallel jobs, and two tar processes collide on the same path (`chmod: cannot access '.../pnpm'`, exit 126 `Text file busy` — typecheck failed while test passed on the same push). This is the same race that makes `pnpm` setup actions take a per-job `dest`.
+- `get.pnpm.io/install.sh` is a Node ESM script — it needs Node 18+ and dies on a runner with an older system Node (`SyntaxError: Invalid or unexpected token`). The direct fetch never invokes system Node, and never touches the npm registry.
+
+In Docker the same fetch applies, but the asset must match libc and alpine has no curl — use `pnpm-linux-x64-musl.tar.gz` and busybox `wget`:
+
+```dockerfile
+RUN wget -qO- "https://github.com/pnpm/pnpm/releases/download/v$(node -p "require('./package.json').packageManager.split('@')[1]")/pnpm-linux-x64-musl.tar.gz" \
+  | tar -xz -C /usr/local/bin pnpm
+```
