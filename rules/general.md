@@ -123,4 +123,16 @@ The discipline that shipped the 47K-line ADR-0039 frontend componentization. App
 
 ## Package manager (pnpm)
 
-24. **pnpm 12, no corepack, native install** — Pin `pnpm@12.1.0` in `package.json` `packageManager`. Never use `corepack enable` or `corepack prepare`. Install with the native standalone script per `pnpm.io/installation#installing-pnpm-12`: `curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION=12.1.0 SHELL=/bin/bash bash -`. In CI (`setup-pnpm-node` composite) and Docker (`node:22-alpine` base/runner) set `ENV PNPM_HOME="/root/.local/share/pnpm"` and `ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"` before the install, and on GitHub Actions add both `$HOME/.local/share/pnpm` and `$HOME/Library/pnpm` to `GITHUB_PATH`. In `pnpm-workspace.yaml` declare `allowBuilds` for packages that need postinstall (`@node-rs/argon2`, `@prisma/client`, `@swc/core`, `sharp`, `esbuild`, `@parcel/watcher`, `unrs-resolver`) and set `strictDepBuilds: false` (or `strict-dep-builds=false` in `.npmrc`) to avoid `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` was removed in pnpm 11 — do not use it.
+24. **pnpm 12, no corepack, version from `packageManager`** — Pin `pnpm@12.3.1` in `package.json` `packageManager`. Never use `corepack enable` or `corepack prepare`. CI uses `pnpm/setup@v2` with no `version` input (reads the same field): `runtime: node@26`, `install: false`, `cache: false`, then `pnpm install --frozen-lockfile --ignore-scripts` by hand (`install: true` runs a plain install with no flags; `cache: true` re-downloads the store — slow on self-hosted runners with a persistent `$HOME/.pnpm-store`). Docker (`node:26-alpine` base/runner) derives the major at build time so nothing manual remains:
+
+```dockerfile
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
+COPY package.json ./
+RUN PNPM_MAJOR="$(node -p "require('./package.json').packageManager.split('@')[1].split('.')[0]")" \
+  curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="latest-$PNPM_MAJOR" sh -
+```
+
+In `pnpm-workspace.yaml` declare `allowBuilds` for packages that need postinstall (`@node-rs/argon2`, `@prisma/client`, `@swc/core`, `sharp`, `esbuild`, `@parcel/watcher`, `unrs-resolver`) and set `strictDepBuilds: false` (or `strict-dep-builds=false` in `.npmrc`) to avoid `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` was removed in pnpm 11 — do not use it.
+
+- **Fresh-package gate** — when a repo sets `minimumReleaseAge`, a newly published dependency install fails until it is listed in `minimumReleaseAgeExclude`. Entries are exact `name@version` or a name-only wildcard (`"@oxfmt/binding-*"`); a wildcard name pinned to a version (`"@scope/pkg-*@1.2.3"`) is rejected as invalid config (verified pnpm 12.3.1). An intentional tool swap gets the exclusion in the same PR — the pin in `package.json` is the review.
