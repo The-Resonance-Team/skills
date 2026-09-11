@@ -19,6 +19,10 @@ Client-side standards: API consumption, uploads, styling, forms. Backend-only re
 
 2. **Native multipart helpers** — Use axios `postForm`/`putForm`/`patchForm` for uploads. Do NOT write a custom `toFormData` helper: native semantics skip undefined/null/empty, repeat `File` arrays per key, and match the server serializer.
 
+26. **Real data once the API exists** — a hardcoded count, placeholder row, or label that disagrees with its endpoint is a bug, not a TODO: fix the wiring, don't file it away. Mocks/placeholders are allowed only while the endpoint does not exist yet (see `rules/general.md` rule 8, ponytail mock hooks), and must name the endpoint they will read. When UI content contradicts live API data (counts, totals, badges, headers), propose — or directly apply — the wiring fix in the same pass instead of reporting and waiting.
+
+    Proven by a real incident: sidebar badges counted over default page windows while the header showed server totals — inbox badge 49 vs 96 pending, appointments badge 50 across all dates vs today's count (XaDaoXa 2026-09).
+
 ## Styling (Tailwind v4)
 
 3. **Check utility availability** — Tailwind v4 resized/renamed utilities. `max-w-sm` no longer exists; use `max-w-[24rem]`. When unsure, check AGENTS.md or the project's Tailwind config before using a utility.
