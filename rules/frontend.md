@@ -73,6 +73,31 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 
 15. **Escape JSX special characters** — JSX text content treats `{`, `}`, `<`, `>`, `'`, and `"` as syntax. The `react/no-unescaped-entities` lint rule flags them. Always escape in visible text: `'` → `&apos;`, `"` → `&quot;`, `<` → `&lt;`, `>` → `&gt;`, `{` → `&lbrace;`, `}` → `&rbrace;`. Example: `Today&apos;s Attendance`, `Save &amp; Exit`, `A &lt; B`. Strings rendered via `{expr}` don't need escaping; the rule applies only to literal text between JSX tags.
 
+## Design-prototype animations (mandatory)
+
+27. **Port animations from the design file by script, never by eye** — a Claude Design `.dc.html` export is the token source: extract `@keyframes` bodies and count `animation:` usages programmatically (use-count tells you what is real vs dead). Copy keyframe values byte-exact into the CSS source the bundler actually reads, and verify the import chain first — a committed generated artifact nobody imports must not absorb a rebuild (precedent: regenerating an orphan `styles.css` added 530 lines of toolchain churn for zero effect; reverted). Wire each animation to the markup owning the matching surface; audit in three layers — keyframes exist, utility class exists, class is on markup — because "defined" is not "wired".
+
+    Proven by a real incident: eyeballing left `screenIn`/`cmsIn`/`pop`/`pulse-red` defined-but-unwired across two apps; scripted extraction recovered all 8 miniapp + 6 CMS animations with exact values and use-counts (XaDaoXa 2026-09).
+
+28. **A component library's native motion wins over a design keyframe** — when a surface is owned by a UI library (zmp-ui Sheet/Snackbar/Modal, sonner toasts, recharts bars), keep the library's animation. Verify value-equality first (`slideUp` ≡ `sheetUp` as translateY(100%)→0, library `fadeIn` ≡ design `fadeIn`) and document parity instead of overriding. Override only for a real delta on a property you own (precedent: `toastUp` opacity fade added to zmp-ui snackbar enter, whose end state already matched) — and never apply geometry-coupled keyframes to foreign layout: design `toastUp`'s `translate(-50%)` assumes bottom-center and breaks right-docked sonner toasts.
+
+29. **Page-enter is one keyed wrapper, not per-page classes** — replay the design's screen-enter on every route change with a single wrapper keyed by pathname, placed where the pathname is already in scope:
+
+    ```tsx
+    // miniapp route table / CMS authed shell — same pattern
+    const { pathname } = useLocation(); // or usePathname()
+    <div key={pathname} className="cms-in flex min-h-0 flex-1 flex-col">
+      {children}
+    </div>
+    ```
+
+    The key remounts the wrapper so the CSS animation restarts per navigation (40-file edits are the failure mode). Requires the existing `prefers-reduced-motion` guard to already collapse animations. Every wired animation lands with a live-QA e2e asserting computed `animation-name` — it fails before the class exists:
+
+    ```ts
+    const name = await shell.evaluate((el) => getComputedStyle(el).animationName);
+    expect(name).toContain('cmsIn');
+    ```
+
 ## Splitting a monolith (mandatory)
 
 16. **Monolith split pattern** — splitting a >300-line file follows fixed targets (proven in ADR-0039's 47K-line componentization):
