@@ -101,6 +101,24 @@ Delete each rule's entry as it hits zero, drop every ceiling to `--max-warnings 
 - **eqeqeq / no-eq-null** — `x == null` → `x === null || x === undefined`.
 - **oxc/no-barrel-file** — a separate pass (Hazard 6).
 
+## Kickoff prompt (paste into the target repo's agent)
+
+> Adopt the org Ultracite lint baseline in this repository and drive lint to zero.
+>
+> **Read first (fetch, do not guess).** `rules/linting.md` — https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md — and this workflow — https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md — plus the stack deltas that apply: `rules/nestjs.md` (decorator metadata, DI value imports, boot gate), `rules/frontend.md` (barrels, file cap), `rules/prisma.md`. Copy the org configs from that repo's root: `configs/oxfmt.config.ts`, `configs/oxlint.config.ts`.
+>
+> **Setup.** Install `ultracite` + `oxlint` + `oxfmt` as devDependencies (move them together with `npx ultracite upgrade`); copy the two configs to the repo root, no app-level copies. Add per-package `"lint": "oxlint . --max-warnings <current count>"`, root `format`/`format:check`, lint-staged (`oxlint --fix` + `oxfmt` on staged files — never `--no-verify`), and one CI lint job running the package scripts.
+>
+> **Park day.** Run `npx oxlint . --format json`; build the ledger (rule × surface) and open ONE tracking issue with it — the only place counts live. Park every pre-existing finding at `warn` in `migrationWarnings`, repeating each preset rule's options (a bare `"warn"` drops them). Set every package ceiling to its current count so CI is green and cannot regress.
+>
+> **Burn-down.** Partition by directory into slices of ~60–140 findings with disjoint file sets; one subagent per slice, 3–5 per wave. Every dispatch carries the slice paths, the workflow's fix playbook + hazards, and this contract: only your files; no repo-wide fixers (`--fix` on your paths only, review the diff, never `--fix-suggestions`); verify `oxlint <paths>` → 0 findings + typecheck + the slice's tests; suppressions are last resort with a reason; never weaken an assertion or change behavior to silence a rule; report files, suppressions, tests. After every wave YOU run the full gates — typecheck + full test suite + repo-wide count; never stack a wave on a red integration. Before a ceiling reaches 0, boot the real app (NestJS: confirm DI resolution + Swagger document generation; web: `next build`) and run the format check and e2e.
+>
+> **Un-park.** Delete a rule's entry only when it is zero findings repo-wide (every surface), drop its ceiling, update the ledger; close the issue when the last rule lands.
+>
+> **Hard rules.** Never strip explicit annotations from decorated properties or `import type` a constructor-injected dependency — both pass `tsc` and the unit suite and kill the app at boot. Never suppress what code can fix; every suppression carries `-- <reason>`. Never lower a ceiling to make CI pass. One PR per surface with the ceiling and docs in it; never commit another task's work.
+>
+> Report per tranche: findings before → after, suppressions added, tests run.
+
 ## Done when
 
 `oxlint .` is zero on every surface, every package ceiling is `--max-warnings 0`, every rule entry is deleted, and the tracking issue is closed with the final table.
