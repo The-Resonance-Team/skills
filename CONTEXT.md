@@ -24,11 +24,13 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 | `rules/dependabot.md`                  | Repos with a `.github/dependabot.yml`                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`                  |
 | `rules/audit.md`                       | Any repo under audit                                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                       |
 | `workflows/codebase-audit.md`          | Full-codebase audit with subagent slices               | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
+| `workflows/lint-burndown.md`           | Lint backlog to zero: park, ratchet, subagent waves       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md`           |
 | `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
 **Condition triggers for workflows**:
 
 - Use `workflows/codebase-audit.md` when the user asks to audit the codebase, check team-rule compliance repo-wide, find and remove AI slop and dead code across the repo, or scan for leaked secrets and risky dependencies.
+- Use `workflows/lint-burndown.md` when the user asks to adopt the Ultracite baseline, clear a lint backlog to zero, lower `--max-warnings`, or make a repo lint-clean.
 - Use `workflows/claude-design-to-nextjs.md` when:
 
 - User provides Claude Design HTML export and asks to convert to Next.js/React
