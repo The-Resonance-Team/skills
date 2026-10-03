@@ -62,6 +62,10 @@ export default defineConfig({
       },
     ],
     'max-lines': ['error', 300],
+    // `ultracite/oxlint/core` sets this to plain "error" and the nestjs preset
+    // is empty (`rules: {}`), so every `@Module({}) class X {}` fails lint
+    // without this override.
+    'typescript/no-extraneous-class': ['error', { allowWithDecorator: true }],
     // Ultracite rules whose autofix is type-unsafe (verified by `tsc --noEmit`
     // and the test suites after a repo-wide `oxlint --fix`):
     // `import type` for NestJS constructor params erases the DI metadata Nest

@@ -84,7 +84,7 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 
 ## Linting (when applicable)
 
-10. **Decorated classes** — oxlint sets `typescript/no-extraneous-class: ["warn", {"allowWithDecorator": true}]` (see `rules/linting.md`): NestJS entities, providers, and controllers are decorated classes and must not trip the rule.
+10. **Decorated classes** — the org oxlint config sets `typescript/no-extraneous-class: ["error", {"allowWithDecorator": true}]` itself, because the ultracite nestjs preset does not (see `rules/linting.md` rule 11): NestJS entities, providers, and controllers are decorated classes and must not trip the rule.
 11. **DI-injected properties use `!:`** — Constructor-less dependency injection writes `private service!: Service` (definite assignment) and keeps `strict: true`. `no-non-null-assertion` does not flag `!:` property declarations, only expression-position `x!` (verified against oxlint). Do not "fix" `!:` to `:` by disabling `strictPropertyInitialization` — that removes the compiler guarantee. No `@ts-ignore` on DI properties.
 
 ## Uploads (when applicable)
@@ -94,6 +94,7 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 ## CSRF (mandatory)
 
 21. **csrf-csrf is the CSRF library — never csurf** — `csurf` is deprecated and unmaintained (last publish 2020). Configure once via `doubleCsrf()`: `getSecret` returns a boot-validated env secret (`CSRF_SECRET`, `getOrThrow`), `cookieName` + `cookieOptions` (`httpOnly: true, secure: true, sameSite: 'strict'`), `getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token']`. Expose `{ doubleCsrfProtection, generateCsrfToken }` through a provider; the token endpoint calls `generateCsrfToken(req, res)` (sets the cookie, returns the token), enforcement middleware runs `doubleCsrfProtection` only on cookie-authenticated requests. Clients echo the token in the `x-csrf-token` header. Caveat: tokens are HMAC-signed against the secret — rotating the secret invalidates outstanding tokens (precedent: RestoSuite 2026-08).
+    - **Scope: the boundary where the cookie rides — not a cookie-less API.** `csrf-csrf` applies to a Nest app that *itself* authenticates the browser by cookie. When the browser talks only to a BFF (Next route handlers) and the Nest API is server-to-server with header auth (`x-api-key` + `Authorization: Bearer`), the API has no cookie to forge, so enforcement there matches nothing. Put an `Origin` allowlist check in the BFF's request hook instead (Next 16: `src/proxy.js` — `middleware.js` was renamed and is ignored), fail closed on an empty allowlist, and keep no CSRF layer in the API. Do not port an API-side `Origin` check either: the BFF does not forward `Origin`, so it is a no-op that reads as a defence (precedent: VibeHost 2026-10, ADR 0018 — `verifyCsrf` on 52 mounts enforced nothing; only `SameSite=Lax` stood between a sibling subdomain and every mutation).
 
 ## Memory bounds & stream lifecycle (mandatory)
 
