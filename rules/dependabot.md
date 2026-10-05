@@ -6,22 +6,34 @@ Rules for keeping every version source in a repo under Dependabot automation. Sc
 
 ### 1. One ecosystem entry per version source in the repo
 
-List every place a version is declared, and give each one an entry in `dependabot.yml`. A typical TS monorepo needs all three:
+List every place a version is declared, and give each one an entry in `dependabot.yml`. The ecosystem for `package.json` follows the lockfile, and for images it follows the file format:
 
-| Version source                      | Ecosystem        |
-| ----------------------------------- | ---------------- |
-| `package.json` dependencies         | `npm`            |
-| `.github/workflows/*` action refs   | `github-actions` |
-| `FROM <image>:<tag>` in Dockerfiles | `docker`         |
+| Version source                      | Ecosystem         | Condition                                  |
+| ----------------------------------- | ----------------- | ------------------------------------------ |
+| `package.json` dependencies         | `bun`             | repo has `bun.lock`                        |
+| `package.json` dependencies         | `npm`             | repo has `package-lock.json` or `yarn.lock` |
+| `package.json` dependencies         | `pnpm`            | repo has `pnpm-lock.yaml`                  |
+| `.github/workflows/*` action refs   | `github-actions`  | always                                     |
+| `FROM <image>:<tag>` in Dockerfiles | `docker`          | Dockerfile or Kubernetes YAML exists       |
+| `image:` in `docker-compose.yml`    | `docker-compose`  | compose file exists                        |
 
 Anti-pattern: an `npm`-only config. The `npm` ecosystem does **not** touch the `packageManager` field, and it never reads `RUN npm i -g <tool>@<ver>` lines. The result is CI on the new version while Docker images and the local toolchain build on the old one — drift nobody sees until a lockfile refuses to install.
+
+### 1a. The wrong ecosystem aborts the whole job, it does not degrade
+
+Two mismatches abort with `dependency_file_not_found` / a misconfiguration error, and the run is marked **failed** rather than skipped:
+
+- **`npm` against a `bun.lock` repo.** Dependabot names the fix: `Set package-ecosystem: "bun"`. The `npm_and_yarn` ecosystem cannot read `bun.lock` at all (incident 2026-10: VibeHost).
+- **`docker` against a compose-only repo.** The `docker` ecosystem reads only `Dockerfile` and Kubernetes YAML; it never looks at `docker-compose.yml` (same incident).
+
+Pick the ecosystem from the file that actually exists in the repo, then read the Dependabot run before assuming the entry is inert. A green-looking config can still be a failed job.
 
 ### 2. The package manager binary is manual — no ecosystem covers it
 
 There is no `package-manager-versions` ecosystem value (Dependabot rejects it — incident 2026-09: the team baseline shipped it and the config validator failed the PR). Bumping the binary means, by hand, in one PR:
 
-- the `packageManager` field in `package.json` plus `pnpm install --lockfile-only` for the lockfile block;
-- `RUN npm i -g pnpm@<ver>` lines inside Dockerfiles — or better, derive pnpm from `package.json` at build time so nothing manual remains (rules/github-vps-deploy.md §8);
+- the `packageManager` field in `package.json` plus a lockfile-only install (`pnpm install --lockfile-only`, or `bun install`) for the lockfile block;
+- Docker `RUN` lines that derive pnpm from `package.json` at build time so nothing manual remains (rules/general.md §24: `PNPM_MAJOR` + `latest-$PNPM_MAJOR`), never `RUN npm i -g pnpm@<ver>`;
 - `engines` / `devEngines` runtime fields if the bump changes the required runtime;
 - the developer's locally installed toolchain — outside the repo, say so in the PR body.
 
