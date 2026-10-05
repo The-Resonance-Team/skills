@@ -4,7 +4,9 @@
 version: 2
 
 updates:
-  # package.json dependencies
+  # package.json dependencies. `npm` is correct for a pnpm repo. A repo with a
+  # bun.lock needs `bun` here, not `npm`: npm_and_yarn cannot read bun.lock and
+  # aborts the job. See rules/dependabot.md section 1a.
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
@@ -47,6 +49,8 @@ updates:
 
   # FROM image tags in Dockerfiles — list every directory holding one
   # (a file glob is NOT valid here; use plain directory paths).
+  # A repo with ONLY a docker-compose.yml needs `docker-compose` here instead;
+  # `docker` never reads compose files and fails with dependency_file_not_found.
   - package-ecosystem: 'docker'
     directories:
       - '/apps/api'
