@@ -6,7 +6,6 @@ Rules for deploying from self-hosted runners to a VPS over SSH, and for deriving
 
 ### 1. Never curl files from GitHub API inside SSH sessions
 
-
 `curl` to `api.github.com/repos/.../contents/...` inside an SSH session on a self-hosted runner fails with `curl: (23) Failure writing output to destination`. The `GHCR_TOKEN` (PAT with `read:packages` scope) can authenticate to the API, but the write fails intermittently across different runner instances.
 
 **Fix**: Use `appleboy/scp-action` to SCP files from the runner (which already has the repo via `actions/checkout`) to the VPS. Files exist locally after checkout — no API download needed.
@@ -31,7 +30,6 @@ Rules for deploying from self-hosted runners to a VPS over SSH, and for deriving
 
 ### 2. Health checks: use `127.0.0.1`, not `localhost`
 
-
 `localhost` may resolve to IPv6 `::1` first on some systems, while Docker port bindings use `127.0.0.1` (IPv4 only). This causes health check failures even when the service is running.
 
 ```bash
@@ -43,7 +41,6 @@ curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3401/v1/health"
 ```
 
 ### 3. Always re-download deploy scripts in rollback
-
 
 The `if [ ! -x /tmp/rollback.sh ]` guard reuses stale scripts from previous runs. A rollback needs the latest script version.
 
@@ -63,7 +60,6 @@ The `if [ ! -x /tmp/rollback.sh ]` guard reuses stale scripts from previous runs
 ```
 
 ### 4. Pass all required env vars to deploy scripts
-
 
 `appleboy/ssh-action` does not inherit workflow env vars. Every variable the deploy script reads must be explicitly passed:
 
@@ -88,7 +84,6 @@ The `if [ ! -x /tmp/rollback.sh ]` guard reuses stale scripts from previous runs
 
 ### 5. Pre-deploy: free disk space before writing files
 
-
 Docker images and build cache can fill the disk. Run `docker system prune` before downloading or writing deploy files:
 
 ```yaml
@@ -98,7 +93,6 @@ script: |
 ```
 
 ### 6. Authenticate docker-pulling actions on self-hosted runners
-
 
 A third-party action that `docker run`s its own image (e.g. `trufflesecurity/trufflehog@main` pulling `ghcr.io/trufflesecurity/trufflehog`) pulls anonymously by default. GitHub-hosted runners get a fresh pooled IP per job and rarely hit registry rate limits; a self-hosted runner shares one IP across every job in the repo, so anonymous pulls hit the registry's per-IP limit and fail with a bare `denied` — not a rate-limit message, just a pull denial that looks like a real problem with the action.
 
@@ -120,7 +114,6 @@ A third-party action that `docker run`s its own image (e.g. `trufflesecurity/tru
 
 ### 7. `continue-on-error` hides failures
 
-
 When using `appleboy/ssh-action` with `continue-on-error: true`, the step shows as passed even when the SSH command fails. Use `steps.<id>.outcome` (not `conclusion`) in downstream `if` conditions to detect actual failures:
 
 ```yaml
@@ -137,7 +130,6 @@ When using `appleboy/ssh-action` with `continue-on-error: true`, the step shows 
 ```
 
 ### 8. Derive tool versions from the repo, never hardcode them in workflows
-
 
 A version literal in a workflow is a version source Dependabot cannot see (dependabot.md §1: every source needs an entry, and workflow-inline tool versions have none). Read it from the manifest that owns it and pass it through.
 
@@ -159,3 +151,33 @@ sh -c "npm install -g dotenv prisma@7.9.1 && ..."
     script: |
       sh -c "npm install -g dotenv prisma@$PRISMA_VER && ..."
 ```
+
+### 9. Node + pnpm Dockerfile shape: stages, one pnpm install, owned copies
+
+Multi-stage `node:26-alpine` images follow one shape: manifests first so the deps layer survives source edits, pnpm installed once in `base` from the `packageManager` major (rules/general.md §24), runner reuses the binary instead of downloading again. Every `COPY --from=` carries `--chown` to the runtime user — a root-owned file under a non-root `USER` breaks writes and fails consistency checks.
+
+```dockerfile
+# Good — install once, reuse everywhere
+FROM node:26-alpine AS base
+RUN apk add --no-cache libc6-compat curl
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
+COPY package.json ./
+RUN PNPM_MAJOR="$(node -p "require('./package.json').packageManager.split('@')[1].split('.')[0]")" \
+  curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="latest-$PNPM_MAJOR" sh -
+
+FROM node:26-alpine AS runner
+RUN apk add --no-cache curl
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
+# ponytail: reuse pnpm from base — same packageManager major, no second download.
+COPY --from=base /root/.local/share/pnpm /root/.local/share/pnpm
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
+USER nestjs
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://127.0.0.1:6200/health || exit 1
+CMD ["node", "dist/main.js"]
+```
+
+Anti-patterns: `bash` in `apk add` when the installer runs under `sh -`; a second `curl ... install.sh` in the runner stage; `COPY --from=` without `--chown` next to copies that have it; secrets via `ARG` instead of `--mount=type=secret`; healthchecks against `localhost` (resolves to IPv6 `::1` first on some hosts — see §2, use `127.0.0.1`); shell-form `CMD` instead of exec-form `["node", ...]`.

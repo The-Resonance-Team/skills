@@ -13,14 +13,14 @@ Or globally — instruction plus a reference to this repo:
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
-    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md"
+    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md",
   ],
   "references": {
     "skills": {
       "repository": "The-Resonance-Team/skills",
-      "description": "Use for rule modules, configs, and the README of the rules repo"
-    }
-  }
+      "description": "Use for rule modules, configs, and the README of the rules repo",
+    },
+  },
 }
 ```
 
@@ -40,7 +40,7 @@ Rule of thumb: small + always-needed → instructions; big + sometimes-needed �
 
 The module index lives in [`CONTEXT.md`](./CONTEXT.md) — the same file consumers fetch, so it can never drift from what agents actually see. Do not duplicate the table here.
 
-Machine-readable tool configs (Prettier, Oxlint, ESLint-for-Next.js) ship in [`configs/`](./configs/) and are copied into consumer repos per `rules/linting.md`.
+Machine-readable tool configs (Oxfmt, Oxlint, ESLint-for-Next.js) ship in [`configs/`](./configs/) and are copied into consumer repos per `rules/linting.md`.
 
 Agent-facing skills (progressive-disclosure packs with `SKILL.md`) live in [`skills/`](./skills/); long procedures live in [`workflows/`](./workflows/).
 

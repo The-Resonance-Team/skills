@@ -4,33 +4,33 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 
 ## Rule modules
 
-| Module                                 | Scope                                                  | Fetch URL                                                                                               |
-| -------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `rules/general.md`                     | All projects                                           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md`                     |
-| `rules/nestjs.md`                      | NestJS API                                             | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`                      |
-| `rules/prisma.md`                      | TS/NestJS repos on Prisma 7                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`                      |
-| `rules/frontend.md`                    | Web/portal/miniapp                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`                    |
-| `rules/i18n.md`                        | Projects with i18n (message catalogs, multi-locale UI) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                        |
-| `rules/e2e-testing.md`                 | Repos with Playwright e2e tests against a real API     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`                 |
-| `rules/linting.md`                     | All TS/JS projects                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`                     |
-| `rules/libraries.md`                   | All TS/JS projects                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`                   |
-| `rules/upload.md`                      | APIs with uploads                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
-| `rules/issues.md`                      | Repos with a GitHub issue tracker                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`                      |
-| `rules/github-ci.md`                  | Repos running CI on GitHub Actions                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-ci.md`                  |
-| `rules/github-releases.md`             | Repos cutting releases or keeping release branches        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-releases.md`            |
-| `rules/github-vps-deploy.md`           | Self-hosted runners deploying to a VPS                    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-vps-deploy.md`          |
-| `rules/github-pr-automation.md`        | Repos with PR automation (commands, labels, title checks) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-pr-automation.md`       |
-| `rules/github-supply-chain.md`         | Actions + registries (scanning, pinning, toolchain)       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-supply-chain.md`        |
-| `rules/dependabot.md`                  | Repos with a `.github/dependabot.yml`                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`                  |
-| `rules/audit.md`                       | Any repo under audit                                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                       |
-| `workflows/codebase-audit.md`          | Full-codebase audit with subagent slices               | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
+| Module                                 | Scope                                                     | Fetch URL                                                                                               |
+| -------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `rules/general.md`                     | All projects                                              | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md`                     |
+| `rules/nestjs.md`                      | NestJS API                                                | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`                      |
+| `rules/prisma.md`                      | TS/NestJS repos on Prisma 7                               | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`                      |
+| `rules/frontend.md`                    | Web/portal/miniapp                                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`                    |
+| `rules/i18n.md`                        | Projects with i18n (message catalogs, multi-locale UI)    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                        |
+| `rules/e2e-testing.md`                 | Repos with Playwright e2e tests against a real API        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`                 |
+| `rules/linting.md`                     | All TS/JS projects                                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`                     |
+| `rules/libraries.md`                   | All TS/JS projects                                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`                   |
+| `rules/upload.md`                      | APIs with uploads                                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
+| `rules/issues.md`                      | Repos with a GitHub issue tracker                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`                      |
+| `rules/github-ci.md`                   | Repos running CI on GitHub Actions                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-ci.md`                   |
+| `rules/github-releases.md`             | Repos cutting releases or keeping release branches        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-releases.md`             |
+| `rules/github-vps-deploy.md`           | Self-hosted runners deploying to a VPS                    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-vps-deploy.md`           |
+| `rules/github-pr-automation.md`        | Repos with PR automation (commands, labels, title checks) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-pr-automation.md`        |
+| `rules/github-supply-chain.md`         | Actions + registries (scanning, pinning, toolchain)       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-supply-chain.md`         |
+| `rules/dependabot.md`                  | Repos with a `.github/dependabot.yml`                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`                  |
+| `rules/audit.md`                       | Any repo under audit                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                       |
+| `workflows/codebase-audit.md`          | Full-codebase audit with subagent slices                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
 | `workflows/lint-burndown.md`           | Lint backlog to zero: park, ratchet, subagent waves       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md`           |
-| `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
+| `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
 **Condition triggers for workflows**:
 
 - Use `workflows/codebase-audit.md` when the user asks to audit the codebase, check team-rule compliance repo-wide, find and remove AI slop and dead code across the repo, or scan for leaked secrets and risky dependencies.
-- Use `workflows/lint-burndown.md` when the user asks to adopt the Ultracite baseline, clear a lint backlog to zero, lower `--max-warnings`, or make a repo lint-clean.
+- Use `workflows/lint-burndown.md` when the user asks to adopt a strict lint preset, clear a lint backlog to zero, lower `--max-warnings`, or make a repo lint-clean.
 - Use `workflows/claude-design-to-nextjs.md` when:
 
 - User provides Claude Design HTML export and asks to convert to Next.js/React
@@ -48,7 +48,7 @@ Consumers add **only this file** to `opencode.json` `instructions`. It is the ro
 - Chrome DevTools MCP — visual verification, pixel-perfect comparison
 - PostHog MCP — analytics integration, user behavior tracking (optional)
 
-Machine-readable tool configs ship in `configs/` of the same repo (`oxlint.config.ts`, `oxfmt.config.ts`, `eslint.config.mjs`, `dependabot.yml`).
+Machine-readable tool configs ship in `configs/` of the same repo (`.oxfmtrc.json`, `eslint.config.mjs`, `dependabot.yml`).
 
 ## Language rules (all consumers)
 
@@ -61,8 +61,8 @@ Machine-readable tool configs ship in `configs/` of the same repo (`oxlint.confi
 - **Consumer** — a repo that lists one of our rule files in its `opencode.json` `instructions` array.
 - **Instruction** — a single URL entry in a consumer's `instructions` array.
 - **Lint baseline** — the standard tool+rule configuration for the org, encoded in `rules/linting.md`. One accepted configuration; alternatives are not accommodated.
-- **Tool config** — a machine-readable config file shipped in `configs/` (`oxlint.config.ts`, `oxfmt.config.ts`, `eslint.config.mjs`) that a consumer copies into its own repo.
-- **Config drift** — a config inside a consumer repo that contradicts the lint baseline (e.g. a stale app-level formatter config). Resolution is unification, not accommodation.
+- **Tool config** — a machine-readable config file shipped in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `eslint.config.mjs`) that a consumer copies into its own repo.
+- **Config drift** — a config inside a consumer repo that contradicts the lint baseline (e.g. a stale app-level `.oxfmtrc.json`). Resolution is unification, not accommodation.
 - **Library baseline** — the fixed library-per-concern table in `rules/libraries.md`, chosen by framework. A substitute library for a covered concern is a violation.
 - **Inline multipart upload** — the upload model in `rules/upload.md`: files ride `multipart/form-data` on authenticated business endpoints; the `mediaUpload` interceptor validates and stores, injecting public URLs into `req.body` before DTO validation. Anti-pattern: a dedicated presign-then-PUT upload service.
 - **Media lifecycle** — create/replace/delete of stored media in `rules/upload.md`; replaces persist new URLs first, then fire-and-forget `deleteDropped` (a failed GC never fails the update); orphaned objects from failed mid-update writes are accepted until a GC job exists.
