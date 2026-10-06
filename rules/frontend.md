@@ -229,3 +229,13 @@ Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tans
 
 25. **Long-lived streams and timers must abort on unmount.** A component consuming a streaming response (SSE assistant chat, NDJSON log feed) or background timer must register an unmount cleanup effect that calls `stop()` or triggers an `AbortController`. Without an unmount abort, in-flight fetch readers and underlying TCP sockets stay open after route transitions, continuing to process incoming chunks and updating unmounted component state (precedent: XaDaoXa 2026-09 — `useChatbot` dangling fetch reader on navigation).
 
+
+## Design-port verification (mandatory)
+
+30. **Scripted source edits must assert they changed something.** A find-and-replace whose old string no longer matches (a formatter reordered classes between the read and the write) succeeds silently and prints nothing, and a follow-up "patched" log turns the no-op into a reported done. Every scripted edit ends with an assertion that the file differs — or use an edit operation that fails loudly on no match (precedent: VibeHost 2026-10 — three production builds spent verifying fixes that were never applied).
+
+31. **Verify paint, not class names.** A `data-[x=true]:bg-transparent` sitting next to a gradient, a `w-full` beside `[width:var(--w)]`, an unregistered color utility — all read correctly in source and render nothing (or everything). After any state-driven visual change, read the computed style from a live page (background-image, width, color) rather than trusting the class list. The repo's `lint:landing` guardrail automates the three known shapes; the discipline covers the fourth (precedent: VibeHost 2026-10 — unit tests asserted numbers the markup threw away).
+
+32. **A design that ships JavaScript ships its spec in two files.** Motion, timers, auto-advance sequences and computed display values live in the design's scripts, not its markup — grepping the HTML alone concludes features don't exist that the script implements (precedent: VibeHost 2026-10 — "no scroll-in" verdict missed the 15KB motion layer beside the HTML).
+
+33. **Verify both locales' rendered text, in both directions.** Structure checks pass while an entire language leaks: the FAQ accordion was correct with Vietnamese answers on the English page. After any i18n change, scan the built page's text for the other language's function words (not source grep — the catalogue can hold keys nothing renders), Vietnamese-guild-names-type content excepted.
