@@ -6,7 +6,7 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 
 | Concern            | Web/React (portal, web, mobile-rn)                                                    | NestJS (apps/api)                                                                                       |
 | ------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| HTTP client        | `axios`                                                                               | `axios`                                                                                                 |
+| HTTP client        | `axios`                                                                               | `@nestjs/http-client` (`rules/nestjs.md` rule 31)                                                       |
 | Runtime validation | `zod`                                                                                 | `class-validator` + `class-transformer`                                                                 |
 | Forms              | `react-hook-form`                                                                     | —                                                                                                       |
 | Server state       | `@tanstack/react-query`                                                               | —                                                                                                       |
@@ -34,7 +34,7 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 
 ## Rules
 
-1. **axios is the only HTTP client** — no `fetch`-wrapper hand-rolls, no got/ky/undici. Generic type parameter + interceptor unwrapping per `rules/general.md`; `postForm`/`putForm`/`patchForm` for uploads. Sole exception: SSE/streaming endpoints, where fetch is required (rules/frontend.md rule 5).
+1. **One HTTP client per framework — `axios` for web, `@nestjs/http-client` for NestJS** — no `fetch`-wrapper hand-rolls, no got/ky/undici, no `@nestjs/axios`, no raw `axios` in NestJS. Web/React: `axios` with generic type parameter + interceptor unwrapping per `rules/general.md`; `postForm`/`putForm`/`patchForm` for uploads. NestJS: `HttpClient` per `rules/nestjs.md` rule 31. Sole exception: SSE/streaming endpoints, where fetch is required (rules/frontend.md rule 5).
 2. **zod is the only runtime validation for web clients** — forms, API-client input, config parsing. No yup/joi/io-ts. `z.infer` derives the shared type; the schema is the source of truth, never a hand-maintained duplicate interface.
 3. **react-hook-form is the only form library** — with `zodResolver`, so the RHF schema and the zod schema are one. No formik, no react-final-form, no hand-rolled `useState` form state.
 4. **@tanstack/react-query is the only server-state library** — data fetching, caching, and invalidation go through queries/mutations. No SWR, no RTK Query, no `useEffect` + `fetch` + manual `setState` caching. Infinite scroll and paged lists use `useInfiniteQuery` with an `IntersectionObserver` sentinel — no `react-infinite-scroll-component`, no `react-infinite-scroll-hook`; a second library for pagination state duplicates a concern this rule already owns.

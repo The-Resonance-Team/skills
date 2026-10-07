@@ -68,7 +68,7 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 
 ## NestJS 12 baseline (mandatory)
 
-26. **Every `@nestjs/*` package installs at the latest version — all or nothing, never a partial set** — v12 unified versioning: `core`/`common`/`platform-express` and the satellite packages (`axios`, `config`, `schedule`, `swagger`, `jwt`, `passport`, `testing`, `cli`, `schematics`) all ship as one major (12.x). When a new major lands, bump the **entire** `@nestjs/*` set to the current latest in one change — a mixed set (11.x core with 12.x satellite, or 12.0 with 11.8) will not typecheck. Do not pin a `@nestjs/*` package to an older minor "for stability"; the floor, not a pin, is the stable point. Node floor is 20.19+/22.12+; core packages ship ESM and CJS apps keep working via `require(esm)` — no code rewrite required (precedent: XaDaoXa 2026-08, Nest 11→12, PR #226).
+26. **Every `@nestjs/*` package installs at the latest version — all or nothing, never a partial set** — v12 unified versioning: `core`/`common`/`platform-express` and the satellite packages (`config`, `schedule`, `swagger`, `jwt`, `passport`, `testing`, `cli`, `schematics`) all ship as one major (12.x). `@nestjs/axios` is banned per rule 31, not part of this set. When a new major lands, bump the **entire** `@nestjs/*` set to the current latest in one change — a mixed set (11.x core with 12.x satellite, or 12.0 with 11.8) will not typecheck. Do not pin a `@nestjs/*` package to an older minor "for stability"; the floor, not a pin, is the stable point. Node floor is 20.19+/22.12+; core packages ship ESM and CJS apps keep working via `require(esm)` — no code rewrite required (precedent: XaDaoXa 2026-08, Nest 11→12, PR #226).
 27. **`forRootAsync` options must carry `imports`/`providers` even when empty** — v12 tightened the async module option types: `ThrottlerModule.forRootAsync({...})`, `LoggerModule.forRootAsync({...})`, etc. fail typecheck without the `imports`/`providers` metadata fields, despite the fields reading as optional in the d.ts. Write the fields explicitly (`imports: []`, `providers: []`) in every new async module registration.
 28. **Keep the class-validator DTO flow; Standard Schema is opt-in** — v12 adds an optional `schema` option on `@Body()`/`@Query()`/`@Param()` (Zod/Valibot/ArkType) with `StandardSchemaValidationPipe`. Rule 1 (class-validator DTO class per handler) stays mandatory — do not replace the established flow per-module. The new `nest upgrade` CLI does the mechanical v12 migration (nest-cli.json webpack options, GraphQL playground→graphiql rename, NATS package swap, `@nestjs/config` validation options, Jest/Joi bumps) but does not migrate ESM/Vitest/oxlint — run those deliberately.
 
@@ -89,6 +89,33 @@ This module encodes the NestJS coding standards: DTO validation, folder layout, 
 
 21. **csrf-csrf is the CSRF library — never csurf** — `csurf` is deprecated and unmaintained (last publish 2020). Configure once via `doubleCsrf()`: `getSecret` returns a boot-validated env secret (`CSRF_SECRET`, `getOrThrow`), `cookieName` + `cookieOptions` (`httpOnly: true, secure: true, sameSite: 'strict'`), `getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token']`. Expose `{ doubleCsrfProtection, generateCsrfToken }` through a provider; the token endpoint calls `generateCsrfToken(req, res)` (sets the cookie, returns the token), enforcement middleware runs `doubleCsrfProtection` only on cookie-authenticated requests. Clients echo the token in the `x-csrf-token` header. Caveat: tokens are HMAC-signed against the secret — rotating the secret invalidates outstanding tokens (precedent: RestoSuite 2026-08).
     - **Scope: the boundary where the cookie rides — not a cookie-less API.** `csrf-csrf` applies to a Nest app that *itself* authenticates the browser by cookie. When the browser talks only to a BFF (Next route handlers) and the Nest API is server-to-server with header auth (`x-api-key` + `Authorization: Bearer`), the API has no cookie to forge, so enforcement there matches nothing. Put an `Origin` allowlist check in the BFF's request hook instead (Next 16: `src/proxy.js` — `middleware.js` was renamed and is ignored), fail closed on an empty allowlist, and keep no CSRF layer in the API. Do not port an API-side `Origin` check either: the BFF does not forward `Origin`, so it is a no-op that reads as a defence (precedent: VibeHost 2026-10, ADR 0018 — `verifyCsrf` on 52 mounts enforced nothing; only `SameSite=Lax` stood between a sibling subdomain and every mutation).
+
+## HTTP client (mandatory)
+
+31. **`@nestjs/http-client` is the HTTP client — never `axios`, `@nestjs/axios`, or raw `fetch`** — `fetch`-based, zero deps, Promise API (not Observable like the old `@nestjs/axios` `HttpService`). `HttpResponse<T>` carries `{ status, headers, data, url, request }`; `T` is the parsed JSON body, nothing validates it at runtime.
+    - **Module**: `forRoot()` once in `AppModule` for defaults; `register({ name, baseUrl })` per upstream in its owning module. `retry: false` preserves single-attempt `axios` behavior — the client default retries idempotent methods 3x. Inject as `HttpClient` (default) or `@InjectHttpClient(name)`.
+    ```ts
+    HttpClientModule.forRoot({ retry: false, timeout: 10_000 });
+    HttpClientModule.register({ baseUrl: "https://discord.com/api", name: "discord", retry: false, timeout: 10_000 });
+    constructor(@InjectHttpClient("discord") private readonly http: HttpClient) {}
+    const { data } = await this.http.get<User>("/users/@me", { headers: { Authorization: `Bearer ${token}` } });
+    const { data } = await this.http.post<Token>("/oauth2/token", { body: params.toString(), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+    const { data } = await this.http.post<Created>("/users", { json: { email } });
+    const { data } = await this.http.get<List>("/users", { query: { "filter[email]": email } });
+    ```
+    - **Bodies**: `json` stringifies + sets `content-type: application/json`; `body` passes raw (`string`, `URLSearchParams.toString()`, stream). Never pass both. `query` repeats array keys, skips `null`/`undefined`; `params` fills `/:name` segments.
+    - **Errors**: `HttpResponseError` (non-2xx, has `status`/`body`) maps to upstream-denied with that status; `HttpNetworkError`/`HttpTimeoutError` map to unavailable; all else maps to unavailable/unknown. Never branch on `error.response` (`axios` shape) — use `instanceof`.
+    ```ts
+    if (error instanceof HttpResponseError) throw new AppError("DENIED", { status: error.status });
+    throw new AppError("UNAVAILABLE");
+    ```
+    - **Tests**: stub `fetch` per client or override the provider — never `vi.mock("axios")`.
+    ```ts
+    HttpClientModule.register({ baseUrl, fetch: stubFetch, name: "github" });
+    // or
+    .overrideProvider(getHttpClientToken("github")).useValue({ get: async () => ({ data }) })
+    ```
+    (Precedent: VibeHost 2026-10 — raw `axios` in `discord.service`/`ptero-app.client` migrated; `axios` removed from `apps/api`. `@nestjs/http-client@0.0.1` is exempt from rule 26 all-or-nothing 12.x — it versions alone, peer `^11 || ^12`.)
 
 ## Memory bounds & stream lifecycle (mandatory)
 

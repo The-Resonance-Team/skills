@@ -12,7 +12,7 @@ Applies to every project in the organization. Include this file in `opencode.jso
 2. **CONTEXT.md is the glossary** — Always read `CONTEXT.md` files and use their ubiquitous language. When a term conflicts with the glossary, call it out immediately.
 3. **Vietnamese diacritics** — Always use correct thanh điệu (diacritics) in Vietnamese content. Verify before commit.
 
-## API clients (axios)
+## API clients (axios, web/React only — NestJS uses `rules/nestjs.md` rule 31)
 
 4. **Generic type parameter, never manual unwrap** — Use the axios generic type parameter to declare response types:
 
