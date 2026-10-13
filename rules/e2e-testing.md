@@ -4,7 +4,7 @@ Applies to any repo running Playwright (or similar) e2e tests against a real bac
 
 ## Scope
 
-Locator precision, correlating live-fetched entities with rendered UI, environment/infra setup that blocks a suite from running at all, coverage-manifest design, parallel-worker isolation, and how to document a real bug found mid-suite without turning CI red.
+Locator precision, correlating live-fetched entities with rendered UI, environment/infra setup that blocks a suite from running at all, coverage-manifest design, parallel-worker isolation, copy-dependent assertions that break on i18n rewrites, and how to document a real bug found mid-suite without turning CI red.
 
 ## Locators (mandatory)
 
@@ -101,3 +101,9 @@ A script that claims "route/endpoint X is tested" by checking whether a literal 
 
 15. **`beforeAll` runs once per worker, and `fullyParallel` scatters one `describe` block's tests across workers by default.** Any spec file with more than the simple one-test-per-describe pattern — several tests sharing fixtures a `beforeAll` sets up once, meant to run in sequence — needs `test.describe.configure({ mode: "serial" })`, or the tests race each other against not-yet-ready fixtures on different workers.
 16. **A failure that disappears under `--workers=1` is shared-DB parallel contention, not a bug.** Confirm with an isolation rerun (same file or same test, `--workers=1`, a fresh/known-good server) before spending time "fixing" the assertion; once confirmed, document it and stop chasing it further. **A failure that still reproduces in isolation is real** — fix it even if it lives in a test helper rather than app code; a red suite fails the acceptance bar regardless of which side of the test/app boundary the bug is on.
+
+## Copy-dependent assertions (mandatory)
+
+17. **A spec that asserts a literal UI string inherits every future copy rename** — the assertion breaks the commit that changes the message value, not a commit that changes behavior. Locate by role/testid where the app exposes one; where the string itself is what's under test (copy IS the feature), keep the literal but make the copy change own the follow-up: grep the spec corpus for every renamed value in the same change and update the assertions there (`rules/i18n.md` rule 14's sweep covers `messages/`; extend it over `**/*.spec.ts` too).
+
+   Proven by a real incident: a catalog copy rewrite (renames like "Trainer nổi bật" → "HLV nổi bật") shipped clean — then the e2e suite went red on three specs still asserting the old strings, costing a separate follow-up commit to locate and repoint each assertion.
