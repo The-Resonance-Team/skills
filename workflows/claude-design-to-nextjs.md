@@ -11,6 +11,7 @@ Read the Claude Design HTML export. Extract:
 - **Layouts** — page structure, spacing, responsive behavior
 - **Interactions** — click handlers, state transitions, navigation
 - **Data shapes** — what fields appear, what's required, what's optional
+- **Incremental v2 drops** — when a revised design archive (`.zip`) arrives mid-flight, extract it to a sibling directory and run `diff -rq <old_dir> <new_dir>` first to isolate which `.dc.html`, `tokens.css`, or `data.js` files actually changed (`diff -u <old_file> <new_file>`) instead of re-reading unchanged screens.
 
 **Tools**: Chrome DevTools MCP to open design HTML, `take_snapshot()` to inspect structure.
 
@@ -46,8 +47,10 @@ Test edge cases:
 Apply team rules:
 - **Ponytail pattern** — mock data with `// ponytail:` comment + upgrade path
 - **Component library** — use what the design or user specifies; if neither specifies, default to **shadcn/ui** as the reference standard
+- **Tailwind v4 cascade layers & `@source`** — never copy unlayered `* { margin: 0; padding: 0; }` resets or custom classes from `.dc.html` / `tokens.css` into a Tailwind v4 app (`@import "tailwindcss"`), because unlayered rules override all `@layer utilities` (`p-*`, `px-*`, `py-*`, `m-*`, `mx-auto`). Wrap element resets in `@layer base`, wrap custom classes in `@layer components`, and add `@source "../";` (plus `@source` paths for shared UI packages) in `apps/*/src/app/globals.css`.
+- **250-line post-`oxfmt` file budget** — `oxfmt` expands single-line JSX props, object literals, and multi-element array destructuring by 1.4×–2.5×. Author each view, modal, and data file under ~250 lines and always run `oxfmt <paths>` *before* `oxlint --max-warnings=0 <paths>` (`max-lines: 300`).
 - **JSX escaping** — `&apos;`, `&quot;`, `&lt;`, `&gt;` in text content
-- **Barrel imports** — folder with ≥2 files gets `index.ts`
+- **Module boundaries** — folder with ≥2 files gets `index.ts` in barrel-based repos; in deep-module repos (`oxc/no-barrel-file` + `.dependency-cruiser.cjs`), forbid `export *` barrels and import workspace packages only via `package.json#exports` entry points.
 - **DTOs intact** — pass through controller → service seam
 - **date-fns** — all time processing, never raw `Date` arithmetic
 
@@ -145,23 +148,28 @@ Report per file/hunk. Cite rule or spec line.
 ```
 1. navigate_page(url) → open page
 2. take_snapshot() → get a11y tree with uids
-3. take_screenshot() → visual comparison
-4. Click elements → verify interactions work
-5. Fill forms → verify validation
-6. Resize viewport → verify responsive behavior
-7. Repeat until pixel-perfect + UX-improved
+3. evaluate_script() → assert computed box-model (getComputedStyle(main) paddingTop/paddingLeft/marginLeft/maxWidth, getComputedStyle(aside) width/borderRightWidth) matches the .dc.html reference (catches unlayered CSS reset collisions where p-* / m-* collapse to 0px)
+4. take_screenshot() → visual comparison (note: filePath only writes inside the active workspace root and appends .jpeg when format="jpeg"; save to a workspace-local .tmp-screenshots/ folder first and remove .tmp-screenshots/ before committing)
+5. list_console_messages(types: ["error"]) → confirm 0 runtime/hydration errors
+6. Click elements → verify interactions work
+7. Fill forms → verify validation
+8. Resize viewport → verify responsive behavior
+9. Repeat until pixel-perfect + UX-improved
 ```
 
-**Run verification**:
+**Run verification** (always run `oxfmt` before `oxlint` so `max-lines: 300` is checked against formatted files):
 ```bash
-# Typecheck (project-specific — adapt to package manager)
-pnpm typecheck  # or: npm run typecheck, bun run typecheck, yarn typecheck
+# Format first (expands single-line JSX/objects before max-lines check)
+pnpm format     # or: bun run format, ./node_modules/.bin/oxfmt
 
 # Lint
-pnpm lint       # or: npm run lint, bun run lint, yarn lint
+pnpm lint       # or: bun run lint, ./node_modules/.bin/oxlint --max-warnings=0
+
+# Typecheck (project-specific — adapt to package manager)
+pnpm typecheck  # or: bun run typecheck, bun check
 
 # Tests (if applicable)
-pnpm test       # or: npm test, bun test, vitest, jest
+pnpm test       # or: bun test --check, vitest
 ```
 
 ## Leading words

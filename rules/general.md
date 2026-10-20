@@ -109,7 +109,7 @@ The discipline that shipped the 47K-line ADR-0039 frontend componentization. App
 ## Subagents (orchestration)
 
 19. **Partition subagents by path, never by rule within one directory** — two agents editing the same directory concurrently overwrite each other: corrupted syntax from mid-file merges, duplicate imports, and restores-from-HEAD that discard a sibling agent's work. One directory, one owner; batch agents by route group or module.
-20. **Run the gates yourself after every agent returns** — an agent's "done" report is a claim, not evidence. Re-run the full gate suite (`lint --max-warnings=0`, `typecheck`, targeted tests) on the merged tree before building on the result; agents have reported clean trees holding syntax errors, type errors, and cap overruns. A dropped brace survives `tsc` when the file sits outside its tsconfig — lint the tree, not the project graph alone. In network-sandboxed subagent shells where `pnpm` cannot reach the registry to verify `packageManager`, invoke workspace binaries directly (`./node_modules/.bin/vitest`, `./node_modules/.bin/oxlint`, `./node_modules/.bin/oxfmt`, `./node_modules/.bin/tsc --noEmit`). Keep conventional commit headers ≤100 characters (`header-max-length`) so `commitlint` never rejects a commit after the pre-commit typecheck + lint-staged hook has already run.
+20. **Run the gates yourself after every agent returns, starting with `oxfmt`** — an agent's "done" report is a claim, not evidence. Re-run the full gate suite in strict order — **`oxfmt` first**, then `oxlint --max-warnings=0`, then `typecheck` (`bun check` / `tsc --noEmit`), then targeted tests — on the merged tree before building on the result; agents have reported clean trees holding syntax errors, type errors, and `max-lines: 300` overruns that only appear after `oxfmt` expands single-line JSX and object literals. A dropped brace survives `tsc` when the file sits outside its tsconfig — lint the tree, not the project graph alone. Check `git status` after builds/verifications and remove tool-generated untracked artifacts (`apps/*/AGENTS.md` created by Next.js 16, temporary `.tmp-screenshots/` directories) before staging. In network-sandboxed subagent shells where `pnpm` cannot reach the registry to verify `packageManager`, invoke workspace binaries directly (`./node_modules/.bin/oxfmt`, `./node_modules/.bin/oxlint`, `./node_modules/.bin/vitest`, `./node_modules/.bin/tsc --noEmit`). Keep conventional commit headers ≤100 characters (`header-max-length`) so `commitlint` never rejects a commit after the pre-commit typecheck + lint-staged hook has already run.
 
 ## Debugging discipline (mandatory)
 
@@ -121,9 +121,9 @@ The discipline that shipped the 47K-line ADR-0039 frontend componentization. App
 
 26. **Regression test with every fix** — every bug fix lands with a test that fails before and passes after, in the same PR. The fix is not done until that test exists. Unit-test logic; cover rendered surfaces through e2e (never a component-harness test where the repo convention excludes it). Name the incident in the test so the next reader knows which defect it locks.
 
-## Package manager (pnpm)
+## Package manager (pnpm or Bun, per repo `packageManager`)
 
-24. **pnpm 12, no corepack, version from `packageManager`** — Pin `pnpm@12.3.1` in `package.json` `packageManager`. Never use `corepack enable` or `corepack prepare`. CI uses `pnpm/setup@v2` with no `version` input (reads the same field): `runtime: node@26`, `install: false`, `cache: false`, then `pnpm install --frozen-lockfile --ignore-scripts` by hand (`install: true` runs a plain install with no flags; `cache: true` re-downloads the store — slow on self-hosted runners with a persistent `$HOME/.pnpm-store`). Docker (`node:26-alpine` base/runner) derives the major at build time so nothing manual remains:
+24. **pnpm 12, no corepack, version from `packageManager`** — Pin `pnpm@12.3.1` in `package.json` `packageManager` (unless the repo declares a Bun-native toolchain — see rule 29). Never use `corepack enable` or `corepack prepare`. CI uses `pnpm/setup@v2` with no `version` input (reads the same field): `runtime: node@26`, `install: false`, `cache: false`, then `pnpm install --frozen-lockfile --ignore-scripts` by hand (`install: true` runs a plain install with no flags; `cache: true` re-downloads the store — slow on self-hosted runners with a persistent `$HOME/.pnpm-store`). Docker (`node:26-alpine` base/runner) derives the major at build time so nothing manual remains:
 
 ```dockerfile
 ENV PNPM_HOME="/root/.local/share/pnpm"
@@ -136,6 +136,11 @@ RUN PNPM_MAJOR="$(node -p "require('./package.json').packageManager.split('@')[1
 In `pnpm-workspace.yaml` declare `allowBuilds` for packages that need postinstall (`@node-rs/argon2`, `@prisma/client`, `@swc/core`, `sharp`, `esbuild`, `@parcel/watcher`, `unrs-resolver`) and set `strictDepBuilds: false` (or `strict-dep-builds=false` in `.npmrc`) to avoid `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` was removed in pnpm 11 — do not use it.
 
 - **Fresh-package gate** — when a repo sets `minimumReleaseAge`, a newly published dependency install fails until it is listed in `minimumReleaseAgeExclude`. Entries are exact `name@version` or a name-only wildcard (`"@oxfmt/binding-*"`); a wildcard name pinned to a version (`"@scope/pkg-*@1.2.3"`) is rejected as invalid config (verified pnpm 12.3.1). An intentional tool swap gets the exclusion in the same PR — the pin in `package.json` is the review.
+
+29. **Bun-native toolchain profile (`packageManager: "bun@1.x"`)** — When a repo pins `bun@...` in `packageManager` and declares a Bun-native toolchain in `AGENTS.md`:
+    - **Install**: `bun install` (`--frozen-lockfile` in CI/Docker) is the only install path; never hand-edit version ranges without running `bun install`.
+    - **Typecheck**: `bun check` is the primary type checker (`tsc` stays only for `tsc -b` in `packages/*` when emitting `.d.ts` declarations).
+    - **Test**: `bun test --check` is the default test runner and typecheck gate; reach for `vitest` only when a suite requires capabilities `bun test` lacks (`vi.hoisted`, browser mode, branch coverage).
 
 ## Tool replacement (mandatory)
 
