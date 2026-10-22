@@ -1,54 +1,39 @@
 # CONTEXT.md — skills repo glossary & rule router
 
-Consumers add **only this file** to `opencode.json` `instructions`. It is the router: fetch the rule modules your project needs by URL below. Glossary terms below define the ubiquitous language across all modules.
+Consumers add **only this file** to `opencode.json` `instructions`. It is the router: fetch the rule modules and workflows your project needs by URL below. Glossary terms below define the ubiquitous language across all modules.
 
 ## Rule modules
 
-| Module                                 | Scope                                                     | Fetch URL                                                                                               |
-| -------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `rules/general.md`                     | All projects                                              | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md`                     |
-| `rules/nestjs.md`                      | NestJS API                                                | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`                      |
-| `rules/prisma.md`                      | TS/NestJS repos on Prisma 7                               | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`                      |
-| `rules/frontend.md`                    | Web/portal/miniapp                                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`                    |
-| `rules/i18n.md`                        | Projects with i18n (message catalogs, multi-locale UI, user-facing copy) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                        |
-| `rules/e2e-testing.md`                 | Repos with Playwright e2e tests against a real API        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`                 |
-| `rules/linting.md`                     | All TS/JS projects                                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`                     |
-| `rules/libraries.md`                   | All TS/JS projects                                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`                   |
-| `rules/upload.md`                      | APIs with uploads                                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`                      |
-| `rules/issues.md`                      | Repos with a GitHub issue tracker                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`                      |
-| `rules/github-ci.md`                   | Repos running CI on GitHub Actions                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-ci.md`                   |
-| `rules/github-releases.md`             | Repos cutting releases or keeping release branches        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-releases.md`             |
-| `rules/github-vps-deploy.md`           | Self-hosted runners deploying to a VPS                    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-vps-deploy.md`           |
-| `rules/github-pr-automation.md`        | Repos with PR automation (commands, labels, title checks) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-pr-automation.md`        |
-| `rules/github-supply-chain.md`         | Actions + registries (scanning, pinning, toolchain)       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-supply-chain.md`         |
-| `rules/dependabot.md`                  | Repos with a `.github/dependabot.yml`                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`                  |
-| `rules/audit.md`                       | Any repo under audit                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                       |
-| `workflows/codebase-audit.md`          | Full-codebase audit with subagent slices                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
-| `workflows/lint-burndown.md`           | Lint backlog to zero: park, ratchet, subagent waves       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md`           |
-| `workflows/claude-design-to-nextjs.md` | Converting Claude Design HTML to Next.js/React            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
+| Module                          | Scope                                                                    | Fetch URL                                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `rules/general.md`              | All projects                                                             | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md`              |
+| `rules/nestjs.md`               | NestJS API (`apps/api`)                                                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`               |
+| `rules/prisma.md`               | TS/NestJS repos on Prisma 7                                              | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`               |
+| `rules/frontend.md`             | Web, portal, miniapp                                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`             |
+| `rules/i18n.md`                 | Projects with message catalogs, multi-locale UI, user-facing copy        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                 |
+| `rules/e2e-testing.md`          | Repos with Playwright e2e tests against a real API                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`          |
+| `rules/linting.md`              | All TS/JS and Python projects                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`              |
+| `rules/libraries.md`            | All TS/JS projects                                                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`            |
+| `rules/upload.md`               | APIs and clients with file uploads / object storage                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`               |
+| `rules/issues.md`               | Repos with a GitHub issue tracker                                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`               |
+| `rules/github-ci.md`            | Repos running CI on GitHub Actions                                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-ci.md`            |
+| `rules/github-releases.md`      | Repos cutting releases or maintaining release branches                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-releases.md`      |
+| `rules/github-vps-deploy.md`    | Self-hosted runners deploying to a VPS over SSH                          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-vps-deploy.md`    |
+| `rules/github-pr-automation.md` | Repos with PR automation (`/autofix`, path labels, semantic titles)      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-pr-automation.md` |
+| `rules/github-supply-chain.md`  | Actions + registries (CodeQL, SHA pinning, `pnpm/setup` isolation)       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-supply-chain.md`  |
+| `rules/dependabot.md`           | Repos with `.github/dependabot.yml`                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`           |
+| `rules/audit.md`                | Any repo or slice under audit                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                |
 
-**Condition triggers for workflows**:
+## Workflows
 
-- Use `workflows/codebase-audit.md` when the user asks to audit the codebase, check team-rule compliance repo-wide, find and remove AI slop and dead code across the repo, or scan for leaked secrets and risky dependencies.
-- Use `workflows/lint-burndown.md` when the user asks to adopt a strict lint preset, clear a lint backlog to zero, lower `--max-warnings`, or make a repo lint-clean.
-- Use `workflows/claude-design-to-nextjs.md` when:
+| Workflow                               | When to fetch (trigger)                                                                                                          | Fetch URL                                                                                               |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `workflows/codebase-audit.md`          | Full-codebase audit in package/directory slices against `rules/audit.md` (team-rule compliance, slop, dead code, risk, secrets). | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
+| `workflows/themed-codebase-audit.md`   | Three-theme audit (dead code, duplicated business logic, complex logic) with a grill gate and wave branches.                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/themed-codebase-audit.md`   |
+| `workflows/lint-burndown.md`           | Adopt strict lint preset, clear a lint backlog to zero, ratchet `--max-warnings` down in subagent waves.                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md`           |
+| `workflows/claude-design-to-nextjs.md` | Convert Claude Design (`.dc.html`) exports or specs into pixel-perfect Next.js/React pages verified with Chrome DevTools MCP.   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
-- User provides Claude Design HTML export and asks to convert to Next.js/React
-- User asks to implement feature from design spec
-- User asks to review design against spec for missing/partial/wrong features
-- User asks for pixel-perfect implementation from design
-
-**Suggested tools/skills for workflow**:
-
-- `/code-review` — two-axis code review (Standards + Spec) after implementation
-- `/tdd` — test-driven development for critical business logic
-- `/domain-modeling` — challenge terms, sharpen glossary, test edge cases
-- `/codebase-design` — design deep modules, find clean seams
-- `/implement` — execute implementation plan from spec
-- Chrome DevTools MCP — visual verification, pixel-perfect comparison
-- PostHog MCP — analytics integration, user behavior tracking (optional)
-
-Machine-readable tool configs ship in `configs/` of the same repo (`.oxfmtrc.json`, `eslint.config.mjs`, `dependabot.yml`).
+Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, `.oxlintrc.json`, `eslint.config.mjs`, `dependabot.yml`).
 
 ## Language rules (all consumers)
 
@@ -57,28 +42,18 @@ Machine-readable tool configs ship in `configs/` of the same repo (`.oxfmtrc.jso
 
 ## Terms
 
-- **Rule module** — one file under `rules/` (`general.md`, `nestjs.md`, `frontend.md`, `i18n.md`, `linting.md`, `issues.md`), consumed as a unit by agents.
-- **Consumer** — a repo that lists one of our rule files in its `opencode.json` `instructions` array.
+- **Rule module** — one self-contained markdown file under `rules/`, fetched by URL into an agent's context.
+- **Consumer** — a repository that lists this router (or rule module URLs) in its `opencode.json` `instructions` array or `AGENTS.md`.
 - **Instruction** — a single URL entry in a consumer's `instructions` array.
-- **Lint baseline** — the standard tool+rule configuration for the org, encoded in `rules/linting.md`. One accepted configuration; alternatives are not accommodated.
-- **Tool config** — a machine-readable config file shipped in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `eslint.config.mjs`) that a consumer copies into its own repo.
-- **Config drift** — a config inside a consumer repo that contradicts the lint baseline (e.g. a stale app-level `.oxfmtrc.json`). Resolution is unification, not accommodation.
+- **Lint baseline** — the standard formatter + linter setup (`Oxfmt` + `Oxlint` / Next.js `ESLint`, `max-lines: 300`) in `rules/linting.md`. Alternatives are not accommodated.
+- **Tool config** — a machine-readable config in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `eslint.config.mjs`, `dependabot.yml`) copied into consumer repos.
+- **Config drift** — a local or per-app config in a consumer repo that contradicts the baseline. Resolved by unification, never accommodation.
 - **Library baseline** — the fixed library-per-concern table in `rules/libraries.md`, chosen by framework. A substitute library for a covered concern is a violation.
-- **Inline multipart upload** — the upload model in `rules/upload.md`: files ride `multipart/form-data` on authenticated business endpoints; the `mediaUpload` interceptor validates and stores, injecting public URLs into `req.body` before DTO validation. Anti-pattern: a dedicated presign-then-PUT upload service.
-- **Media lifecycle** — create/replace/delete of stored media in `rules/upload.md`; replaces persist new URLs first, then fire-and-forget `deleteDropped` (a failed GC never fails the update); orphaned objects from failed mid-update writes are accepted until a GC job exists.
-- **`_`-prefix convention** — intentionally-unused bindings are named with a leading underscore and exempted from unused-variable rules via the three `^_` ignore patterns.
-- **Suppressed binding** — a `_`-prefixed binding that swallowed real input (a DTO, a param, a state setter): real input silently discarded, a bug in hiding. The `_` is valid only for signature-required placeholders (guard params, validator args, react-query callbacks, test stubs) — otherwise wire it or remove it (`rules/linting.md`).
-- **Slop** — an AI-generation artifact flagged by `rules/audit.md`: narrating comments, defensive checks on trusted paths, type-bypass casts, single-use abstractions, deep nesting, style inconsistent with the surrounding file, suppression directives, and value-free tests (no assertions, tautologies, mock-echoes).
-- **Verdict** — a file's audit outcome: `clean` or one or more findings. A slice audit completes when every file in the slice carries a verdict.
-- **Slice** — the unit of partitioning in `workflows/codebase-audit.md`: a group of paths small enough for one subagent's context; every source path sits in exactly one slice.
-- **Reusable workflow** — a workflow file (prefixed with `_` or in `.github/workflows/`) that other workflows call via `uses: ./.github/workflows/<name>.yml` with `workflow_call` trigger. DRY for build/test logic shared across CI, release, and deploy.
-- **Changeset** — a markdown file describing a package version bump and changelog entry, consumed by `changesets/action` to automate library releases.
-- **Ecosystem CI** — downstream testing of dependent projects triggered by a comment command (e.g., `/ecosystem-ci`) on a PR, gated by permission checks.
-- **Autofix command** — a comment-triggered workflow (e.g., `/autofix`) that runs lint fix and pushes the result to the PR branch, gated by permission checks.
-- **Version source** — a place a dependency or toolchain version is declared: `package.json`, a workflow action ref, the `packageManager` field, a Dockerfile `FROM` tag. Each needs a Dependabot ecosystem entry or it drifts manually (`rules/dependabot.md`).
-- **Encapsulated resource component** — a child component that scopes an external resource's allocation and cleanup (`URL.createObjectURL` / `URL.revokeObjectURL`) to its own React lifecycle (`rules/frontend.md`).
-- **Bounded in-memory map** — a `Map` instance with an explicit maximum entry capacity (`MAX_ENTRIES`), TTL pruning, and FIFO eviction on overflow (`rules/nestjs.md`).
-- **Term table** — the User-Facing Copy section of a consumer repo's glossary: internal term → displayed VI → displayed EN (`rules/i18n.md`). Copy that contradicts the table is a violation even when it reads well; a new display term enters the table in the same change that uses it.
-- **Machinery leak** — an internal name inside a message value: integration mechanics (webhook, HMAC, VA), process codes (SLA, RLS, WORM), raw enums or status codes, or an English original parenthesized beside a translated label (`rules/i18n.md`). Sweep for it before shipping; wire the sweep as a test.
-- **Cascade-layer collision** — an unlayered CSS rule (`* { margin: 0; padding: 0; }` or custom classes copied from a `.dc.html` export) imported alongside Tailwind v4 (`@import "tailwindcss"`), which beats every `@layer utilities` rule (`p-*`, `px-*`, `py-*`, `m-*`, `mx-auto`) regardless of specificity and collapses spacing to `0px` (`rules/frontend.md`).
-- **Deep-module boundary** — a monorepo boundary regime (`oxc/no-barrel-file: "error"` + `.dependency-cruiser.cjs` `lint:boundaries`) where workspace packages are imported only through declared `package.json#exports` entry points and folder barrels (`export *`) are forbidden (`rules/frontend.md`, `rules/linting.md`).
+- **Ponytail marker** — a `// ponytail: <ceiling>, <upgrade if ...>` comment marking a deliberate simplification or mock store (`rules/general.md`). A marker without an upgrade trigger is **`no-trigger` debt** and blocks merge.
+- **`_`-prefix convention** — intentionally-unused signature placeholders carry a leading `_` (`^_` ignore pattern). A `_`-prefixed binding that swallows real input (DTO, route param, state setter) is a **suppressed binding** (`rules/linting.md`).
+- **Deep-module boundary** — the default monorepo boundary regime (`oxc/no-barrel-file: "error"` + `.dependency-cruiser.cjs`) where workspace packages are imported only via `package.json#exports` entry points and `export *` folder barrels are forbidden (`rules/frontend.md`, `rules/nestjs.md`).
+- **Inline multipart upload** — the upload model in `rules/upload.md`: files ride `multipart/form-data` on authenticated business endpoints into `@nestjs/storage` (`StorageDisk` / `uploadToDisk`), with best-effort delete on replace or removal (**media lifecycle**).
+- **Term table** — the User-Facing Copy section of a consumer repo's `GLOSSARY.md` mapping internal terms to displayed VI and EN strings (`rules/i18n.md`).
+- **Machinery leak** — an internal mechanism (`webhook`, `HMAC`, `SLA`, `RLS`), raw enum, status code, or parenthesized English original leaked into a user-facing message value (`rules/i18n.md`).
+- **Slop** — an AI-generation artifact flagged by `rules/audit.md`: narrating comments, defensive checks on trusted paths, type-bypass casts, single-use abstractions, deep nesting, suppression directives, and value-free tests.
+- **Slice** — a partition of source paths small enough for one subagent's context in `workflows/codebase-audit.md`; every file in a slice receives a **verdict** (`clean` or `file:line` findings).

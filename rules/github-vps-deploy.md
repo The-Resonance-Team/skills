@@ -1,183 +1,56 @@
-# VPS Deploy Rules
+# VPS Deploy & Dockerfile Rules — self-hosted runners & SSH
 
-Rules for deploying from self-hosted runners to a VPS over SSH, and for deriving tool versions from the repo instead of hardcoding them. Scope: repos with self-hosted runners and SSH deploys.
+Applies to repos deploying from self-hosted GitHub Actions runners to a VPS over SSH and building production Docker images.
 
-## VPS Deploy via Self-Hosted Runners
+## SSH & self-hosted runner deploys
 
-### 1. Never curl files from GitHub API inside SSH sessions
+1. **SCP deploy files from the runner — never `curl` the GitHub Contents API inside SSH** — `curl` to `api.github.com/repos/.../contents/...` inside an `appleboy/ssh-action` session fails intermittently with `curl: (23) Failure writing output to destination`. Copy checked-out files from the runner to the VPS via `appleboy/scp-action`:
 
-`curl` to `api.github.com/repos/.../contents/...` inside an SSH session on a self-hosted runner fails with `curl: (23) Failure writing output to destination`. The `GHCR_TOKEN` (PAT with `read:packages` scope) can authenticate to the API, but the write fails intermittently across different runner instances.
+   ```yaml
+   - uses: appleboy/scp-action@<sha> # v0.1.7
+     with:
+       source: "deploy/docker-compose.prod.yml,deploy/scripts/deploy.sh,deploy/scripts/rollback.sh"
+       target: "/tmp/deploy-stage/"
+   ```
 
-**Fix**: Use `appleboy/scp-action` to SCP files from the runner (which already has the repo via `actions/checkout`) to the VPS. Files exist locally after checkout — no API download needed.
+2. **Health checks target `127.0.0.1`, never `localhost`** — `localhost` can resolve to IPv6 `::1` while Docker binds `127.0.0.1` (IPv4 only), causing false healthcheck failures:
 
-```yaml
-# Bad — fails on some runners
-- name: Deploy
-  uses: appleboy/ssh-action@v1
-  with:
-    script: |
-      curl -fsSL -H "Authorization: token $GHCR_TOKEN" \
-        -o /tmp/deploy.sh \
-        "https://api.github.com/repos/.../contents/deploy/scripts/deploy.sh?ref=$TAG"
+   ```sh
+   curl -fsS -o /dev/null -w '%{http_code}' "http://127.0.0.1:3401/v1/health"
+   ```
 
-# Good — SCP from runner to VPS
-- name: Copy deploy files
-  uses: appleboy/scp-action@v0.1.7
-  with:
-    source: "deploy/docker-compose.prod.yml,deploy/scripts/deploy.sh"
-    target: "/tmp/deploy-stage/"
-```
+3. **Always copy a fresh `rollback.sh` from `/tmp/deploy-stage/`** — Never guard rollback script provisioning with `if [ ! -x /tmp/rollback.sh ]`, which reuses a stale script from an earlier deploy.
+4. **Explicitly pass all required env vars into `appleboy/ssh-action`** — SSH sessions do not inherit workflow environment variables; pass `TAG`, `REPO_OWNER`, `GHCR_TOKEN`, and `GH_ACTOR` explicitly inline or via `envs:`.
+5. **Prune Docker disk space before writing deploy files** — Run `docker system prune -af || true && docker builder prune -af || true` before staging files so image/build caches never exhaust VPS disk.
+6. **Authenticate `ghcr.io` before running docker-pulling actions on self-hosted runners** — Self-hosted runners share a single IP across all jobs; anonymous third-party image pulls (`trufflesecurity/trufflehog`) hit GHCR's per-IP limit and fail with a bare `denied`. Run `docker/login-action` (`registry: ghcr.io`, `username: ${{ github.actor }}`, `password: ${{ secrets.GITHUB_TOKEN }}`) beforehand to move pulls onto the authenticated quota.
+7. **Gate rollback on `steps.<id>.outcome == 'failure'`, never `conclusion`** — When a deploy step sets `continue-on-error: true`, `conclusion` reports `success` even when SSH fails; `outcome` reflects the real failure.
+8. **Derive CLI tool versions from `package.json`, never hardcode in workflows** — Hardcoded versions (`prisma@7.9.1` inside SSH scripts) are invisible to Dependabot and drift from `apps/api/package.json`:
 
-### 2. Health checks: use `127.0.0.1`, not `localhost`
+   ```yaml
+   - id: prisma
+     run: echo "version=$(node -p 'require("./apps/api/package.json").dependencies.prisma.replace("^","")')" >> "$GITHUB_OUTPUT"
+   ```
 
-`localhost` may resolve to IPv6 `::1` first on some systems, while Docker port bindings use `127.0.0.1` (IPv4 only). This causes health check failures even when the service is running.
+## Multi-stage Node 26 + pnpm Dockerfile shape
 
-```bash
-# Bad — may resolve to IPv6
-curl -s -o /dev/null -w '%{http_code}' "http://localhost:3401/v1/health"
+9. **Install `pnpm` once in `base`, copy into `runner`, and `--chown` every runtime copy** — Derive `PNPM_MAJOR` from `package.json#packageManager` in `base`, reuse `/root/.local/share/pnpm` in `runner` without a second download, pass `--chown=nestjs:nodejs` on every `COPY --from=`, target `127.0.0.1` in `HEALTHCHECK`, and use exec-form `CMD`:
 
-# Good — explicit IPv4
-curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3401/v1/health"
-```
+   ```dockerfile
+   FROM node:26-alpine AS base
+   RUN apk add --no-cache libc6-compat curl
+   ENV PNPM_HOME="/root/.local/share/pnpm" PATH="/root/.local/share/pnpm:$PATH"
+   COPY package.json ./
+   RUN PNPM_MAJOR="$(node -p "require('./package.json').packageManager.split('@')[1].split('.')[0]")" \
+     && curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="latest-$PNPM_MAJOR" sh -
 
-### 3. Always re-download deploy scripts in rollback
-
-The `if [ ! -x /tmp/rollback.sh ]` guard reuses stale scripts from previous runs. A rollback needs the latest script version.
-
-```yaml
-# Bad — reuses stale file
-- name: Rollback
-  script: |
-    if [ ! -x /tmp/rollback.sh ]; then
-      curl -o /tmp/rollback.sh ...
-    fi
-
-# Good — always fresh
-- name: Rollback
-  script: |
-    cp /tmp/deploy-stage/deploy/scripts/rollback.sh /tmp/rollback.sh
-    chmod +x /tmp/rollback.sh
-```
-
-### 4. Pass all required env vars to deploy scripts
-
-`appleboy/ssh-action` does not inherit workflow env vars. Every variable the deploy script reads must be explicitly passed:
-
-```yaml
-# Bad — TAG not passed
-- name: Run deploy
-  uses: appleboy/ssh-action@v1
-  with:
-    script: /tmp/deploy.sh
-
-# Good — all vars explicit
-- name: Run deploy
-  uses: appleboy/ssh-action@v1
-  with:
-    script: |
-      TAG="${{ github.ref_name }}" \
-      REPO_OWNER="${{ secrets.DEPLOY_OWNER }}" \
-      GHCR_TOKEN="${{ secrets.GHCR_TOKEN }}" \
-      GH_ACTOR="${{ github.actor }}" \
-        /tmp/deploy.sh
-```
-
-### 5. Pre-deploy: free disk space before writing files
-
-Docker images and build cache can fill the disk. Run `docker system prune` before downloading or writing deploy files:
-
-```yaml
-script: |
-  docker system prune -af || true
-  docker builder prune -af || true
-```
-
-### 6. Authenticate docker-pulling actions on self-hosted runners
-
-A third-party action that `docker run`s its own image (e.g. `trufflesecurity/trufflehog@main` pulling `ghcr.io/trufflesecurity/trufflehog`) pulls anonymously by default. GitHub-hosted runners get a fresh pooled IP per job and rarely hit registry rate limits; a self-hosted runner shares one IP across every job in the repo, so anonymous pulls hit the registry's per-IP limit and fail with a bare `denied` — not a rate-limit message, just a pull denial that looks like a real problem with the action.
-
-**Fix**: authenticate the pull with `docker/login-action` before the step, moving it onto the token's own (much higher) limit:
-
-```yaml
-- name: Log in to GHCR
-  uses: docker/login-action@v3
-  with:
-    registry: ghcr.io
-    username: ${{ github.actor }}
-    password: ${{ secrets.GITHUB_TOKEN }}
-
-- name: Scan for leaked secrets (TruffleHog)
-  uses: trufflesecurity/trufflehog@main
-```
-
-`GITHUB_TOKEN` works here even against a public image the repo doesn't own — authenticated pulls get a separate, larger quota than anonymous ones, regardless of the token's access scope to that image. Symptom to recognize: a step that pulls a third-party docker image starts failing on every branch (not just one PR) at the same time, with a bare `denied` from the registry.
-
-### 7. `continue-on-error` hides failures
-
-When using `appleboy/ssh-action` with `continue-on-error: true`, the step shows as passed even when the SSH command fails. Use `steps.<id>.outcome` (not `conclusion`) in downstream `if` conditions to detect actual failures:
-
-```yaml
-- name: Deploy
-  id: deploy
-  uses: appleboy/ssh-action@v1
-  continue-on-error: true
-  with:
-    script: ...
-
-- name: Rollback
-  if: steps.deploy.outcome == 'failure' # outcome = actual result
-  uses: appleboy/ssh-action@v1
-```
-
-### 8. Derive tool versions from the repo, never hardcode them in workflows
-
-A version literal in a workflow is a version source Dependabot cannot see (dependabot.md §1: every source needs an entry, and workflow-inline tool versions have none). Read it from the manifest that owns it and pass it through.
-
-```yaml
-# Bad — rots when apps/api/package.json moves past prisma 7.9.1
-sh -c "npm install -g dotenv prisma@7.9.1 && ..."
-
-# Good — single source is apps/api/package.json
-- name: Resolve Prisma version from repo
-  id: prisma
-  run: echo "version=$(node -p 'require("./apps/api/package.json").dependencies.prisma.replace("^","")')" >> "$GITHUB_OUTPUT"
-
-- name: Run Prisma migrate deploy
-  uses: appleboy/ssh-action@v1.0.3
-  with:
-    envs: PRISMA_VER
-    env:
-      PRISMA_VER: ${{ steps.prisma.outputs.version }}
-    script: |
-      sh -c "npm install -g dotenv prisma@$PRISMA_VER && ..."
-```
-
-### 9. Node + pnpm Dockerfile shape: stages, one pnpm install, owned copies
-
-Multi-stage `node:26-alpine` images follow one shape: manifests first so the deps layer survives source edits, pnpm installed once in `base` from the `packageManager` major (rules/general.md §24), runner reuses the binary instead of downloading again. Every `COPY --from=` carries `--chown` to the runtime user — a root-owned file under a non-root `USER` breaks writes and fails consistency checks.
-
-```dockerfile
-# Good — install once, reuse everywhere
-FROM node:26-alpine AS base
-RUN apk add --no-cache libc6-compat curl
-ENV PNPM_HOME="/root/.local/share/pnpm"
-ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
-COPY package.json ./
-RUN PNPM_MAJOR="$(node -p "require('./package.json').packageManager.split('@')[1].split('.')[0]")" \
-  curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="latest-$PNPM_MAJOR" sh -
-
-FROM node:26-alpine AS runner
-RUN apk add --no-cache curl
-ENV PNPM_HOME="/root/.local/share/pnpm"
-ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
-# ponytail: reuse pnpm from base — same packageManager major, no second download.
-COPY --from=base /root/.local/share/pnpm /root/.local/share/pnpm
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
-USER nestjs
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://127.0.0.1:6200/health || exit 1
-CMD ["node", "dist/main.js"]
-```
-
-Anti-patterns: `bash` in `apk add` when the installer runs under `sh -`; a second `curl ... install.sh` in the runner stage; `COPY --from=` without `--chown` next to copies that have it; secrets via `ARG` instead of `--mount=type=secret`; healthchecks against `localhost` (resolves to IPv6 `::1` first on some hosts — see §2, use `127.0.0.1`); shell-form `CMD` instead of exec-form `["node", ...]`.
+   FROM node:26-alpine AS runner
+   RUN apk add --no-cache curl \
+     && addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
+   ENV PNPM_HOME="/root/.local/share/pnpm" PATH="/root/.local/share/pnpm:$PATH"
+   COPY --from=base /root/.local/share/pnpm /root/.local/share/pnpm
+   COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
+   USER nestjs
+   HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+     CMD curl -f http://127.0.0.1:6200/health || exit 1
+   CMD ["node", "dist/main.js"]
+   ```

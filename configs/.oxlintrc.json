@@ -51,6 +51,7 @@
     "build/**",
     "www/**",
     "test-results/**",
-    ".expo/**"
+    ".expo/**",
+    "**/next-env.d.ts"
   ]
 }

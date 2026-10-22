@@ -1,310 +1,57 @@
+---
+name: claude-design-to-nextjs
+description: >-
+  Convert Claude Design (.dc.html) exports and product specs into pixel-perfect
+  Next.js/React pages using team rules, domain modeling, two-axis code review,
+  and live Chrome DevTools MCP verification. Use when converting a Claude Design
+  export to Next.js/React, auditing design vs spec gaps, or verifying pixel-perfect
+  UI parity.
+---
+
 # Claude Design to Next.js/React Workflow
 
-Convert Claude Design HTML exports to production Next.js/React code using team rules and domain modeling to catch gaps.
+Convert Claude Design (`.dc.html`) exports to production Next.js/React code while enforcing `rules/frontend.md`, `rules/i18n.md`, and `rules/linting.md`.
 
 ## Process
 
 ### 1. Design intake
 
-Read the Claude Design HTML export. Extract:
-- **Components** — buttons, forms, tables, cards, modals
-- **Layouts** — page structure, spacing, responsive behavior
-- **Interactions** — click handlers, state transitions, navigation
-- **Data shapes** — what fields appear, what's required, what's optional
-- **Incremental v2 drops** — when a revised design archive (`.zip`) arrives mid-flight, extract it to a sibling directory and run `diff -rq <old_dir> <new_dir>` first to isolate which `.dc.html`, `tokens.css`, or `data.js` files actually changed (`diff -u <old_file> <new_file>`) instead of re-reading unchanged screens.
-
-**Tools**: Chrome DevTools MCP to open design HTML, `take_snapshot()` to inspect structure.
-
-Output: component inventory + data model sketch.
+Inspect both the `.dc.html` markup and any companion `.js` / `tokens.css` files (`rules/frontend.md` #20 — motion, timers, and computed display values often live in scripts, not HTML):
+- **Incremental drops (v2 `.zip`)**: extract to a sibling folder and run `diff -rq <old_dir> <new_dir>` + `diff -u` first so you only inspect changed screens/tokens.
+- **Animations**: extract `@keyframes` bodies and `animation:` use-counts by script (`rules/frontend.md` #19), never by eye.
+- **Completion criterion**: component inventory, route map, and data model sketch produced.
 
 ### 2. Spec alignment
 
-Compare design against spec (e.g. `docs/specs/hrm/hrm-v1.md`):
-- **Missing** — spec requires, design lacks
-- **Partial** — design shows some but not all spec behavior
-- **Wrong** — design contradicts spec
-
-**Tools**: Read spec file, diff against design inventory. Use `/code-review` skill with Spec axis to formalize gap report.
-
-Report gaps. Don't implement yet — get alignment first.
+Diff the design inventory against the product spec (e.g. `docs/specs/...`):
+- Classify every discrepancy as **Missing** (in spec, absent in design), **Partial**, or **Wrong** (contradicts spec).
+- **Completion criterion**: gap report presented and scope confirmed by the user before writing app code.
 
 ### 3. Domain modeling
 
-Challenge design terms against `CONTEXT.md` glossary:
-- "Account" vs "User" vs "Employee" — which concept?
-- "Clock in" vs "Attendance record" — same thing or different?
-- "Department" vs "Team" — overlap?
-
-Test edge cases:
-- What if employee has no department?
-- What if availability request is approved then rejected?
-- What if pay band min > max?
-
-**Tools**: `/domain-modeling` skill to challenge terms, sharpen glossary, test edge cases. Update `CONTEXT.md` inline when terms resolve.
+Cross-check all labels, statuses, and entity names against `CONTEXT.md` / `GLOSSARY.md` (`rules/i18n.md` #7–#8):
+- Resolve overloaded terms, probe edge-case state transitions, and update the glossary's **Term table** (internal term → VI → EN) inline.
+- **Completion criterion**: zero unresolved domain terms; `CONTEXT.md` / `GLOSSARY.md` updated.
 
 ### 4. Implementation
 
-Apply team rules:
-- **Ponytail pattern** — mock data with `// ponytail:` comment + upgrade path
-- **Component library** — use what the design or user specifies; if neither specifies, default to **shadcn/ui** as the reference standard
-- **Tailwind v4 cascade layers & `@source`** — never copy unlayered `* { margin: 0; padding: 0; }` resets or custom classes from `.dc.html` / `tokens.css` into a Tailwind v4 app (`@import "tailwindcss"`), because unlayered rules override all `@layer utilities` (`p-*`, `px-*`, `py-*`, `m-*`, `mx-auto`). Wrap element resets in `@layer base`, wrap custom classes in `@layer components`, and add `@source "../";` (plus `@source` paths for shared UI packages) in `apps/*/src/app/globals.css`.
-- **250-line post-`oxfmt` file budget** — `oxfmt` expands single-line JSX props, object literals, and multi-element array destructuring by 1.4×–2.5×. Author each view, modal, and data file under ~250 lines and always run `oxfmt <paths>` *before* `oxlint --max-warnings=0 <paths>` (`max-lines: 300`).
-- **JSX escaping** — `&apos;`, `&quot;`, `&lt;`, `&gt;` in text content
-- **Module boundaries** — folder with ≥2 files gets `index.ts` in barrel-based repos; in deep-module repos (`oxc/no-barrel-file` + `.dependency-cruiser.cjs`), forbid `export *` barrels and import workspace packages only via `package.json#exports` entry points.
-- **DTOs intact** — pass through controller → service seam
-- **date-fns** — all time processing, never raw `Date` arithmetic
+Build each screen/slice adhering strictly to `rules/frontend.md` and `rules/general.md`:
+- **Tailwind v4 cascade layers & `@source` (`rules/frontend.md` #5)**: never copy unlayered `* { margin: 0; padding: 0; }` resets or unlayered custom classes from `.dc.html` / `tokens.css` alongside `@import "tailwindcss"` (unlayered rules override every `@layer utilities` `p-*`/`m-*`/`mx-auto` class). Put element resets in `@layer base`, custom classes in `@layer components`, and add `@source "../";` + shared UI package `@source` paths in `apps/*/src/app/globals.css`.
+- **≤250-line post-`oxfmt` file budget (`rules/linting.md` #9)**: `oxfmt` expands single-line JSX props, objects, and destructuring by 1.4×–2.5×. Author each view, modal, hook, and data file under ~250 lines and always run `oxfmt <paths>` *before* `oxlint --max-warnings=0 <paths>`.
+- **Deep-module boundaries (`rules/frontend.md` #7)**: import workspace packages only via `package.json#exports` entry points and app-internal files directly by path; do not create `export *` folder barrels unless the repo uses the legacy barrel convention.
+- **Data & forms (`rules/frontend.md` #3, #11–#13)**: use Ponytail mock hooks (`// ponytail: ... Upgrade if: ...` inside `useQuery`/`useMutation`) only when the API endpoint does not exist yet; wire real endpoints immediately when available. Mirror backend DTOs in `<form>-schema.ts` (`react-hook-form` + `zodResolver`).
+- **Route structure**: full-page create/edit uses a shared route editor across `/path/new` and `/path/[id]/edit` (`rules/frontend.md` #9); escape literal JSX entities (`&apos;`, `&quot;`, `&lt;`, `&gt;`); hide ligature icon spans with `aria-hidden="true"`.
+- **Completion criterion**: `oxfmt`, `oxlint --max-warnings=0`, typecheck (`bun check` / `tsc --noEmit`), and unit tests pass with zero warnings.
 
-**Tools**: `/implement` skill to execute plan. `/codebase-design` skill to find clean seams for complex modules. `/tdd` skill for critical business logic.
+### 5. Two-axis code review
 
-Structure (CRUD pattern):
-```
-apps/[app]/src/app/[feature]/
-├── page.tsx (list)
-├── new/page.tsx (create form)
-└── [id]/
-    ├── page.tsx (detail)
-    └── edit/page.tsx (edit form)
-```
+Run `/code-review` against the base SHA along **Standards** (`rules/frontend.md`, `rules/i18n.md`, `rules/general.md`, Fowler smells) and **Spec** (missing, scope creep, wrong).
+- **Completion criterion**: every finding resolved and re-verified with `oxfmt` + `oxlint`.
 
-For nested resources:
-```
-apps/[app]/src/app/[feature]/
-├── page.tsx (parent list)
-└── [parentId]/
-    ├── page.tsx (parent detail)
-    └── [child]/page.tsx (nested resource)
-```
+### 6. Live Chrome DevTools verification & UX refinement
 
-Hooks pattern (ponytail mock data):
-```ts
-// ponytail: module-level mutable mock store. Upgrade path: swap for real API.
-const MOCK_DATA: T[] = [...];
-
-export function useList() {
-  return useQuery({ queryKey: ["resource"], queryFn: async () => MOCK_DATA });
-}
-
-export function useCreate() {
-  return useMutation({
-    mutationFn: async (item: T) => {
-      MOCK_DATA.push({ ...item, id: `id-${Date.now()}` });
-      return item;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["resource"] }),
-  });
-}
-```
-
-### 5. Code review
-
-Two-axis review against fixed point (commit SHA):
-
-**Tools**: `/code-review` skill with Standards + Spec axes. Provide fixed point (commit SHA or branch name).
-
-**Standards axis** — team rules + Fowler smells:
-- Mysterious Name — function/variable name doesn't reveal purpose
-- Duplicated Code — same logic in multiple places
-- Feature Envy — method reaches into another object's data
-- Data Clumps — same fields travel together (bundle into type)
-- Primitive Obsession — primitive standing in for domain concept
-- Speculative Generality — abstraction for needs spec doesn't have
-
-**Spec axis** — requirements coverage:
-- Missing — spec asked, code lacks
-- Scope creep — code has, spec didn't ask
-- Wrong — implemented but incorrectly
-
-Report per file/hunk. Cite rule or spec line.
-
-### 6. Verification & UX refinement
-
-**Pixel-perfect match** — UI must match design 100% unless user explicitly requires deviation:
-
-1. **Visual comparison** — Open page in browser via Chrome DevTools MCP
-2. **Take snapshot** — `take_snapshot` to get page structure, `take_screenshot` for visual
-3. **Compare against design** — open design HTML in adjacent tab, compare:
-   - Spacing (margins, padding, gaps)
-   - Typography (font size, weight, line height, color)
-   - Colors (backgrounds, borders, text)
-   - Component sizes (button height, input width, icon size)
-   - Layout (flex/grid alignment, responsive behavior)
-4. **Fix gaps** — adjust CSS until pixel-perfect match
-5. **Iterate** — repeat snapshot → compare → fix until no visual differences
-
-**UX improvement opportunities** — during verification, look for:
-
-- **Missing feedback** — button clicks should show loading state, form submissions should show success/error
-- **Empty states** — what happens when list is empty? Show helpful message + action button
-- **Error recovery** — can user undo accidental delete? Show confirmation dialog
-- **Keyboard shortcuts** — Enter submits form, Escape closes modal, Tab navigates logically
-- **Focus management** — after modal opens, focus first input; after closes, return to trigger
-- **Progressive disclosure** — hide advanced options behind "Show more" if they clutter the UI
-- **Micro-interactions** — hover states, transitions, animations for state changes
-- **Accessibility** — can user navigate entire flow with keyboard only?
-
-**UX improvements are mandatory** — don't just match the design, make it better if obvious improvements exist. Document what you improved and why.
-
-**Chrome DevTools MCP workflow**:
-```
-1. navigate_page(url) → open page
-2. take_snapshot() → get a11y tree with uids
-3. evaluate_script() → assert computed box-model (getComputedStyle(main) paddingTop/paddingLeft/marginLeft/maxWidth, getComputedStyle(aside) width/borderRightWidth) matches the .dc.html reference (catches unlayered CSS reset collisions where p-* / m-* collapse to 0px)
-4. take_screenshot() → visual comparison (note: filePath only writes inside the active workspace root and appends .jpeg when format="jpeg"; save to a workspace-local .tmp-screenshots/ folder first and remove .tmp-screenshots/ before committing)
-5. list_console_messages(types: ["error"]) → confirm 0 runtime/hydration errors
-6. Click elements → verify interactions work
-7. Fill forms → verify validation
-8. Resize viewport → verify responsive behavior
-9. Repeat until pixel-perfect + UX-improved
-```
-
-**Run verification** (always run `oxfmt` before `oxlint` so `max-lines: 300` is checked against formatted files):
-```bash
-# Format first (expands single-line JSX/objects before max-lines check)
-pnpm format     # or: bun run format, ./node_modules/.bin/oxfmt
-
-# Lint
-pnpm lint       # or: bun run lint, ./node_modules/.bin/oxlint --max-warnings=0
-
-# Typecheck (project-specific — adapt to package manager)
-pnpm typecheck  # or: bun run typecheck, bun check
-
-# Tests (if applicable)
-pnpm test       # or: bun test --check, vitest
-```
-
-## Leading words
-
-- **Ponytail** — mock data with known ceiling + upgrade path
-- **Seam** — where module's interface lives (controller/service, component/hook)
-- **Depth** — behavior behind interface (small surface, big implementation)
-- **Leading word** — compact concept from pretraining that anchors behavior
-
-## Pruning
-
-- **Duplication** — same meaning in two places → one source of truth
-- **Sediment** — stale layers → delete what no longer bears on task
-- **No-ops** — instruction model already obeys → delete
-
-## When to split workflow
-
-- **By sequence** — design intake → spec alignment → domain modeling → implementation → review → verification. Each step has completion criterion.
-- **By invocation** — code review is separate skill, invoked after implementation.
-
-## Completion criteria
-
-- **Design intake** — component inventory + data model sketch produced
-- **Spec alignment** — gaps reported, user confirmed scope
-- **Domain modeling** — terms resolved, CONTEXT.md updated
-- **Implementation** — typecheck + lint pass, pages render
-- **Code review** — findings reported per axis
-- **Verification** — Chrome DevTools confirms pixel-perfect design match + UX improvements applied
-
-## Complex scenarios
-
-### Multi-resource coordination
-
-When pages share data across resources (e.g., employee list → department filter → position detail):
-
-- **Shared query keys** — use consistent queryKey structure: `["resource", parentId, childId]`
-- **Cross-resource invalidation** — when parent mutates, invalidate child queries: `onSuccess: () => queryClient.invalidateQueries({ queryKey: ["child", parentId] })`
-- **Dependent queries** — use `enabled` flag: `enabled: !!parentId` so child query doesn't fire until parent loads
-- **Breadcrumb state** — derive from route params, not component state
-
-### Permission & role modeling
-
-- **PermissionGuard wrapper** — wrap UI elements that require specific permissions: `<PermissionGuard permission={PERMISSIONS.EDIT}><Button>Edit</Button></PermissionGuard>`
-- **Route-level guards** — check permission in `layout.tsx` or `page.tsx` before rendering, redirect to 403 if denied
-- **Hook-level guards** — `usePermission(permission)` returns boolean, use to conditionally render or disable
-- **Permission constants** — centralize in `@restosuite/constants` or similar, never hardcode strings
-
-### Error handling strategy
-
-- **API errors** — surface from hook's `error` field, render in UI, never swallow into `useState`
-- **Form validation errors** — zod schema messages, displayed inline below field
-- **Not found** — if entity missing (404 or empty result), show "Not found" card with back link
-- **Loading states** — skeleton screens (animate-pulse) while `isLoading`, not blank screens
-- **Error boundaries** — wrap page in React ErrorBoundary for unexpected crashes
-
-### Form validation patterns
-
-- **Client + server** — zod schema mirrors API DTO validation rules exactly
-- **Cross-field validation** — zod `.refine()` for rules like `endDate > startDate`
-- **Async validation** — zod `.refine(async (val) => await checkUnique(val))` for uniqueness checks
-- **Dirty tracking** — RHF's `formState.isDirty` to enable/disable save button
-- **Optimistic save** — disable save button while `mutation.isPending`, re-enable on success/error
-
-### Optimistic updates
-
-Use when latency matters and rollback is safe:
-
-```ts
-useMutation({
-  mutationFn: updateItem,
-  onMutate: async (newItem) => {
-    await queryClient.cancelQueries({ queryKey: ["item", id] });
-    const previous = queryClient.getQueryData(["item", id]);
-    queryClient.setQueryData(["item", id], newItem);
-    return { previous };
-  },
-  onError: (err, newItem, context) => {
-    queryClient.setQueryData(["item", id], context.previous);
-  },
-  onSettled: () => queryClient.invalidateQueries({ queryKey: ["item", id] }),
-});
-```
-
-Skip when: data loss risk, concurrent edits likely, or user needs confirmation.
-
-### Cache invalidation strategy
-
-- **After create** — invalidate list query: `invalidateQueries({ queryKey: ["items"] })`
-- **After update** — invalidate both list and detail: `invalidateQueries({ queryKey: ["items"] }), invalidateQueries({ queryKey: ["item", id] })`
-- **After delete** — same as update
-- **Cross-resource** — when department updates, invalidate positions: `invalidateQueries({ queryKey: ["positions", departmentId] })`
-
-### Nested navigation
-
-- **Breadcrumbs** — derive from `useParams()`, render as `<Link>` chain with separator
-- **Back navigation** — `router.back()` for in-app, `router.push(parentPath)` for cross-feature
-- **Deep linking** — preserve query params in URL: `?filter=kitchen&page=2`, read with `useSearchParams()`
-- **Tab state** — use URL search params, not `useState`, so tabs are shareable/bookmarkable
-
-### Responsive design
-
-- **Mobile-first** — default styles for mobile, `md:` / `lg:` breakpoints for larger screens
-- **Breakpoint tokens** — use Tailwind's default: `sm:640px`, `md:768px`, `lg:1024px`, `xl:1280px`, `2xl:1536px`
-- **Responsive tables** — stack on mobile (card layout), grid on desktop (table layout)
-- **Touch targets** — min 44×44px for buttons/links on mobile
-
-### Accessibility checklist
-
-- **Semantic HTML** — `<button>` for actions, `<a>` for navigation, `<input>` for forms
-- **ARIA labels** — `aria-label` for icon-only buttons, `aria-labelledby` for complex widgets
-- **Keyboard navigation** — all interactive elements focusable, logical tab order, Enter/Space activate
-- **Focus management** — after modal opens, focus first input; after closes, return focus to trigger
-- **Color contrast** — WCAG AA: 4.5:1 for text, 3:1 for large text/UI components
-- **Screen reader** — `sr-only` class for visually hidden but screen-reader-visible text
-
-### Performance budget
-
-- **Code splitting** — dynamic `import()` for heavy components (charts, editors)
-- **Image optimization** — Next.js `<Image>` with `width`, `height`, `alt`, `priority` for above-fold
-- **Font loading** — `next/font` with `display: "swap"`, preload critical fonts
-- **Bundle size** — keep under 200KB gzipped per page, use `@next/bundle-analyzer` to audit
-- **Lazy hydration** — for static content, use `"use client"` only where interactivity needed
-
-### Testing strategy
-
-- **Hook tests** — test mock hooks with React Testing Library: render component, assert data appears
-- **Integration tests** — test page renders with mock data, user interactions work
-- **E2E tests** — Playwright/Cypress for critical flows: create → edit → delete
-- **Visual regression** — Chromatic/Loki for UI snapshot tests
-- **Coverage target** — 80% for business logic, 60% for UI components
-
-### Deployment checklist
-
-- **Environment config** — `.env.local` for dev, `.env.production` for prod, never commit secrets
-- **Feature flags** — use `process.env.NEXT_PUBLIC_FEATURE_X` for gradual rollouts
-- **Preview deploys** — Vercel/Netlify auto-deploy PR branches for review
-- **Rollback plan** — keep last 3 deploys available, one-click rollback on critical bug
-- **Monitoring** — Sentry for error tracking, PostHog for analytics, Vercel Analytics for performance
+Verify the live rendered app against the `.dc.html` reference using Chrome DevTools MCP (`rules/frontend.md` #20):
+1. `navigate_page(url)` and `list_console_messages(types: ["error"])` → confirm **0 runtime/hydration errors**.
+2. `evaluate_script()` → assert `getComputedStyle(el)` box-model (`paddingTop`, `paddingLeft`, `marginLeft`, `maxWidth`, `width`, `backgroundImage`, `color`) on `<main>`, `<aside>`, and `<header>` matches the design (catches unlayered CSS reset collisions where `px-8 py-7` computes to `0px`).
+3. `take_snapshot()` & `take_screenshot()` → verify spacing, typography, token colors, responsive breakpoints, keyboard/focus flows, loading/empty/error states, and both VI/EN locales for leaked untranslated words. (Save screenshots inside workspace-local `.tmp-screenshots/` and delete `.tmp-screenshots/` plus any Next 16 generated `apps/*/AGENTS.md` before committing.)
+- **Completion criterion**: pixel-perfect computed layout verified in Chrome DevTools, 0 console errors, clean `git status`, and all verification gates green.

@@ -1,184 +1,40 @@
-# Release Workflow Rules
+# Release Workflow Rules — shipping, cherry-picks & branch sync
 
-Rules for shipping: library releases, app release dispatches, cherry-picks, branch sync, and dependency rolls. Scope: any repo cutting releases on GitHub.
+Applies to any repo cutting library/application releases or maintaining release branches on GitHub Actions. Pin all action refs to full commit SHAs (`rules/github-supply-chain.md` #2).
 
-## Release Automation
+## Release automation
 
-### 1. Changesets for library releases
+1. **Changesets for multi-package library releases** — Trigger `changesets/action` on `push` to `main` (`fetch-depth: 0`) to open version PRs and publish packages when merged:
 
+   ```yaml
+   - uses: changesets/action@<sha> # v1
+     with:
+       publish: pnpm run release
+     env:
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+   ```
 
-For libraries with multiple packages or frequent releases, use changesets. The workflow detects changesets, versions, and publishes.
+2. **Manual `workflow_dispatch` for application releases** — Trigger application releases explicitly via `workflow_dispatch` with a required `version` input (`v1.2.3`) rather than on every push to `main`.
 
-```yaml
-name: Release
-on:
-  push:
-    branches: [main]
+## Cherry-pick & release branch sync
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-      - run: npm ci
-      - name: Create Release PR or Publish
-        uses: changesets/action@v1
-        with:
-          publish: npm run release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-```
+3. **Automated cherry-pick PRs (`workflow_dispatch`)** — Backport commits to a release branch via a dispatch workflow taking `release-branch` and `commit-sha`, running `git cherry-pick`, and opening a PR with `peter-evans/create-pull-request`:
 
-### 2. Manual dispatch for application releases
+   ```yaml
+   - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+     with:
+       ref: ${{ inputs.release-branch }}
+       fetch-depth: 0
+   - run: |
+       git config user.name "github-actions[bot]"
+       git config user.email "github-actions[bot]@users.noreply.github.com"
+       git cherry-pick ${{ inputs.commit-sha }}
+   - uses: peter-evans/create-pull-request@<sha> # v6
+     with:
+       base: ${{ inputs.release-branch }}
+       branch: cherry-pick/${{ inputs.commit-sha }}
+       title: "chore(release): cherry-pick ${{ inputs.commit-sha }} to ${{ inputs.release-branch }}"
+   ```
 
-
-For applications, use `workflow_dispatch` to trigger releases manually.
-
-```yaml
-name: Trigger Release
-on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., v1.2.3)'
-        required: true
-        type: string
-
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: ./scripts/release.sh ${{ inputs.version }}
-```
-
-## Cherry-Pick / Backport
-
-### 3. Automated cherry-pick PRs
-
-
-For release branches, automate cherry-picks with a manual-dispatch workflow that creates a PR.
-
-```yaml
-name: Cherry-Pick to Release
-on:
-  workflow_dispatch:
-    inputs:
-      release-branch:
-        description: 'Release branch (e.g., release/v1.2)'
-        required: true
-        type: string
-      commit-sha:
-        description: 'Commit SHA to cherry-pick'
-        required: true
-        type: string
-
-jobs:
-  cherry-pick:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.release-branch }}
-          fetch-depth: 0
-      - name: Cherry-pick commit
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git cherry-pick ${{ inputs.commit-sha }}
-      - name: Create PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          title: 'Cherry-pick ${{ inputs.commit-sha }} to ${{ inputs.release-branch }}'
-          base: ${{ inputs.release-branch }}
-          branch: cherry-pick/${{ inputs.commit-sha }}
-```
-
-## Branch Sync
-
-### 4. Sync main to release branches
-
-
-Keep release branches in sync with main using a scheduled or manual workflow.
-
-```yaml
-name: Sync Release Branch
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 1'  # Weekly
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Sync main to release
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout release/v1.2
-          git merge origin/main --no-edit
-          git push origin release/v1.2
-```
-
-### 5. Sync examples to latest branch
-
-
-For repos with examples, sync them to a `latest` branch when stable releases land.
-
-```yaml
-name: Sync Examples
-on:
-  push:
-    branches: [main]
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Sync to latest branch
-        uses: bluwy/auto-branch-sync-action@v1
-        with:
-          map: |
-            / -> latest
-            /examples/* -> examples/*
-```
-
-## Dependency Roll
-
-### 6. Automated dependency updates
-
-
-For critical dependencies (e.g., Dart SDK in Flutter), automate rolls with a manual-dispatch workflow.
-
-```yaml
-name: Roll Dependency
-on:
-  workflow_dispatch:
-    inputs:
-      dep-version:
-        description: 'Version or commit to roll to'
-        required: true
-        type: string
-
-jobs:
-  roll:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Update dependency
-        run: ./scripts/update-dep.sh ${{ inputs.dep-version }}
-      - name: Create PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          title: 'Roll dependency to ${{ inputs.dep-version }}'
-          branch: roll/dep-${{ inputs.dep-version }}
-```
+4. **Scheduled/manual sync from `main` to active release branches** — Where long-lived release branches must track `main`, sync them via a weekly cron (`0 0 * * 1`) + `workflow_dispatch` job (`fetch-depth: 0`, `git checkout release/vX.Y && git merge origin/main --no-edit && git push`).
