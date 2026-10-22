@@ -155,3 +155,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+### 5. Delete the branch when the PR merges
+
+
+Merge with `gh pr merge --delete-branch`. It removes the branch on the remote **and** the local copy.
+
+```sh
+gh pr merge <number> --squash --delete-branch
+```
+
+The repository setting `delete_branch_on_merge` is not enough. It deletes the remote branch only, so the local branch stays and accumulates. It is also a one-shot action bound to the merge event, not a reconciler: GitHub holds no record that a branch must not exist, so a later push to that branch name recreates it and nothing re-fires the cleanup. The pull request timeline shows this as `head_ref_deleted` followed by `head_ref_restored`.
+
+Never push to a branch after merging its pull request. If the branch must live on, open the next pull request from a fresh branch instead.
+
+After merging, drop the local copy and prune the remote-tracking refs:
+
+```sh
+git branch -d <branch>
+git fetch --prune
+```
+
