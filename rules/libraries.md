@@ -29,7 +29,8 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 | WebSockets         | —                                                                                     | `@nestjs/websockets` + `@nestjs/platform-ws` (`WsAdapter`, raw `ws` protocol) — never socket.io unless clients already speak it |
 | Security headers   | —                                                                                     | `helmet`                                                                                                |
 | Object storage     | — (uploads ride `axios` `postForm`)                                                   | `@aws-sdk/client-s3` behind the single `StorageService` (`rules/upload.md`)                             |
-| Email (transactional) | —                                                                                  | `@nestjs/mail` — Mailable classes, transports, `FileTemplateEngine` or a custom engine (`rules/nestjs.md` rule 32) |
+| Email (transactional) | —                                                                                  | `@nestjs/mail` — Mailable classes, transports, `FileTemplateEngine` or a custom engine (`rules/nestjs.md` rule 35) |
+| File storage          | —                                                                                  | `@nestjs/storage` — disks (Local/S3/InMemory), `uploadToDisk`, `serveFile`, signed URLs/uploads (`rules/nestjs.md` rule 36) |
 
 **Miniapp is off this table** — the Zalo webview keeps its own `fetch`-based client and local components (`rules/frontend.md` rule 12, ADR-0039 §5); the table's rows apply to it only where stated.
 
