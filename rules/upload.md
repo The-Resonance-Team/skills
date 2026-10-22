@@ -1,60 +1,39 @@
-# File Upload & Object Storage — inline multipart + S3-compatible
+# File Upload & Object Storage — inline multipart + `@nestjs/storage`
 
-Applies to every project with file uploads (NestJS APIs + web clients). File uploads are inline `multipart/form-data` on business endpoints — there is no dedicated upload service. Object storage is S3-compatible (AWS S3, Cloudflare R2, MinIO) via `@aws-sdk/client-s3`.
+Applies to every project with file uploads or object storage (NestJS APIs + web/portal/miniapp clients). Uploads ride inline `multipart/form-data` on authenticated business endpoints — never a standalone upload controller. Backend storage runs on `@nestjs/storage` (`StorageDisk`: `LocalDisk`, `S3Disk` for AWS S3/R2/MinIO, `InMemoryDisk` for tests).
 
-## Client (web/portal/miniapp)
+> **Legacy note**: Repos not yet migrated to `@nestjs/storage` keep their single `StorageService` (`@aws-sdk/client-s3`) + `mediaUpload(fields, options)` interceptor until migrated in a dedicated PR.
 
-1. **Native axios multipart helpers** — `api.postForm<T>()` / `api.putForm<T>()` / `api.patchForm<T>()` with the generic type parameter; never a hand-rolled `toFormData` helper. The body is a typed object mixing `File` and scalar fields:
+## Client (web, portal, miniapp)
+
+1. **Native axios multipart helpers** — Call `api.postForm<T>()` / `api.putForm<T>()` / `api.patchForm<T>()` with a typed payload mixing `File` and scalar fields; never hand-roll `toFormData`:
 
    ```ts
    const { data } = await api.postForm<MyVideo>('/trainers/me/videos', {
      title,
-     thumbnail,        // File — rides with the submit
-     tags,             // string[] — repeated per key
-   })
+     thumbnail, // File — rides with the form submit
+     tags,      // string[] — repeated per key
+   });
    ```
 
-2. **No eager upload** — the selected `File` travels with the form submit. There is no upload endpoint to pre-upload to; a component that fires an upload on pick is building a dead round-trip. Preview via `URL.createObjectURL`, revoke on clear or component unmount. Multi-file preview grids encapsulate the URL lifecycle in a child thumbnail component (`PhotoThumbnail`) so each blob URL is revoked automatically on thumbnail removal or form unmount (never allocate `URL.createObjectURL` during render).
-3. **Client pre-check mirrors the server allowlist** (type + size) for UX only — the server is the trust boundary; the client check is never the security decision.
+2. **No eager upload & encapsulated preview cleanup** — Selected `File` objects travel with the form submit; never fire a pre-upload on file pick. Render previews through an encapsulated child component (`<PhotoThumbnail file={file} />`, `rules/frontend.md` #18) whose `useEffect` calls `URL.createObjectURL(file)` and revokes it on file change or unmount.
+3. **Client pre-check is UX only** — Mirror the server's MIME/extension and size allowlist on the client for instant feedback; the server remains the security boundary.
 
-## Server (NestJS)
+## Server (`@nestjs/storage` + NestJS)
 
-4. **One storage service** — all S3 access lives in a single `StorageService` (`infra/storage/`): `upload(buffer, filename, mimetype, folder)` → object key, `publicUrlFor(key)`, `presignedGet`/`presignPut` (for exceptional direct access), and best-effort `deleteUrls`/`deleteDropped`. No module reaches for `S3Client` directly.
-5. **One interceptor factory, no upload controller** — endpoints use a single `mediaUpload(fields, options)` interceptor that parses, validates, uploads, and injects URLs. No `POST /uploads/*` endpoints, no presign-then-PUT client flows, no services calling `storage.upload` directly (storage awareness must not leak into services).
-6. **Validation lives in the interceptor, not the service** — per-field `maxCount`, per-file size cap (default 10MB → 413 via multer `limits`), extension-derived MIME canonicalization (`EXT_TO_MIME`; DOCX shares the ZIP signature, so extension is the only reliable signal), plus the declared-mimetype allowlist. Reject with `BadRequestException` before anything is stored.
-7. **URLs inject into `req.body` before the ValidationPipe** — DTOs and services keep their URL-shaped contract. Single-file fields become `string`, `maxCount > 1` fields become `string[]`; an absent field stays absent so `@IsOptional()` still applies. The DTO validates the injected URLs, never the raw files.
-8. **Keys are server-decided** — `buildKey(folder, filename)` = sanitized server-side folder + `randomUUID()` + sanitized, lowercased, length-capped extension. Clients never supply paths or folders; the folder comes from the field config.
-9. **Deletes are best-effort and never throw** — replacing media calls `deleteUrls(old)`/`deleteDropped(old, kept)`; a failed GC must not fail the update. Orphaned objects left by failed mid-update writes are GC'd by callers (a full GC job if storage costs ever matter).
-10. **Endpoints are authenticated** — uploads ride business endpoints that carry guards. A public `/uploads/*` endpoint is a violation.
-11. **Swagger matches the wire format** — `@ApiConsumes('multipart/form-data')` + a shared `multipartBody(fileFields, textFields)` helper; the docs show `format: binary` file fields plus the required text fields.
-12. **S3-compatible client config** — `region: 'auto'`, `forcePathStyle: true`, endpoint/bucket/credentials from env (`S3_ENDPOINT`, `S3_BUCKET_NAME`, `S3_PUBLIC_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`). Bucket existence is ensured best-effort at startup and never blocks boot.
-13. **UploadFile shape is local** — a local `UploadFile` interface (Multer `File` subset) instead of the global `Express.Multer.File` augmentation, which is fragile across TS configs.
-
-## Handler patterns (backend)
-
-14. **One `mediaUpload` call per multipart endpoint** — the field config is the endpoint contract: `{ name, maxCount, folder?, bodyKey? }`. Multi-field endpoints pass an array; `folder` is a server-decided storage path (`'articles'`, `'vendor/legal'`, `'court-photos'`); `bodyKey` renames the injected body field when the DTO expects a different key than the form field (e.g. `{ name: 'photo', bodyKey: 'url' }`):
-
-   ```ts
-   @Post(':id')
-   @UseGuards(RolesGuard)
-   @UseInterceptors(mediaUpload([
-     { name: 'coverImage', maxCount: 1, folder: 'articles' },
-     { name: 'attachments', maxCount: 5, bodyKey: 'attachmentUrls' },
-   ]))
-   @ApiConsumes('multipart/form-data')
-   @ApiBody(multipartBody(
-     [{ name: 'coverImage' }, { name: 'attachments' }],
-     [{ name: 'title', required: true }],
-   ))
-   update(@Param('id') id: string, @Body() dto: UpdateArticleDto) { /* dto.attachmentUrls: string[] */ }
-   ```
-
-15. **DTOs declare the injected URLs** — a single-file field is `@IsOptional() @IsUrl()` `string`, a multi-file field is `@IsOptional() @IsArray() @IsUrl({}, { each: true })` `string[]`. The DTO never sees a `File`; validation runs after the interceptor injected the URLs.
+4. **One `StorageModule` per app, disks instead of SDK clients** — Register `StorageModule.forRoot()` / `forRootAsync()` once in `AppModule` (global). Services inject the default `StorageDisk`, a named `@InjectDisk('name')`, or `Storage`. Never instantiate `S3Client` in feature modules. Configure S3-compatible disks (`S3Disk`) with `region: 'auto'`, `forcePathStyle: true`, and env-driven credentials (`S3_ENDPOINT`, `S3_BUCKET_NAME`, `S3_PUBLIC_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`).
+5. **Inline multipart on authenticated business endpoints via `uploadToDisk`** — Attach `FileInterceptor` / `FileFieldsInterceptor` backed by `uploadToDisk({ disk, contentTypes, cacheControl })` (or the repo's `mediaUpload` interceptor) directly on the guarded business route (`@UseGuards(...)`):
+   - **Magic-byte validation**: content type is detected from file bytes (`detectContentType`), paired with extension canonicalization (`EXT_TO_MIME` for ZIP-container formats like DOCX) and per-file size limits (default 10 MB → 413/400) before storage, leaving no partial files.
+   - **Server-decided keys**: keys are generated server-side (`<folder>/<randomUUID()>.<ext>`); clients never control paths or filenames.
+   - **No public `/uploads/*` endpoint**: uploads always ride an authenticated domain route. For exceptional direct-to-storage flows, use `signedUpload` + `receiveSignedUpload` + `detectContentType`.
+6. **URL/key injection before `ValidationPipe`** — When using `mediaUpload(fields, options)` (`{ name, maxCount, folder?, bodyKey? }`), uploaded URLs inject into `req.body` before `ValidationPipe` so DTOs validate `@IsOptional() @IsUrl()` (`string`) or `@IsArray() @IsUrl({}, { each: true })` (`string[]`). Use `UploadFile` (local Multer subset interface) rather than global `Express.Multer.File`.
+7. **Serving & private files** — Stream stored files via `serveFile(disk, file, { req, res, disposition })` (handles `Range` + `ETag`). Serve private files via time-limited `signedUrl` (and `serveSignedUrl` in dev).
+8. **Swagger matches the wire format** — Decorate multipart handlers with `@ApiConsumes('multipart/form-data')` and `@ApiBody(multipartBody(fileFields, textFields))` so OpenAPI documents `format: binary` fields alongside text fields.
+9. **Tests use `InMemoryDisk`** — Override `STORAGE_MODULE_OPTIONS` with `InMemoryDisk` instances and assert via `disk.keys()` / `disk.getBuffer(key)` — never touch the real filesystem or S3 in specs.
 
 ## Media lifecycle
 
-16. **Create** — the interceptor uploads and injects; the service persists the URL(s). Nothing to delete.
-17. **Replace (update)** — persist the new URL(s) **first**, then fire-and-forget the drop: `void this.storage.deleteDropped([existing.coverImage], [dto.coverImage])`. Never `await` it — a failed GC must not fail the update; `deleteDropped` filters `old` to the URLs absent from `kept` (`?? []` on both sides).
-18. **Entity delete** — delete the row, then `void this.storage.deleteUrls(entity.photos)`.
-19. **Only the storage host's URLs are ever deleted** — `deleteUrls` extracts keys from URLs and skips invalid ones; stale-host URLs are guarded via `isStaleUrl`. Never hand-roll key extraction from a URL.
-20. **Failure mid-update leaves orphaned objects — accepted** — the new upload succeeded but the persist failed: the object sits in the bucket until a GC job (added if storage costs ever matter). Do not add compensating deletes in error paths; that is the anti-pattern, not the fix.
+10. **Create** — Upload via interceptor/disk and persist the resulting URL(s)/key(s) in the DB row.
+11. **Replace (update): persist first, fire-and-forget GC second** — Update the DB row with the new URL(s)/key(s) **first**, then fire-and-forget deletion of dropped media (`void disk.delete(oldKey)` or `void this.storage.deleteDropped(oldUrls, keptUrls)`). Never `await` cleanup — a failed delete must never fail a committed business update.
+12. **Entity delete** — Delete the DB row first, then fire-and-forget deletion of its media keys/URLs. Guard URL-to-key extraction so only objects on our storage host are deleted.
+13. **Accept mid-update orphans** — If the upload succeeds but the subsequent DB write fails, leave the orphaned object in the bucket for batch GC; never add compensating deletes in error paths.

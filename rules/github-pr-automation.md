@@ -1,178 +1,45 @@
-# PR Automation Rules
+# PR Automation Rules — `/autofix`, path labels, semantic titles & branch cleanup
 
-Rules for PR automation: comment-triggered testing and fixes, path labels, and title conventions. Scope: any repo with pull requests on GitHub.
+Applies to any repo managing pull requests on GitHub. Pin all action refs to full commit SHAs (`rules/github-supply-chain.md` #2).
 
-## Ecosystem CI
+## Comment commands & PR hygiene
 
-### 1. Comment-triggered downstream testing
+1. **Permission-gated `/autofix` comment command** — Allow collaborators with write access to trigger formatter/linter autofixes on a PR via an `issue_comment` (`created`) workflow when `github.event.issue.pull_request && github.event.comment.body == '/autofix'`:
 
+   ```yaml
+   permissions:
+     contents: write
+     pull-requests: write
+   steps:
+     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+       with:
+         ref: refs/pull/${{ github.event.issue.number }}/head
+     - uses: pnpm/setup@<sha> # v2
+       with:
+         runtime: node@26
+         install: false
+         cache: false
+         dest: ${{ runner.temp }}/setup-pnpm
+     - run: pnpm install --frozen-lockfile --ignore-scripts
+     - run: pnpm run format && pnpm run lint --fix
+     - run: |
+         git config user.name "github-actions[bot]"
+         git config user.email "github-actions[bot]@users.noreply.github.com"
+         git add -A
+         git diff --staged --quiet || (git commit -m "chore: autofix format and lint" && git push)
+   ```
 
-Allow maintainers to trigger ecosystem CI on PRs with a comment command.
+2. **Auto-label PRs by changed file path** — Use `dorny/paths-filter@v4` (with `pull-requests: read` so no checkout is needed) + `actions/github-script@v7` on `pull_request: [opened, synchronize]` to apply surface labels (`api`, `web`, `portal`, `miniapp`, `docs`).
+3. **Enforce conventional PR titles** — Validate `pull_request` titles (`[opened, edited, synchronize]`) with `amannn/action-semantic-pull-request@v5` so squash-merge commits always satisfy `commitlint`.
 
-```yaml
-name: Ecosystem CI Trigger
-on:
-  issue_comment:
-    types: [created]
+## Branch cleanup on merge
 
-jobs:
-  trigger:
-    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = context.payload.comment.body;
-            const user = context.payload.comment.user.login;
-            
-            // Check permissions
-            const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              username: user
-            });
-            
-            if (!data.user.permissions.push) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: 'You do not have permission to trigger ecosystem CI.'
-              });
-              return;
-            }
-            
-            // Trigger workflow
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'ecosystem-ci.yml',
-              ref: 'main',
-              inputs: { pr_number: context.issue.number.toString() }
-            });
-```
+4. **Always merge with `gh pr merge --delete-branch` and prune local refs** — Merge PRs with:
 
-## Autofix
+   ```sh
+   gh pr merge <number> --squash --delete-branch
+   git branch -d <branch>
+   git fetch --prune
+   ```
 
-### 2. Comment-triggered autofix
-
-
-Allow maintainers to trigger lint autofix on PRs with a comment command.
-
-```yaml
-name: Autofix
-on:
-  issue_comment:
-    types: [created]
-
-jobs:
-  autofix:
-    if: github.event.issue.pull_request && github.event.comment.body == '/autofix'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: refs/pull/${{ github.event.issue.number }}/head
-      - uses: actions/setup-node@v4
-      - run: npm ci
-      - run: npm run lint:fix
-      - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --staged --quiet || git commit -m "chore: autofix lint"
-          git push
-```
-
-## PR Management
-
-### 3. Auto-label PRs by file path
-
-
-Label PRs based on which files changed.
-
-```yaml
-name: Label PR
-on:
-  pull_request:
-    types: [opened, synchronize]
-
-jobs:
-  label:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            docs:
-              - 'docs/**'
-            frontend:
-              - 'src/components/**'
-              - 'src/pages/**'
-            api:
-              - 'src/api/**'
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const labels = [];
-            if (${{ steps.filter.outputs.docs }}) labels.push('docs');
-            if (${{ steps.filter.outputs.frontend }}) labels.push('frontend');
-            if (${{ steps.filter.outputs.api }}) labels.push('api');
-            
-            if (labels.length > 0) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                labels
-              });
-            }
-```
-
-### 4. Enforce conventional commits
-
-
-Require PR titles to follow conventional commit format.
-
-```yaml
-name: Semantic PR
-on:
-  pull_request:
-    types: [opened, edited, synchronize]
-
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
-
-### 5. Delete the branch when the PR merges
-
-
-Merge with `gh pr merge --delete-branch`. It removes the branch on the remote **and** the local copy.
-
-```sh
-gh pr merge <number> --squash --delete-branch
-```
-
-The repository setting `delete_branch_on_merge` is not enough. It deletes the remote branch only, so the local branch stays and accumulates. It is also a one-shot action bound to the merge event, not a reconciler: GitHub holds no record that a branch must not exist, so a later push to that branch name recreates it and nothing re-fires the cleanup. The pull request timeline shows this as `head_ref_deleted` followed by `head_ref_restored`.
-
-Never push to a branch after merging its pull request. If the branch must live on, open the next pull request from a fresh branch instead.
-
-After merging, drop the local copy and prune the remote-tracking refs:
-
-```sh
-git branch -d <branch>
-git fetch --prune
-```
-
+   GitHub's `delete_branch_on_merge` repo setting only removes the remote ref once at merge time (leaving local branches behind, and never re-deleting a branch if a stale local push recreates `head_ref_restored`). Never push to a branch after its PR merges; open follow-up work on a fresh branch.

@@ -2,152 +2,53 @@
 
 Applies to every project in the organization. Include this file in `opencode.json` `instructions` for any repo.
 
-## Environment
+> **Moved to domain modules**: Axios generics & `postForm` → `rules/frontend.md` (#1–#2); Ponytail React Query mock hooks → `rules/frontend.md` (#3); Tailwind v4 utility names → `rules/frontend.md` (#4); NestJS DTO validation, controller→service seam & `@ApiProperty` → `rules/nestjs.md` (#1, #6, #8); GitHub Actions concurrency (`ci-${{ github.ref }}` / `cd-${{ github.ref_name }}`) → `rules/github-ci.md` (#3); Dockerfile `pnpm` multi-stage shape → `rules/github-vps-deploy.md` (#9).
 
-- **Postgres: always Docker, never native install** — Use `docker compose up -d postgres` from the repo's `docker-compose.yml` for any test, migration, or local-DB work; tear down with `docker compose down` when done. Do not suggest `brew install postgresql*`, do not use `/opt/homebrew/bin/psql` for app work, and do not start a Homebrew Postgres service.
+## Environment & language
 
-## Language
+1. **Postgres: always Docker, never native install** — Run `docker compose up -d postgres` from the repo's `docker-compose.yml` for any test, migration, or local-DB work; tear down with `docker compose down`. Never suggest `brew install postgresql*`, `/opt/homebrew/bin/psql`, or a Homebrew Postgres service.
+2. **STE100 Simplified Technical English** — Always communicate in ASD-STE100. Use approved vocabulary, one meaning per word, and short sentences.
+3. **`CONTEXT.md` / `GLOSSARY.md` is the ubiquitous language** — Read the repo's glossary first and use its exact terms. Call out any term conflict immediately.
+4. **Vietnamese diacritics** — Always use accurate thanh điệu (diacritics) in Vietnamese copy and comments. Verify before committing.
 
-1. **STE100 Simplified Technical English** — Always talk in ASD-STE100. Use only approved STE100 vocabulary. One meaning per word. Short sentences.
-2. **CONTEXT.md is the glossary** — Always read `CONTEXT.md` files and use their ubiquitous language. When a term conflicts with the glossary, call it out immediately.
-3. **Vietnamese diacritics** — Always use correct thanh điệu (diacritics) in Vietnamese content. Verify before commit.
+## Ponytail audit & debt ledger (mandatory)
 
-## API clients (axios, web/React only — NestJS uses `rules/nestjs.md` rule 31)
+5. **Ladder: `delete → stdlib → native → search → dep → one-liner → minimal code`** — Stop at the first rung that holds, and never skip the search rung. For any concern with locale, Unicode, date/time, cryptography, parsing, or money edge cases, check `rules/libraries.md` first: when edge cases are non-trivial and enumerable, the baseline library wins (`slugify` for Vietnamese slugs; `motion` for staggered/interruptible/scroll-linked sequences vs plain CSS for a single keyframe; `getPageItems()` + CSS over `react-paginate`). Never add speculative abstractions (an interface with one implementation, a factory for one product). Deletion beats addition; shortest diff wins. Mark every deliberate simplification with `// ponytail: <ceiling>, <upgrade if ...>`.
+6. **Zero `no-trigger` debt before merge** — Every `ponytail:` comment is tracked tech debt. Harvest before merge with `grep -rnE '(#|//) ?ponytail:' . --exclude-dir={node_modules,.git,.next,dist}`, group as `<file>:<line> — <what>. ceiling: <limit> upgrade: <trigger>`, and tag any marker lacking `if`/`when`/`Upgrade` as `no-trigger`. Fix or add the trigger so `0 no-trigger` remains before shipping.
 
-4. **Generic type parameter, never manual unwrap** — Use the axios generic type parameter to declare response types:
+## Cross-app impact & rule maintenance
 
-   ```ts
-   const { data } = await api.get<MyType>("/endpoint");
-   return data;
-   ```
+7. **Check affected apps before editing** — In a monorepo, grep sibling apps before changing any shared contract, and fix or document both sides in the same PR:
+   - **Backend edit (`apps/api/`)** → grep `apps/web/`, `apps/portal/`, `apps/miniapp/`, `packages/api-client/` for the route, response shape, field name, or error code.
+   - **Frontend edit** → verify the endpoint, DTO shape, and error codes in `apps/api/`.
+   - **Shared package edit (`packages/utils`, `packages/ui`)** → grep all `apps/` for imports of the changed export.
+8. **Suggest rule updates, never deviate silently** — When a rule is wrong, outdated, or missing for the task at hand, tell the user and propose an update to `rules/*.md` in `The-Resonance-Team/skills` (`main`). Never silently ignore a rule.
 
-   NEVER write `data?.data as Type`. NEVER create duplicate `unwrap()`/`_unwrap()` helpers. The response interceptor in `client.ts` auto-unwraps the `{ data: T }` envelope; callers just type `T`. If an endpoint returns `{ data: T }` or `T` directly, the interceptor handles it.
+## Time, identifiers & imports
 
-5. **Multipart uploads use native axios helpers** — Use `postForm`/`putForm`/`patchForm` for multipart. Do NOT hand-roll a `toFormData` helper: native semantics skip undefined/null/empty, repeat `File` arrays per key, and match what the server serializer expects.
-
-## Tailwind v4
-
-6. **Check utility availability before use** — Tailwind v4 resized/renamed utilities. `max-w-sm` no longer exists; use `max-w-[24rem]`. When a utility is uncertain, check AGENTS.md or the project's Tailwind config before using it.
-
-## Trust boundaries
-
-7. **Validate input at trust boundaries** — Any handler receiving `@Body()`, or multiple `@Query()`/`@Param()` values, must use a DTO class with `class-validator` decorators. Validation lives in the DTO, not in the service/controller. Inline/mapped types (`{ x: string }`, `Omit<Dto, K>`, `Record<string, unknown>`) as a body param bypass the ValidationPipe (the `Object` metatype is excluded from validation) — for the pipe to run, the param must be a DTO class (it may `extends` another DTO to inherit metadata).
-
-## Mock data (ponytail pattern)
-
-8. **Ponytail mock hooks** — When backend endpoints don't exist yet, use module-level mutable mock data with a `// ponytail:` comment documenting the ceiling and upgrade path. Pattern:
-
-   ```ts
-   // ponytail: module-level mutable mock store. Upgrade path: swap for real API when backend ready.
-   const MOCK_ITEMS: Item[] = [...];
-
-   export function useItems() {
-     return useQuery({
-       queryKey: ["items"],
-       queryFn: async () => MOCK_ITEMS,
-     });
-   }
-
-   export function useCreateItem() {
-     return useMutation({
-       mutationFn: async (item: Item) => {
-         MOCK_ITEMS.push({ ...item, id: `item-${Date.now()}` });
-         return item;
-       },
-       onSuccess: () => queryClient.invalidateQueries({ queryKey: ["items"] }),
-     });
-   }
-   ```
-
-   The `// ponytail:` comment signals this is temporary mock data, not production code. When the real API lands, replace the mock hooks with real API calls — the component interface stays the same.
-
-## Ponytail audit (mandatory)
-
-19. **Ladder: delete → stdlib → native → search → dep → one-liner → minimal code** — Stop at the first rung that holds, but never skip the search rung. Before writing native/one-liner code for a concern with locale, Unicode, date/time, cryptography, parsing, or money edge cases, check `rules/libraries.md`'s table and run its discriminator (rule 7): edge cases non-trivial and enumerable → the library wins, even one not yet in the table. `react-paginate` passes the discriminator toward manual — `getPageItems()`/CSS are provably correct on the app's real input, no hidden edge cases. `motion` clears the discriminator when sequencing is non-trivial (stagger, interruptible transitions, scroll-linked) and loses to plain CSS for a single keyframe. Slug generation fails it toward the library (`rules/libraries.md` rule 10). No speculative abstractions (interface with one impl, factory for one product). Deletion over addition; shortest diff wins. Mark deliberate simplifications with `// ponytail: <ceiling>, <upgrade if ...>` — every shortcut names its ceiling and upgrade path; a marker without `if/when/Upgrade` is `no-trigger` debt that rots (harvest with `grep -rnE '(#|//) ?ponytail:' . --exclude-dir=node_modules/.git/.next/dist` and ledger it).
-
-20. **Debt ledger** — Every `ponytail:` comment is tech debt. Harvest the whole tree before merge, group by file `<file>:<line> — <what>. ceiling: <limit> upgrade: <trigger>`, tag `no-trigger` if no `if/when/Upgrade`. 0 no-trigger before ship. DTOs must not re-add `@ApiProperty` when NestJS swagger plugin `classValidatorShim` is on (see `rules/nestjs.md` #22).
-
-## Cross-app impact
-
-9. **Check affected apps before edit** — In a monorepo, a backend change may break a frontend consumer and vice versa. Before any code edit, grep the other apps for the affected symbol, endpoint, type, or field name. Checklist:
-   - **Backend edit** → search `apps/web/`, `apps/portal/`, `apps/miniapp/`, `packages/api-client/` for the changed route, response shape, field name, or error code.
-   - **Frontend edit** → check `apps/api/` for the endpoint the component calls, the DTO shape it sends, and the error codes it catches.
-   - **Shared package edit** (`packages/utils`, `packages/ui`) → search all `apps/` for imports of the changed export.
-   - If the grep finds a consumer, verify the edit does not break it. If it does, fix both sides in the same PR or document the break in the PR description.
-
-## Rule maintenance
-
-10. **Suggest rule updates** — These rules are a living document, not a fixed contract. When a rule is wrong, outdated, or missing for the task at hand, say so and suggest an update. Ask the user whether to update the rules, then edit `rules/*.md` in the `The-Resonance-Team/skills` repo and push to `main` when allowed. Do not silently deviate from a rule — propose the change instead.
-
-## GitHub Actions
-
-11. **Cancel in-progress runs on new push** — Every workflow sets a `concurrency` block with `cancel-in-progress: true`. A newer push to the same ref cancels the stale run; CI time is never spent on superseded commits.
-
-12. **CI keys the group on `github.ref`** — `group: ci-${{ github.ref }}`. `github.ref` is the fully-qualified ref (`refs/heads/main`, `refs/tags/v1.0.0`, `refs/pull/42/merge`) — unique per trigger context. CI fires on both `push` and `pull_request`, so `ref` keeps a branch push, a tag push, and a PR run in separate groups; a PR run is never cancelled by an unrelated push. `github.ref_name` is unsafe here: `42/merge` (a PR's short name) collides with a branch literally named `42/merge`.
-
-13. **CD keys the group on `github.ref_name`** — `group: cd-${{ github.ref_name }}`. Deployment is tracked per ref _name_ (`main`, `v1.0.0`) in the deploy-environments UI: same branch/tag → same deployment slot → a newer push cancels the stale deploy. `github.ref` would treat a tag and a same-named branch as different slots, allowing two deploys of the same target to run concurrently.
-
-## Conventions (repo-level)
-
-11. **DTOs pass intact through the controller→service seam** — DTOs (`@Body()`/`@Query()`) pass intact into the service (`service.method(dto)`), imported with `import type`; no field-by-field destructuring in the controller. Exceptions: service→service calls and transport composites (cookies + body) still use primitives.
-12. **Time handling uses date-fns** — All time processing (parse, arithmetic, boundary, relative, display) uses `date-fns` + `@date-fns/tz`. Sole exception: serialization to the wire format keeps `toISOString()`. Boundaries (`startOfDay`/`startOfMonth`) always go through `new TZDate(d, TZ)` — never `new Date(y, m, d)` constructor arithmetic. Never derive a business calendar day (`YYYY-MM-DD`) or weekday with `.toISOString().slice(0, 10)`, `.getUTCDay()`, or `.getDay()` — timestamps between 00:00 and 07:00 `Asia/Ho_Chi_Minh` fall on the prior UTC date; format calendar day keys and weekdays in the target timezone (`TZDate` + `date-fns`, or `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })` in date-fns-exempt miniapps).
-13. **Keep identifiers short** — A hand-written identifier over ~30 characters is a smell. Drop the qualifier the module or file context already carries (`ictReportingWeekBoundsInstantAt` inside `ict.ts`, `findAvailabilityTemplateForSlot` inside the appointments repo, `FeedbackReportTransitionPayload` inside the feedback module). Exempt: generated types (`*UncheckedUpdateManyInput`), DB constraint names, wire-format error codes (`INCOMPATIBLE_FUTURE_APPOINTMENTS`), and SCREAMING_CASE constants — unless a word is redundant (`MAX_OPEN_PENDING_ORDERS_PER_CITIZEN` → `MAX_PENDING_ORDERS_PER_CITIZEN`). Scan with: `grep -rhoE "[a-zA-Z_][a-zA-Z0-9_]{34,}" src --include="*.ts"`.
-
-## Imports (TypeScript)
-
-14. **Import specifiers never carry file extensions** — No `.ts`/`.tsx`/`.js`/`.jsx` in import paths: `from './portal'`, never `from './portal/index.ts'` or `from './portal.js'`. Resolvers handle extensionless specifiers; `allowImportingTsExtensions` stays off. Barrel directories import by directory name (`./portal`), not by `./portal/index`.
+9. **Time handling uses `date-fns` + `@date-fns/tz`** — All parsing, arithmetic, boundaries, and display use `date-fns` + `@date-fns/tz` (target timezone `Asia/Ho_Chi_Minh`). Wire serialization is the sole exception (`toISOString()`). Compute day/month boundaries via `new TZDate(d, TZ)` — never `new Date(y, m, d)`, `.toISOString().slice(0, 10)`, `.getUTCDay()`, or `.getDay()` (timestamps between 00:00 and 07:00 ICT fall on the previous UTC day). Date-fns-exempt miniapps use `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })`.
+10. **Keep hand-written identifiers ≤ ~30 characters** — Drop qualifiers the file or module already implies (`findAvailabilityTemplateForSlot` inside `appointments.repo.ts`, `FeedbackReportTransitionPayload` inside `feedback`). Exempt: generated Prisma types, DB constraint names, wire error codes, and `SCREAMING_CASE` constants (unless a word is redundant: `MAX_OPEN_PENDING_ORDERS` → `MAX_PENDING_ORDERS`). Audit with `grep -rhoE "[a-zA-Z_][a-zA-Z0-9_]{34,}" src --include="*.ts"`.
+11. **Import specifiers never carry file extensions** — Write `from './portal'`, never `from './portal.ts'` or `from './portal/index.js'`. Keep `allowImportingTsExtensions` off.
 
 ## Refactoring (mandatory)
 
-The discipline that shipped the 47K-line ADR-0039 frontend componentization. Applies to every refactor, on any surface:
-
-15. **Incremental strangle, never big-bang** — one page/component per PR, each slice reviewable and shippable on its own. A "rewrite everything at once" refactor is unreviewable at scale (ADR-0039 rejected it); the plan is a sequence of slices, not one mega-branch.
-16. **Behavior identical, drift documented** — visual drift (token shifts, one-notch shadow scale) is acceptable only where the ADR/plan says so. A refactor that changes behavior is a feature change and gets its own PR.
-17. **Deletion over addition** — a refactor deletes dead routes (no navigation entry, no roadmap item), dead exports, unused CSS files, and mock layers. A refactor that only moves code and deletes nothing carries its debt forward. Keep a single canonical signature for internal refactors — never add union-parameter overloads (`Options | Mode`), runtime `instanceof Set` / `'field' in obj` shape branches, dual field-name fallbacks (`a.start ?? a.startTime`), or pass-through re-exports (`export { X } from ...`) to preserve old in-repo call shapes; update every in-repo caller in the same slice.
-18. **Zero suppression debt** — a refactor leaves no lint suppression for the rules it was meant to satisfy: no `oxlint-disable max-lines` in any split file. Complete means complete.
+12. **Incremental strangle, behavior identical** — Ship one page, component, or module slice per PR (ADR-0039 rejected big-bang rewrites). A refactor preserves exact runtime behavior; visual drift is allowed only when explicitly documented in the ADR/plan, and behavior changes require a separate feature PR.
+13. **Deletion over addition & single canonical signature** — Delete dead routes, dead exports, unused CSS, and obsolete mock layers during the refactor. Never add union-parameter overloads (`Options | Mode`), runtime shape branches (`instanceof Set`, `'field' in obj`), dual field-name fallbacks (`a.start ?? a.startTime`), or pass-through re-exports (`export { X } from ...`) to keep old in-repo call shapes alive — update every in-repo caller in the same slice. Leave zero lint suppressions (`oxlint-disable max-lines`).
 
 ## Subagents (orchestration)
 
-19. **Partition subagents by path, never by rule within one directory** — two agents editing the same directory concurrently overwrite each other: corrupted syntax from mid-file merges, duplicate imports, and restores-from-HEAD that discard a sibling agent's work. One directory, one owner; batch agents by route group or module.
-20. **Run the gates yourself after every agent returns, starting with `oxfmt`** — an agent's "done" report is a claim, not evidence. Re-run the full gate suite in strict order — **`oxfmt` first**, then `oxlint --max-warnings=0`, then `typecheck` (`bun check` / `tsc --noEmit`), then targeted tests — on the merged tree before building on the result; agents have reported clean trees holding syntax errors, type errors, and `max-lines: 300` overruns that only appear after `oxfmt` expands single-line JSX and object literals. A dropped brace survives `tsc` when the file sits outside its tsconfig — lint the tree, not the project graph alone. Check `git status` after builds/verifications and remove tool-generated untracked artifacts (`apps/*/AGENTS.md` created by Next.js 16, temporary `.tmp-screenshots/` directories) before staging. In network-sandboxed subagent shells where `pnpm` cannot reach the registry to verify `packageManager`, invoke workspace binaries directly (`./node_modules/.bin/oxfmt`, `./node_modules/.bin/oxlint`, `./node_modules/.bin/vitest`, `./node_modules/.bin/tsc --noEmit`). Keep conventional commit headers ≤100 characters (`header-max-length`) so `commitlint` never rejects a commit after the pre-commit typecheck + lint-staged hook has already run.
+14. **Partition subagents by directory path, never by rule** — Never let two subagents edit the same directory concurrently (prevents mid-file merge corruption, duplicate imports, and `git checkout` clobbers). One directory = one owner.
+15. **Run the verification gates yourself in strict order (`oxfmt` first)** — A subagent's "done" report is a claim, not proof. On the merged tree, run: (1) `oxfmt`, (2) `oxlint --max-warnings=0`, (3) typecheck (`bun check` / `tsc --noEmit`), (4) targeted tests. Running `oxfmt` first is mandatory because formatting expands single-line JSX/objects and exposes `max-lines: 300` overruns. Check `git status` and delete tool-generated untracked files (`apps/*/AGENTS.md` from Next.js 16, `.tmp-screenshots/`) before staging. In network-sandboxed subagent shells, invoke `./node_modules/.bin/{oxfmt,oxlint,vitest,tsc}` directly. Keep conventional commit headers ≤100 characters (`commitlint` `header-max-length`).
 
-## Debugging discipline (mandatory)
+## Debugging & fix verification (mandatory)
 
-21. **A blank/wrong-looking render is a claim about the whole pipeline, not just the component you're looking at.** Before patching the render site (a fallback string, a default value, a conditional), trace the value backward: does the client's fetch/mapper receive the field at all? Does the server response actually include it? Does the DB query (a Prisma `select`, a SQL projection) actually fetch the underlying column/relation? Compare against a sibling endpoint or screen that renders the same kind of data correctly — a working peer is the fastest way to localize which layer is missing the value. Patching the outermost layer (the one you happened to be looking at) fixes the symptom for that one screen and leaves every other consumer of the same broken upstream shape still broken.
-22. **A visible ellipsis or truncated value might be literal data, not a CSS truncation bug.** Before assuming a fixed-width container or a `truncate`/`line-clamp` class is cutting a value off, check the actual constant, seed row, or database value the UI is rendering verbatim — a placeholder value with `…` typed directly into source or seed data produces an identical visual symptom to a real truncation bug, but the fix is a data change, not a layout change.
-23. **A lookup/label/map miss found in one place is evidence of a class, not an isolated typo.** The instinct on finding one missing case (a raw enum value falling through a status-label map, a validation gap on one DTO field among many siblings, a `.env`-var default missing in one config file among several) is to patch that one instance and move on. Grep for the same _shape_ of problem across the codebase before considering the fix complete — every regression this discipline catches was, on inspection, one of several near-identical instances, not a one-off (precedent: XaDaoXa 2026-08 — a missing icon-map key, an incomplete notification-template label map, and a `?window=` param bug were each traced back to the same root-cause class as at least one sibling instance found only by deliberately searching for it after the first was fixed).
+16. **Trace blank/wrong renders and ellipses backward through the full pipeline** — Before patching a component with a fallback or CSS tweak: (a) verify whether the DB `select`/projection, server response, and client mapper actually send the field, comparing against a working sibling endpoint/screen; (b) check whether a visible `…` truncation is literal seed/DB data rather than CSS `truncate`/`line-clamp`.
+17. **Sweep the root-cause class & lock every fix with a regression test** — A missing lookup-map key, missing DTO validator, or missing `.env` default is rarely a one-off: grep for the same shape across the repo and fix all sibling instances in the same pass (Precedent: XaDaoXa 2026-08). Every bug fix ships in the same PR with a unit or e2e test that fails before and passes after, naming the incident.
 
-## Fix verification (mandatory)
+## Package manager, tool replacement & session hygiene (mandatory)
 
-26. **Regression test with every fix** — every bug fix lands with a test that fails before and passes after, in the same PR. The fix is not done until that test exists. Unit-test logic; cover rendered surfaces through e2e (never a component-harness test where the repo convention excludes it). Name the incident in the test so the next reader knows which defect it locks.
-
-## Package manager (pnpm or Bun, per repo `packageManager`)
-
-24. **pnpm 12, no corepack, version from `packageManager`** — Pin `pnpm@12.3.1` in `package.json` `packageManager` (unless the repo declares a Bun-native toolchain — see rule 29). Never use `corepack enable` or `corepack prepare`. CI uses `pnpm/setup@v2` with no `version` input (reads the same field): `runtime: node@26`, `install: false`, `cache: false`, then `pnpm install --frozen-lockfile --ignore-scripts` by hand (`install: true` runs a plain install with no flags; `cache: true` re-downloads the store — slow on self-hosted runners with a persistent `$HOME/.pnpm-store`). Docker (`node:26-alpine` base/runner) derives the major at build time so nothing manual remains:
-
-```dockerfile
-ENV PNPM_HOME="/root/.local/share/pnpm"
-ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
-COPY package.json ./
-RUN PNPM_MAJOR="$(node -p "require('./package.json').packageManager.split('@')[1].split('.')[0]")" \
-  curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="latest-$PNPM_MAJOR" sh -
-```
-
-In `pnpm-workspace.yaml` declare `allowBuilds` for packages that need postinstall (`@node-rs/argon2`, `@prisma/client`, `@swc/core`, `sharp`, `esbuild`, `@parcel/watcher`, `unrs-resolver`) and set `strictDepBuilds: false` (or `strict-dep-builds=false` in `.npmrc`) to avoid `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` was removed in pnpm 11 — do not use it.
-
-- **Fresh-package gate** — when a repo sets `minimumReleaseAge`, a newly published dependency install fails until it is listed in `minimumReleaseAgeExclude`. Entries are exact `name@version` or a name-only wildcard (`"@oxfmt/binding-*"`); a wildcard name pinned to a version (`"@scope/pkg-*@1.2.3"`) is rejected as invalid config (verified pnpm 12.3.1). An intentional tool swap gets the exclusion in the same PR — the pin in `package.json` is the review.
-
-29. **Bun-native toolchain profile (`packageManager: "bun@1.x"`)** — When a repo pins `bun@...` in `packageManager` and declares a Bun-native toolchain in `AGENTS.md`:
-    - **Install**: `bun install` (`--frozen-lockfile` in CI/Docker) is the only install path; never hand-edit version ranges without running `bun install`.
-    - **Typecheck**: `bun check` is the primary type checker (`tsc` stays only for `tsc -b` in `packages/*` when emitting `.d.ts` declarations).
-    - **Test**: `bun test --check` is the default test runner and typecheck gate; reach for `vitest` only when a suite requires capabilities `bun test` lacks (`vi.hoisted`, browser mode, branch coverage).
-
-## Tool replacement (mandatory)
-
-25. **A replacement ends with a repo-wide grep of the old tool's name** — leftover references to a removed tool are invisible to the build: a root dotfile config shadowing the live one (`.lintstagedrc` sitting beside the `lint-staged` package.json field — the field wins, the file rots), per-package scripts no CI job runs, a README command table still naming the old tool, a devDep in a sub-package. After every swap or removal, grep the old name across the repo (excluding lockfile, build caches, and dated audit docs), fix every hit in the same PR, and prove it with a second grep returning empty (precedent: XaDaoXa 2026-09 Prettier→Oxfmt — the first pass missed `.lintstagedrc`, two per-app `format` scripts, one sub-package devDep, and the README row).
-
-## Session hygiene (mandatory)
-
-27. **Kill dev servers by process name, never by port pattern.** `pkill -f "next start --port NN"` matches nothing when the runtime registers as `next-server`, so every subsequent check silently reads a stale server while reporting fresh results. Prefer a `dev:stop` script bound to the port; when killing by hand, confirm zero survivors with `ps` before trusting the next read (precedent: VibeHost 2026-10 — a full verify loop ran against a days-old server).
-
-28. **Never nest a worktree inside the tree it was cut from.** `git add -A` stages a nested worktree as a gitlink on every commit, silently. Keep worktrees as siblings, and reject staged gitlinks (mode 160000) in pre-commit so the one that slips through fails loudly instead of shipping (precedent: VibeHost 2026-10 — same stray entry amended out four times).
+18. **Toolchain profile: `pnpm@12.3.1` or `bun@1.x` from `packageManager` (never corepack)** —
+    - **pnpm repos**: Pin `pnpm@12.3.1` in `package.json#packageManager`. In `pnpm-workspace.yaml`, declare `allowBuilds` for native/postinstall packages (`@node-rs/argon2`, `@prisma/client`, `@swc/core`, `sharp`, `esbuild`, `@parcel/watcher`, `unrs-resolver`) and set `strictDepBuilds: false` (never use removed v10 `onlyBuiltDependencies`). When `minimumReleaseAge` is enabled, list intentional fresh upgrades in `minimumReleaseAgeExclude` using exact `name@version` or name-only wildcard `"@oxfmt/binding-*"` (never versioned wildcards `"@scope/pkg-*@1.2.3"`).
+    - **Bun-native repos** (`packageManager: "bun@1.x"` declared in `AGENTS.md`): use `bun install` (`--frozen-lockfile` in CI/Docker), `bun check` for typechecking (`tsc -b` only for package `.d.ts` emit), and `bun test --check` by default (`vitest` only when `vi.hoisted`, browser mode, or branch coverage is required).
+19. **Finish every tool swap with a repo-wide grep for the old tool's name** — Remove stale dotfiles (`.lintstagedrc` shadowed by `package.json`), per-app scripts, sub-package `devDependencies`, and README rows in the same PR; prove completion with a second grep returning zero hits (Precedent: XaDaoXa 2026-09 Prettier→Oxfmt).
+20. **Kill dev servers by process name & never nest git worktrees** — `pkill -f "next start --port NN"` misses `next-server` processes and leaves stale servers answering checks; use a port-bound `dev:stop` script or verify zero survivors with `ps` (Precedent: VibeHost 2026-10). Keep git worktrees as sibling directories — never inside the source repo tree, where `git add -A` stages them as mode `160000` gitlinks (reject `160000` in pre-commit).

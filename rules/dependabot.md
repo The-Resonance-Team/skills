@@ -1,84 +1,37 @@
-# Dependabot Rules
+# Dependabot & Override Hygiene Rules
 
-Rules for keeping every version source in a repo under Dependabot automation. Scope: any repo on GitHub with a `.github/dependabot.yml`. A dependency version that no ecosystem entry covers is a manual liability: it drifts silently until it rots (copy `configs/dependabot.yml` from the skills repo as the baseline).
+Applies to every repo with `.github/dependabot.yml` (copy `configs/dependabot.yml` as the starting baseline). Every version source in the repo must be covered by a matching ecosystem entry.
 
-## Coverage
+## Ecosystem coverage
 
-### 1. One ecosystem entry per version source in the repo
+1. **Match the ecosystem to the actual lockfile and container manifest** — Mismatched ecosystems fail the Dependabot job outright with `dependency_file_not_found` rather than skipping cleanly (Precedent: VibeHost 2026-10 — `npm` on a `bun.lock` repo and `docker` on a compose-only repo both aborted):
 
-List every place a version is declared, and give each one an entry in `dependabot.yml`. The ecosystem for `package.json` follows the lockfile, and for images it follows the file format:
+   | Version source                      | Ecosystem        | Condition                                   |
+   | ----------------------------------- | ---------------- | ------------------------------------------- |
+   | `package.json` dependencies         | `bun`            | repo uses `bun.lock`                        |
+   | `package.json` dependencies         | `npm`            | repo uses `pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock` |
+   | `.github/workflows/*` action refs   | `github-actions` | always                                      |
+   | `FROM <image>:<tag>` in Dockerfiles | `docker`         | `Dockerfile` or Kubernetes YAML exists (list plain `directories:`, never globs) |
+   | `image:` in `docker-compose*.yml`   | `docker-compose` | compose file exists                         |
 
-| Version source                      | Ecosystem         | Condition                                  |
-| ----------------------------------- | ----------------- | ------------------------------------------ |
-| `package.json` dependencies         | `bun`             | repo has `bun.lock`                        |
-| `package.json` dependencies         | `npm`             | repo has `package-lock.json` or `yarn.lock` |
-| `package.json` dependencies         | `pnpm`            | repo has `pnpm-lock.yaml`                  |
-| `.github/workflows/*` action refs   | `github-actions`  | always                                     |
-| `FROM <image>:<tag>` in Dockerfiles | `docker`          | Dockerfile or Kubernetes YAML exists       |
-| `image:` in `docker-compose.yml`    | `docker-compose`  | compose file exists                        |
+2. **Bump `packageManager` manually in one PR** — Dependabot has no `package-manager-versions` ecosystem (its validator rejects that string — Precedent: 2026-09). Update `package.json#packageManager`, refresh the lockfile (`pnpm install --lockfile-only` or `bun install`), update `engines`/`devEngines` if needed, and verify `git grep <old-version>` returns zero hits outside changelogs.
 
-Anti-pattern: an `npm`-only config. The `npm` ecosystem does **not** touch the `packageManager` field, and it never reads `RUN npm i -g <tool>@<ver>` lines. The result is CI on the new version while Docker images and the local toolchain build on the old one — drift nobody sees until a lockfile refuses to install.
+## Update policy & overrides
 
-### 1a. The wrong ecosystem aborts the whole job, it does not degrade
+3. **Group `minor` + `patch`; keep `major` PRs individual (`open-pull-requests-limit: 5`)** — Group routine updates under `groups.minor-and-patch` (`patterns: ["*"]`, `update-types: ["minor", "patch"]`) so each major breaking upgrade gets its own isolated CI run.
+4. **Never `ignore` a major without a rationale comment** — Security PRs bypass `ignore` anyway and land on the old major; document any mandatory major pin right above its `ignore:` block.
+5. **Keep workflow actions SHA-pinned** — Use `uses: owner/repo@<40-char-sha> # v1.2.3`; Dependabot updates both the commit SHA and the trailing version comment.
+6. **Single source of truth for `overrides` in `pnpm-workspace.yaml`** — `pnpm-workspace.yaml#overrides` completely shadows root `package.json#overrides`; delete any duplicate root `package.json` `overrides` block so edits never silently no-op. To bump a pinned transitive dependency for `pnpm audit`, update the pin in `pnpm-workspace.yaml` first, then run bare `pnpm update <pkg>` (passing an explicit `@version` is rejected when a pin exists) and confirm `pnpm audit --audit-level=high` exits `0` (Precedent: XaDaoXa 2026-09, PRs #257–#259).
 
-Two mismatches abort with `dependency_file_not_found` / a misconfiguration error, and the run is marked **failed** rather than skipped:
+## Supply-chain release age gate (`pnpm`)
 
-- **`npm` against a `bun.lock` repo.** Dependabot names the fix: `Set package-ecosystem: "bun"`. The `npm_and_yarn` ecosystem cannot read `bun.lock` at all (incident 2026-10: VibeHost).
-- **`docker` against a compose-only repo.** The `docker` ecosystem reads only `Dockerfile` and Kubernetes YAML; it never looks at `docker-compose.yml` (same incident).
+7. **Enforce `minimumReleaseAge: 10080` (7 days) in `pnpm-workspace.yaml`** — Since pnpm v11, non-auth settings live in `pnpm-workspace.yaml` (not `.npmrc`). `minimumReleaseAge: 10080` blocks under-age versions during both Dependabot and CI `--frozen-lockfile` installs (Precedent: 2026-09 — caught 4 packages <7d old on first run). Exempt manually reviewed upgrades with exact `name@version` or name-only wildcard `"@oxfmt/binding-*"` and enable auto-pruning:
 
-Pick the ecosystem from the file that actually exists in the repo, then read the Dependabot run before assuming the entry is inert. A green-looking config can still be a failed job.
-
-### 2. The package manager binary is manual — no ecosystem covers it
-
-There is no `package-manager-versions` ecosystem value (Dependabot rejects it — incident 2026-09: the team baseline shipped it and the config validator failed the PR). Bumping the binary means, by hand, in one PR:
-
-- the `packageManager` field in `package.json` plus a lockfile-only install (`pnpm install --lockfile-only`, or `bun install`) for the lockfile block;
-- Docker `RUN` lines that derive pnpm from `package.json` at build time so nothing manual remains (rules/general.md §24: `PNPM_MAJOR` + `latest-$PNPM_MAJOR`), never `RUN npm i -g pnpm@<ver>`;
-- `engines` / `devEngines` runtime fields if the bump changes the required runtime;
-- the developer's locally installed toolchain — outside the repo, say so in the PR body.
-
-A version bump is landed only when `git grep <old-version>` returns nothing outside the changelog.
-
-## Update policy
-
-### 3. Group minor and patch; keep majors individual
-
-```yaml
-groups:
-  minor-and-patch:
-    patterns: ["*"]
-    update-types: ["minor", "patch"]
-```
-
-One grouped PR for routine bumps; one PR per major so a breaking bump gets its own build-and-test signal. Cap the noise: `open-pull-requests-limit: 5`.
-
-### 4. Never `ignore` a major to dodge work
-
-Security-update PRs bypass `ignore` conditions anyway, so ignoring a major hides only the planned upgrade; the emergency patch still lands on top of the old major. If a major must stay pinned, say why in a comment above the `ignore:` block.
-
-### 5. Keep action SHA pins pinned
-
-Workflow action refs stay pinned to an exact commit hash with the tag in a trailing comment (`uses: owner/repo@<sha> # v1.2.3`). Dependabot updates the SHA and syncs the comment for SHA-pinned refs. Anti-pattern: re-pinning a Dependabot PR back to a tag ref, or letting a tag ref stay a tag ref — tag drift is a supply-chain hazard.
-
-## Safety
-
-### 6. Gate fresh releases with `minimumReleaseAge` (pnpm)
-
-Dependabot proposes the newest matching version, including one published an hour ago — the exact window supply-chain hijacks exploit. pnpm's `minimumReleaseAge` (minutes, in `pnpm-workspace.yaml` — not `.npmrc`: since pnpm v11 only auth/registry settings are read from `.npmrc`) makes every install, including frozen CI installs, fail on versions younger than the cutoff. The default is 1440 (1 day) since v11; an explicit value is strict (fail, never fall back).
-
-```yaml
-# pnpm-workspace.yaml — 10080 minutes = 7 days
-minimumReleaseAge: 10080
-```
-
-Manually-reviewed upgrades exempt themselves with exact-version pins (future releases stay gated); `minimumReleaseAgeExcludePrune` drops stale pins on the next add/update/remove:
-
-```yaml
-minimumReleaseAgeExclude:
-  # manual upgrades, one line per reviewed version
-  - cn@0.2.3
-  - zod@4.5.2
-minimumReleaseAgeExcludePrune: true
-```
-
-Worked incident (2026-09): enabling the gate failed CI on four lockfile entries younger than 7 days (`cn@0.2.3` at 1 day old among them) — the gate doing its job on the first run. Dependabot PRs that resolve to under-age versions now fail the CI install until they mature; no human triage needed.
+   ```yaml
+   # pnpm-workspace.yaml
+   minimumReleaseAge: 10080
+   minimumReleaseAgeExclude:
+     - cn@0.2.3
+     - "@oxfmt/binding-*"
+   minimumReleaseAgeExcludePrune: true
+   ```

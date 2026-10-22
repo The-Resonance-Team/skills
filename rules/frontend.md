@@ -1,258 +1,67 @@
 # Frontend Rules — web, portal, miniapp
 
-Applies to browser clients in the organization (React/Next.js web apps, admin portals, mobile-web miniapps). Include this file for any frontend repo.
+Applies to browser clients in the organization (React/Next.js web apps, admin portals, mobile-web miniapps). Repos with i18n additionally include `rules/i18n.md`.
 
-## Scope
+## API consumption & Ponytail mock hooks (mandatory)
 
-Client-side standards: API consumption, uploads, styling, forms. Backend-only repos should omit this file. Repos with an i18n feature additionally include `rules/i18n.md` (catalog discipline lives there, not here).
-
-## API consumption (mandatory)
-
-1. **Axios generic type parameter** — Declare response types via the generic parameter, never manual unwrap:
+1. **Axios generic type parameter, never manual unwrap** — Declare response types via `const { data } = await api.get<MyType>('/endpoint')` and return `data`. Never write `data?.data as Type` or custom `unwrap()` helpers — the `lib/client.ts` response interceptor unwraps `{ data: T }` envelopes.
+2. **Native multipart helpers** — Use `api.postForm<T>()` / `putForm` / `patchForm` for uploads; never hand-roll `toFormData` (native helpers skip `undefined`/`null`, repeat `File[]` per key, and match the server serializer). *Sole exception*: a single port-boundary `toFormData` inside a transport-agnostic `RequestPort` (`@repo/api-client`) shared with an Axios-exempt `fetch` adapter.
+3. **Wire real API data once the endpoint exists; use Ponytail mock hooks only before it lands** — Hardcoded counts, badges, or rows that contradict a live endpoint are bugs to fix in the same pass, not TODOs (Precedent: XaDaoXa 2026-09 sidebar vs header counts). When the backend endpoint does not exist yet, put module-level mutable mock state behind standard `useQuery`/`useMutation` hooks so component signatures never change on swap:
 
    ```ts
-   const { data } = await api.get<MyType>("/endpoint");
-   return data;
+   // ponytail: module-level mutable mock store. Upgrade if: GET/POST /v1/items lands.
+   const MOCK_ITEMS: Item[] = [...];
+   export const useItems = () => useQuery({ queryKey: ['items'], queryFn: async () => MOCK_ITEMS });
    ```
 
-   NEVER write `data?.data as Type`. NEVER create duplicate `unwrap()` helpers — the interceptor handles the envelope.
+## Styling, Tailwind v4 & Colors (mandatory)
 
-2. **Native multipart helpers** — Use axios `postForm`/`putForm`/`patchForm` for uploads. Do NOT write a custom `toFormData` helper: native semantics skip undefined/null/empty, repeat `File` arrays per key, and match the server serializer. Exception: a transport-agnostic `RequestPort` shared with an Axios-exempt `fetch` client (rule 12, `@repo/api-client`) normalizes `RequestOptions.form` via a single port-boundary `toFormData` helper so `fetch` adapters do not `JSON.stringify` multipart payloads.
+4. **Tailwind v4 utilities only** — No hand-rolled CSS files or inline `style={{}}` objects. Use v4 utility names (`shadow-xs`, `shadow-sm`, `rounded-xs`, `rounded-sm`, `shrink-0`, `outline-hidden`, `max-w-[24rem]`, `bg-linear-<angle> from-x to-y`; `ring-offset-*` is removed; `shadow-md/lg/xl` and `tracking-wider` remain valid). Check `AGENTS.md` or the theme config when unsure.
+5. **Cascade-layer hygiene & `@source` in Tailwind v4** — In CSS Cascade Layers, **any unlayered rule beats every `@layer` rule** regardless of specificity (`* { margin: 0; padding: 0; }` unlayered zeroes out every `@layer utilities` `p-*`/`px-*`/`m-*`/`mx-auto` class). When porting `.dc.html` / `tokens.css` into a Tailwind v4 app (`@import "tailwindcss"`), drop duplicate resets or wrap element resets in `@layer base` and custom classes in `@layer components`. When `globals.css` sits in `apps/*/src/app/globals.css`, add `@source "../";` plus `@source` paths for shared UI packages (`@source "../../../../packages/ui/src";`) so Turbopack scans all components (Precedent: Gia Su Anh Minh 2026-10).
+6. **Colors are `@theme` design tokens, never literals** — Define shared tokens in `tokens.css` and app tokens in `globals.css` (`@theme inline`); reference them via generated classes (`bg-ph-bg`, `text-tier-low-strong`) or `var(--color-x)` in JS style maps. Keep raw hex **only** where CSS variables cannot resolve: token definitions, `var(--color-x, #hex)` fallbacks, `themeColor` meta tags, `<canvas>`, SVG `fill`/`stroke` attributes, and brand/chart-series data maps.
 
-26. **Real data once the API exists** — a hardcoded count, placeholder row, or label that disagrees with its endpoint is a bug, not a TODO: fix the wiring, don't file it away. Mocks/placeholders are allowed only while the endpoint does not exist yet (see `rules/general.md` rule 8, ponytail mock hooks), and must name the endpoint they will read. When UI content contradicts live API data (counts, totals, badges, headers), propose — or directly apply — the wiring fix in the same pass instead of reporting and waiting.
+## Module boundaries, file shape & Next.js 16 (mandatory)
 
-    Proven by a real incident: sidebar badges counted over default page windows while the header showed server totals — inbox badge 49 vs 96 pending, appointments badge 50 across all dates vs today's count (XaDaoXa 2026-09).
+7. **Deep-module boundaries by default (`oxc/no-barrel-file: "error"`)** — Import workspace packages only through declared `package.json#exports` entry points (`@scope/pkg`, `@scope/pkg/subpath`) and import app-internal modules directly by file path (use relative paths when shorter than `@/` alias; keep same-folder imports relative). Forbid `export *` folder barrels. *Legacy exception*: in repos that have not enabled `oxc/no-barrel-file`, folders with ≥2 non-test files maintain an `index.ts` barrel and never import their own barrel from within the same folder.
+8. **300-line hard cap (`max-lines: 300`), one screen = one file, fold into shared UI** — Target **≤250 formatted lines** when authoring new files and split >300-line monoliths in-place (behavior identical): multi-view screens → thin shell + per-view files; `hooks.ts` → per-domain `use-<resource>.ts`; `lib/data` → per-domain `<domain>.ts` (delete dead exports/mocks during the split). Shared multi-variant components live **once** in the shared UI package using `cva` + `import { cn } from 'cn'` — fold new tones/variants (`Badge`, `Input`) into the shared component and delete app-local copies (`Pill`, `Btn`, `INPUT_CLASS`).
+9. **Route editor vs modal form** — Full-page create/edit flows share one route-editor component across `/path/new` + `/path/[id]` (`isNew = !id || id === 'new'`), never page-level `useState`. Use `*FormModal` dialogs only for inline edits triggered from a list page.
+10. **Next.js 16 conventions (`src/proxy.ts` & default Turbopack)** — Name request hooks `src/proxy.ts` exporting `export function proxy(request: NextRequest)` (Next.js 16 ignores deprecated `middleware.ts`). Run `next dev` and `next build` with default Turbopack (never `--webpack`). Ignore `**/next-env.d.ts` in `.gitignore`, `.oxfmtrc.json`, and `.oxlintrc.json` so dev/build route-type switches never dirty git; delete any tool-scaffolded `apps/*/AGENTS.md`. In Bun multi-app monorepos, symlink `apps/<app>/node_modules/.bin -> ../../../node_modules/.bin` in `postinstall` (Precedent: Gia Su Anh Minh 2026-10).
 
-## Styling (Tailwind v4)
+## Data fetching, React Query & Forms (mandatory)
 
-3. **Check utility availability** — Tailwind v4 resized/renamed utilities. `max-w-sm` no longer exists; use `max-w-[24rem]`. When unsure, check AGENTS.md or the project's Tailwind config before using a utility.
-4. **Tailwind v4 utilities only** — no hand-rolled CSS files, no inline `style={{}}` objects. v3-only utilities do not exist: `shadow-sm`→`shadow-xs`, bare `shadow`→`shadow-sm`, `rounded-sm`→`rounded-xs`, bare `rounded`→`rounded-sm`, `flex-shrink-0`→`shrink-0`, `outline-none`→`outline-hidden`, `ring-offset-*` removed, `max-w-sm`→`max-w-[24rem]`. `shadow-md/lg/xl` and `tracking-wider` ARE valid v4 utilities — do not shift them. (ADR-0040; shadcn v3 tokens.)
-35. **Cascade-layer hygiene when porting design CSS into Tailwind v4** — In the CSS Cascade Layers spec, **any unlayered rule beats every `@layer` rule**, regardless of selector specificity (`*` unlayered beats `.px-8` inside `@layer utilities`). Never copy an unlayered reset (`* { box-sizing: border-box; margin: 0; padding: 0; }`) or unlayered custom classes from a `.dc.html` export's `tokens.css` or `<style>` block into a file imported alongside `@import "tailwindcss"`. Wrap ported element resets in `@layer base` (or omit `* { margin: 0; padding: 0 }` entirely because Tailwind v4 Preflight already resets margins and padding inside `@layer base`) and wrap any custom utility/component classes in `@layer components`. When `globals.css` sits inside `apps/*/src/app/globals.css` in a monorepo, add explicit `@source "../";` and `@source` paths for shared UI packages (`@source "../../../../packages/ui/src";`) so Tailwind v4 scans sibling component folders and workspace packages under Turbopack.
+11. **Single Axios client in `lib/client.ts`** — Configure `axios.create({ baseURL, headers })` with: (a) auth request interceptor, (b) response error interceptor normalizing messages to `` `${method} ${path} → ${status}` ``, and (c) response unwrap interceptor only if the API wraps `{ data: T }`. Endpoint functions live in `lib/api.ts`. Use `fetch` (sharing `baseURL` + `authHeader()`) **only** for SSE/NDJSON streaming endpoints. **Miniapp exemption**: Zalo miniapp keeps its local `fetch` client (`api/client.ts`) and local components (ADR-0039).
+12. **`QueryProvider` & typed `use-<resource>.ts` hooks** — Wrap `QueryClientProvider` once at the root layout (`useState(() => new QueryClient())`); never fetch in `useEffect`. Centralize keys in `lib/query-keys.ts` and include `userId ?? 'anon'` on user-private caches; set `retry: false` on auth/session queries; update cache in a single layer (hook `onSuccess` OR form callback, never both); type `qc.setQueryData<MyType>(key, ...)` via generic; extract multi-query cache transitions into pure unit-tested `apply<Domain>Event(qc, event)` helpers in `lib/data/<domain>-cache.ts`.
+13. **Forms (`react-hook-form` + `zodResolver`) mirror the backend DTO** — Colocate `<form>-schema.ts` next to the form with a comment citing the backend DTO path; wire i18n error messages via `const schema = (t: TranslatorLike) => z.object(...)`. Skip RHF only for trivial `required`-only forms.
+    - **Zod v4 input ≠ output (`z.coerce` / `.transform()`)**: pass three generics `useForm<z.input<S>, unknown, z.output<S>>()` (and `Control<In, unknown, Out>`) — never cast `as unknown as Resolver<...>`. Render coerced inputs as `value={field.value == null ? '' : String(field.value)}`.
+    - **Input normalization parity**: strip formatting separators (`value.replace(/[\s.-]/gu, '')`) before regex checks (e.g. VN phone `/^0\d{9,10}$/`) and pair positive-number constraints with HTML `min="1"` (Precedent: Ecopick 2026-10, PR #452).
 
-    Proven by a real incident: porting an unlayered `* { margin: 0; padding: 0; }` in `packages/ui/tokens.css` and unlayered `.main { padding: 28px 32px 80px }` rules across 6 Next.js 16 apps silently zeroed out every Tailwind `p-*` / `px-*` / `py-*` / `m-*` / `mx-auto` utility, leaving `<main>` content flush against fixed sidebars and sticky headers (`0px` computed padding) until wrapped in `@layer base` and `@layer components` (Gia Su Anh Minh 2026-10).
+## JSX, React hooks & UI reliability (mandatory)
 
-## Barrel imports (mandatory)
-
-4. **Barrels** — A folder with ≥2 non-test files (`components/`, `lib/`, `hooks/`, `features/`, ...) gets an `index.ts` `export *`-ing all members. New files added to a folder are added to its `index.ts` manually. Cross-folder imports go through the barrel (e.g. `@/components/ui`) or the alias (e.g. `@/domain/commerce/booking/dto`), **unless the relative path is shorter than the alias** — then import relatively, never deep-file. Imports **within the same folder** stay relative — never import the folder's own barrel (self-barrel cycles).
-   - **Exception — Deep-module repos**: Repos enforcing `oxc/no-barrel-file: "error"` and `.dependency-cruiser.cjs` (`lint:boundaries` / `packages/README.md`) forbid `export *` barrel files inside apps and packages. In those repos, import workspace packages only via their declared `package.json#exports` entry points (`@scope/pkg`, `@scope/pkg/subpath`) and import app-internal modules directly by file path.
-
-## Data fetching & forms setup (mandatory)
-
-Library choices are fixed in `rules/libraries.md` (axios, react-hook-form, @tanstack/react-query). The wiring below is the structure every web app follows:
-
-5. **Axios client** — exactly one instance in `lib/client.ts`: `axios.create({ baseURL, headers })` with:
-   - a **request interceptor** injecting auth (Bearer token or Basic from storage — never inline in call sites, never `localStorage` for passwords),
-   - a **response error interceptor** normalizing error messages to `` `${method} ${path} → ${status}` `` so callers and error UI read a consistent shape,
-   - an unwrap interceptor **only if the API wraps responses** in `{ data: T }` — if the API returns payloads directly, no unwrap.
-     Endpoint functions live in `lib/api.ts` and call `api.get<T>()` / `api.post<T>()` / `api.patch<T>()` / `api.delete<T>()` with the response generic, returning `r.data` (`api.get<SessionDto>(...).then((r) => r.data)`). Never `fetch`, never a second instance.
-   - **Exception — SSE streams**: axios in the browser is XHR-based with no streaming-reader API, and `EventSource` cannot set auth headers. Streaming endpoints (SSE/NDJSON) stay on `fetch`, reusing the instance's `baseURL` and the same auth helper (`authHeader()`) the interceptor uses.
-
-6. **Query provider** — `QueryClientProvider` wrapped once at the root layout through a `QueryProvider` component (`lib/query-provider.tsx`). No per-page providers, no new `QueryClient` per render (create it in `useState(() => new QueryClient())`).
-
-7. **Query/mutation hooks** — typed hooks in `lib/use-<resource>.ts`, one per resource. Queries: `useQuery({ queryKey: ['resource', id], queryFn })`. Mutations: `useMutation({ mutationFn, onSuccess: () => invalidateQueries({ queryKey: [...] }) })`. Set `retry: false` on auth/session queries (401s must surface immediately, not retry 3×). Errors render from the hook's `error` — never swallowed into `useState`.
-   - **One module per resource** — duplicate API modules for the same resource merge into one (precedent: miniapp `api/booking.ts` + `api/bookings.ts` merged with unified query keys). Query keys centralize in one module (`lib/query-keys.ts`) so invalidation never guesses a key shape (precedent: portal pattern).
-   - **Pure cache-event module per complex domain** — when a mutation touches list + detail + calendar queries (or paginates/filters tabs), extract pure transitions (`apply<Domain>Event(qc, event)`) into `lib/data/<domain>-cache.ts` and unit-test them against a real `new QueryClient()`.
-   - **Single owner for mutation cache sync** — update the cache in exactly one layer (either `useMutation.onSuccess` or the form submit handler before calling `onCreated()`), never in both a child `*FormModal` and its parent `onCreated` callback.
-   - **Type `setQueryData` via its generic parameter** — write `qc.setQueryData<MyType>(key, (old) => ...)`, never `(old: unknown) => { const prev = old as MyType }`.
-   - **Scope user-private query keys by `userId`** — inbox, KYC, and account-scoped caches include `userId ?? 'anon'` in their key factory (`portalKeys.messaging.threads.list(userId)`) so switching accounts never serves the previous user's cache.
-
-8. **Forms** — react-hook-form + `zodResolver`, one zod schema as the single source of truth (typed via `z.infer` when input and output match; see the next bullet for zod v4 coerce/transform schemas). `useForm({ resolver: zodResolver(schema) })`, inputs via `{...register('field')}`, errors from `formState.errors`. No hand-rolled `useState` per field, no validation logic inside `onSubmit`.
-   - **Schema mirrors the API DTO** — the zod schema encodes exactly what the backend DTO enforces (same required/optional set, same value constraints). Colocate it as `<form>-schema.ts` next to the form, with a comment pointing at the DTO file path as source of truth; update both whenever either changes. Never invent rules the DTO lacks (e.g. no enum for a backend free-text field).
-   - **i18n error messages** — the schema is a factory taking the translator: `const schema = (msg: TranslatorLike) => z.object({ ... })` with messages under `<ns>.errors.*`, wired via `zodResolver(schema(t))`. (Key placement follows `rules/i18n.md`.)
-   - **Skip RHF for trivial forms** — a few fields with only `required` checks may stay on native `required` + plain state. Adopt RHF when the first rule beyond `required` lands (pattern, min/max, cross-field, dirty tracking) or when the form must mirror a non-trivial DTO.
-   - **Zod v4 resolver typing: input ≠ output** — `zodResolver(schema)` returns `Resolver<z.input<S>, C, z.output<S>>`. With `z.coerce` or `.transform()` the two types differ, so `useForm<z.infer<S>>({ resolver: zodResolver(schema) })` type-errors on the resolver. Resolve it with RHF's third generic instead of casting the resolver: `useForm<z.input<S>, unknown, z.output<S>>` (or named aliases, e.g. `type XInput = z.input<S>` / `type XOutput = z.infer<S>`). Pass the same three generics to child props typed `Control<In, unknown, Out>`, `UseFormReturn<In, unknown, Out>`, `ControllerRenderProps<In, K>`. Never silence the mismatch with `as unknown as Resolver<...>` — the cast hides input/output drift. Coerced fields are `unknown` in form state: render inputs as `value={field.value == null ? '' : String(field.value)}`.
-
-## Route editors vs modal forms (mandatory)
-
-9. **Route editor vs modal form** — A full-page create/edit form is a **route editor**: one component split across `/path/new` + `/path/[id]`, deriving `isNew = !id || id === 'new'`. Never gate create vs edit with `useState` on a page. A **modal form** (`*FormModal`, list page + `editId` state → Dialog) is allowed only for inline editing _from_ a list page. New multi-mode flows needing a dedicated page become routes, not state.
-
-## File shape & component ownership (mandatory)
-
-10. **Hard cap 300 lines per source file** — `max-lines: 300` is part of the lint baseline (`rules/linting.md`). A file over 300 lines fails lint — split it, never raise the cap. Components under ~150 lines are extracted on sight — the cap is a ceiling, not a target (ADR-0039).
-11. **One screen = one file** — a screen (page, view, tab) lives in its own file; shared multi-variant components use `cva` + `cn()` (imported from `cn` directly — `rules/libraries.md` rule 11). Shared components live **once** in the shared UI package — no per-app copies, no private per-file atoms (`Btn`, `Pill`, class-string constants). **Fold, don't fork** — when the shared package has an equivalent, add a `cva` variant to the shared component (Badge tone for `Pill`, Input `error` for `KYC_INPUT`, `INPUT_CLASS`) and delete the app-local copy; never keep a shim next to the real one.
-12. **Data fetching is react-query, never `useEffect` + cancelled-flag** — web and portal only. Fetch state lives in hooks via `useQuery`/`useMutation` (rule 7). A cancelled-flag `useEffect` fetch is a bug farm (precedent: portal `lib/hooks.ts` pattern). **Miniapp exempt** — the Zalo webview keeps its own fetch client (`api/client.ts`) and local components; only the file cap and v4 rules apply to it (ADR-0039).
-
-## Colors (mandatory)
-
-13. **Colors are design tokens, never literals** — every color comes from `@theme` variables: shared tokens in the shared config package's `tokens.css`, app-specific ones in that app's `globals.css` `@theme inline`. Never inline `style={{}}` colors, never raw hex in class strings or style props. Use the generated utilities (`bg-ph-bg`, `text-tier-low-strong`, `border-np-line`); gradients use `bg-linear-<angle> from-x to-y`, never `bg-[linear-gradient(...)]`. Tailwind default palette utilities (`red-100`, `gray-400`) are allowed only for palettes the custom theme does not override. JS style-bound color maps must reference `var(--color-x)` (e.g. `'--pill-col': 'var(--color-ok-strong)'`). Raw hex is allowed only in: token definitions, `var(--color-x,#hex)` fallbacks, `themeColor` meta tags (meta never resolves `var()`), SVG brand fills, and brand/chart-series data maps (brand identity, not theme — tokenize only if reused).
-14. **CSS values in non-CSS contexts stay literal** — `var()` resolves only where CSS applies: `style={{}}` props and CSS custom properties are fine; SVG `fill`/`stroke` attributes, `<canvas>`, and `themeColor` meta tags never resolve `var()` — keep raw hex there. Before var-ifying a JS color map, verify the consumer reads it via `style`/CSS var, not an attribute.
-
-## JSX text content (mandatory)
-
-15. **Escape JSX special characters** — JSX text content treats `{`, `}`, `<`, `>`, `'`, and `"` as syntax. The `react/no-unescaped-entities` lint rule flags them. Always escape in visible text: `'` → `&apos;`, `"` → `&quot;`, `<` → `&lt;`, `>` → `&gt;`, `{` → `&lbrace;`, `}` → `&rbrace;`. Example: `Today&apos;s Attendance`, `Save &amp; Exit`, `A &lt; B`. Strings rendered via `{expr}` don't need escaping; the rule applies only to literal text between JSX tags.
-
-## Design-prototype animations (mandatory)
-
-27. **Port animations from the design file by script, never by eye** — a Claude Design `.dc.html` export is the token source: extract `@keyframes` bodies and count `animation:` usages programmatically (use-count tells you what is real vs dead). Copy keyframe values byte-exact into the CSS source the bundler actually reads, or into a `motion` variant when the surface needs orchestration, and verify the import chain first — a committed generated artifact nobody imports must not absorb a rebuild (precedent: regenerating an orphan `styles.css` added 530 lines of toolchain churn for zero effect; reverted). Wire each animation to the markup owning the matching surface; audit in three layers — keyframes exist, utility class exists, class is on markup — because "defined" is not "wired".
-
-    Proven by a real incident: eyeballing left `screenIn`/`cmsIn`/`pop`/`pulse-red` defined-but-unwired across two apps; scripted extraction recovered all 8 miniapp + 6 CMS animations with exact values and use-counts (XaDaoXa 2026-09).
-
-28. **A component library's native motion wins over a design keyframe** — when a surface is owned by a UI library (zmp-ui Sheet/Snackbar/Modal, sonner toasts, recharts bars), keep the library's animation. Verify value-equality first (`slideUp` ≡ `sheetUp` as translateY(100%)→0, library `fadeIn` ≡ design `fadeIn`) and document parity instead of overriding. Override only for a real delta on a property you own (precedent: `toastUp` opacity fade added to zmp-ui snackbar enter, whose end state already matched) — and never apply geometry-coupled keyframes to foreign layout: design `toastUp`'s `translate(-50%)` assumes bottom-center and breaks right-docked sonner toasts.
-
-29. **Page-enter is one keyed wrapper, not per-page classes** — replay the design's screen-enter on every route change with a single wrapper keyed by pathname, placed where the pathname is already in scope:
+14. **Escape JSX entities & data-drive repeated blocks/collections** — Escape literal `'`, `"`, `<`, `>`, `{`, `}` in JSX text (`&apos;`, `&quot;`, `&lt;`, `&gt;`, `&lbrace;`, `&rbrace;`). Render repeated option/tab/field rows from module-level `{ value, labelKey } as const` arrays via `.map`. Replace accumulator loops (`out.push(...)`) with `.map` / `.flatMap` / `Array.from` / `Object.fromEntries` (keep `for`/`while` only for early-exit scans, sequential state machines, or side-effect loops), and extract duplicate loop bodies into a shared helper.
+15. **Hooks run unconditionally before any early return** — Place every `useState`/`useEffect`/`useMemo` above all `if (isLoading) return ...` guards; a hook after an early return crashes React the instant `isLoading` flips (Precedent: tournament live-tracker crash).
+16. **Verify untyped route registries, shared lookup maps, modal flags & sibling screens** —
+    - **Dispatch tables (`params: unknown`)**: grep every real `go('screen', ...)` / `push(...)` caller to confirm the passed payload shape instead of trusting the handler's `as` cast (Precedent: blank `trainerProfile` screen).
+    - **Shared lookup maps (`STATUS_COLOR`, `TEMPLATE_LABELS`, icon maps)**: when adding a missing key, enumerate every backend enum value and caller string constant so zero keys fall through silently.
+    - **Modal confirm actions**: verify the overlay library does not process `close: true` before `onClick: onConfirm` (silently turning Confirm into Cancel).
+    - **Sibling-screen sweep**: when fixing shared cards, currency format (`vnd()`), or Zalo Mini App native capsule right-padding clearance (`SubHeader`), grep and update every sibling screen in the same commit.
+17. **Hide decorative icon-font glyphs from assistive tech** — Add `aria-hidden="true"` to every ligature icon span (`<span className="material-symbols-rounded" aria-hidden="true">upload_file</span>`) so literal ligature text never pollutes button accessible names or breaks `getByRole(..., { exact: true })`; use `aria-label` on icon-only buttons.
+18. **Encapsulate `URL.createObjectURL` & abort streams/timers on unmount** — Never call `URL.createObjectURL` during render or track preview URLs in a parent `useRef(Map)`. Isolate each file preview in a `<PhotoThumbnail file={file} />` child whose `useEffect` creates the URL and revokes it in cleanup:
 
     ```tsx
-    // miniapp route table / CMS authed shell — same pattern
-    const { pathname } = useLocation(); // or usePathname()
-    <div key={pathname} className="cms-in flex min-h-0 flex-1 flex-col">
-      {children}
-    </div>
+    useEffect(() => {
+      const objectUrl = URL.createObjectURL(file);
+      setUrl(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    }, [file]);
     ```
 
-    The key remounts the wrapper so the CSS animation restarts per navigation (40-file edits are the failure mode). Requires the existing `prefers-reduced-motion` guard to already collapse animations. Every wired animation lands with a live-QA e2e asserting computed `animation-name` — it fails before the class exists:
+    Components consuming SSE/NDJSON streams or intervals must register an unmount cleanup calling `AbortController.abort()` / `stop()` (Precedent: XaDaoXa 2026-09).
 
-    ```ts
-    const name = await shell.evaluate((el) => getComputedStyle(el).animationName);
-    expect(name).toContain('cmsIn');
-    ```
+## Design-prototype porting & live verification (mandatory)
 
-## Splitting a monolith (mandatory)
-
-16. **Monolith split pattern** — splitting a >300-line file follows fixed targets (proven in ADR-0039's 47K-line componentization):
-
-- **Multi-view screens** → a thin shell (tab/layout state) + one file per view, each under the cap (precedent: portal `seller-views.tsx` 2800 → shell + 19 view files; web `simulator` 2329 → 272, `pricebank` 1877 → 195).
-- **Hooks split by domain** — a `hooks.ts` monolith becomes one `use-<resource>.ts` per domain (precedent: portal 1579 lines → 13 files).
-- **Data modules split by domain** — `lib/data` becomes one `<domain>.ts` per module (precedent: web → 19 modules); dead exports and mock layers are deleted during the split, not carried.
-- **Compatibility barrel** — the old path becomes a barrel (`export *` from the new folder) so call-site imports don't churn; delete the barrel once all call sites move (precedent: `seller-views.tsx`).
-- **Split in place, behavior identical** — never rewrite a screen while splitting it; a split that changes behavior is a feature change and gets its own PR.
-
-## Data-driven JSX & array methods (mandatory)
-
-17. **Data-drive repeated JSX; prefer array methods over accumulator loops** —
-
-- **Repeated JSX blocks** (option rows, field rows, tab lists) render from a module-level data array via `.map`, never as pasted copies. Options carry `value` + `labelKey`, translated at render time:
-  ```tsx
-  const STATUS_FILTER_OPTIONS = [
-    { value: "ALL", labelKey: "common.all" },
-    { value: "PENDING", labelKey: "verification.status.pending" },
-  ] as const;
-  // ...
-  {
-    STATUS_FILTER_OPTIONS.map((o) => (
-      <option key={o.value} value={o.value}>
-        {t(o.labelKey)}
-      </option>
-    ));
-  }
-  ```
-  (Precedent: portal `verification-queue.tsx` status filter.)
-- **Collection-building loops** — `const out: T[] = []; for (...) { out.push(...) }` — become `.map` / `.flatMap` / `Array.from({ length }, ...)` / `Object.fromEntries`. Set/Map fills become `new Set(xs.map(...))` / `new Map(xs.map((x) => [k, v]))`. Nested hour/minute grids use `Array.from` + `flatMap` (precedent: `date-time-picker.tsx` `timeOptions`).
-- **Two identical loop bodies in one file = one helper**, then both call sites `.map` over it (precedent: `worldcup-bracket.ts` `chunkPairs` de-duplicating two pairwise-pairing loops; `schedule-model.ts` `slotHours` shared by `patternFromCourt` + `pricesFromCourt`).
-- **Not every loop is an accumulator — keep it when it is not**: early-exit scans use `.find`/`.some`; sequential-state generation (voucher codes, hash strings) stays on `for`/`while`; DOM/side-effect appends stay on `for...of`. A loop that mutates state with early returns (`worldcup-bracket.ts` `buildBracket`) stays as-is.
-- **Behavior must be identical** — a refactor that changes semantics is a feature change, not a cleanup (bye-detection by reference equality, id numbering, boundary clipping all preserved).
-
-## React hooks (mandatory)
-
-19. **Hooks run before any early return** — every `useState`/`useEffect`/`useMemo`/etc. call sits above every conditional `return` in the component body, never after a loading/error guard. A hook placed after an early return works fine on the render where the guard doesn't fire, then crashes ("Rendered more hooks than during the previous render") the instant the guard's condition flips between renders — a query resolving from loading to loaded is the most common trigger, and it always eventually happens. Compute what the hook needs unconditionally (nullable is fine) and let the hook's own logic handle the null case:
-
-    ```tsx
-    // Bad — crashes once `isLoading` flips
-    function Screen({ id }: { id: string }) {
-      const { data, isLoading } = useQuery(...)
-      if (isLoading) return <Skeleton />
-      const [tab, setTab] = useState(data.defaultTab) // ← hook after early return
-      return ...
-    }
-
-    // Good — hook unconditional, guard after
-    function Screen({ id }: { id: string }) {
-      const { data, isLoading } = useQuery(...)
-      const [tab, setTab] = useState('default')
-      useEffect(() => {
-        if (data) setTab(data.defaultTab)
-      }, [data])
-      if (isLoading) return <Skeleton />
-      return ...
-    }
-    ```
-
-    Proven by a real incident: a tournament live-tracker screen had `const [seg, setSeg] = useState(...)` after two early returns (loading, error) — every real navigation to the screen crashed once the underlying query resolved.
-
-20. **A dispatch table's `params: unknown` is not checked against its callers** — a screen/route registry keyed by string (`Record<string, (params: unknown) => ...>`) hides caller/handler shape mismatches from the type checker: the handler casts `params as { x: T }` and the compiler trusts it, whether or not any real caller ever produces that shape. Before trusting a handler's assumed param shape, grep every real call site (`go('screenName', ...)`, `push('screenName', ...)`, `dispatch({ type: 'screenName', ... })`) for what it actually passes — do not assume the handler's cast is correct just because it type-checks.
-
-    Proven by a real incident: a screen registry expected `go('trainerProfile', { trainer: summary })`, but every real caller did `go('trainerProfile', summary)` — the bare object, matching a sibling registry entry's own convention in the same file. The handler's `params?.trainer` read was always `undefined`, and the screen was permanently blank in production; the mismatch never surfaced in review or `tsc` because `params` was typed `unknown`.
-
-## Next.js conventions (mandatory)
-
-18. **Proxy file, never middleware** — Next.js 16 renamed `middleware.ts` to `proxy.ts`. The file lives at `src/proxy.ts` (same level as `app/` or `pages/`) and exports a function named `proxy`:
-
-    ```ts
-    import { NextRequest, NextResponse } from "next/server";
-
-    export function proxy(request: NextRequest) {
-      // ...
-      return NextResponse.next();
-    }
-
-    export const config = {
-      matcher: ["/((?!api|_next|...).*)"],
-    };
-    ```
-
-    NEVER name the file `middleware.ts` or the function `middleware` — Next.js 16 ignores it. The old convention is deprecated and will be removed in a future major.
-
-36. **Next.js 16 uses Turbopack by default — never pass `--webpack`** — Run `next dev --port <PORT>` and `next build` with default Turbopack. Next.js 16 mutates `apps/*/next-env.d.ts` between `next dev` (`.next/dev/types/routes.d.ts`) and `next build` (`.next/types/routes.d.ts`) and may scaffold untracked `apps/*/AGENTS.md` files during build. Ignore `**/next-env.d.ts` in `.gitignore`, formatter ignore lists (`oxfmt.config.ts` / `.oxfmtrc.json`), and linter ignore lists (`oxlint.config.ts` / `.oxlintrc.json`) so dev/build switches never dirty the working tree. In a Bun monorepo with multiple Next.js 16 apps, wire a `postinstall` script that symlinks `apps/<app>/node_modules/.bin -> ../../../node_modules/.bin` so Turbopack's PostCSS worker resolves workspace binaries reliably (precedent: Gia Su Anh Minh 2026-10).
-
-## Icon-font glyphs (mandatory)
-
-21. **An icon-font glyph rendered as literal text becomes part of its container's accessible name — hide it.** A `<span className="material-symbols-rounded">upload_file</span>` (or any icon-font pattern that renders a glyph via a literal ligature word) puts the text "upload_file" in the DOM even though it displays as a graphic. That text is read by screen readers and silently prepends/appends onto a sibling button's computed accessible name — `"upload_file Nộp hồ sơ trực tuyến"` instead of `"Nộp hồ sơ trực tuyến"` — breaking both real assistive-tech semantics and any test asserting an exact accessible name (`getByRole('button', {name: '...', exact: true})`). Give every purely decorative icon span `aria-hidden="true"`. Exception: if the icon is the _only_ content of an otherwise-unlabeled control, don't just hide it — the control needs an `aria-label` instead, or it loses its only name.
-
-## Shared lookup maps (mandatory)
-
-22. **A shared label/color/icon map is a single point of failure — a missing key fails silently, not loudly.** A `TEMPLATE_LABELS` / `STATUS_COLOR` / icon-name-to-component `Record<string, T>` read by more than one screen produces a visible defect — raw enum text, a wrong or default color, literal icon-name text instead of a glyph — for **every** real value the map omits, on **every** screen that reads it, not just the one screen where the gap was first noticed. When you add one missing key because a report named it, enumerate every real value the map's key type can take (the backend enum, every string constant actually passed to it — grep call sites, don't guess from the map's current keys) and confirm all of them resolve before calling it done.
-
-## Modal/dialog confirm actions (mandatory)
-
-23. **Verify a shared modal/dialog library's actual click-handling order before trusting its "confirm" callback runs.** Some overlay component libraries check a declarative `close: true`-style flag on an action _before_ invoking that action's own `onClick` — a consumer that sets both `close: true` and `onClick: onConfirm` gets a button that only closes the dialog, silently, functionally identical to Cancel, for every screen using that shared wrapper. This is invisible to code review (the wiring looks correct) and to a test that only checks the dialog is dismissed (dismissal succeeds either way, confirm or cancel). When a "confirm" flow mysteriously has no effect beyond closing, read the library's actual click-handler source rather than assuming the click didn't land or the app logic is wrong.
-
-## Resource lifecycle & memory cleanup (mandatory)
-
-24. **Object URL previews must use encapsulated child components — never allocate during render.** Creating an object URL inside JSX mapping (`urlFor(file)` calling `URL.createObjectURL(file)`) is a render-phase side effect that produces duplicate URLs across re-renders and breaks in React StrictMode. Storing URLs in a parent `useRef(Map)` with array-diffing effects leaks memory when the form submits or navigates away before clearing.
-
-    Encapsulate multi-file previews in an isolated thumbnail component where `useEffect` allocates the URL and revokes it on unmount or file change:
-
-    ```tsx
-    // Good — lifecycle bound to thumbnail mounting/unmounting
-    export const PhotoThumbnail: React.FC<{
-      file: File;
-      onRemove: () => void;
-    }> = ({ file, onRemove }) => {
-      const [url, setUrl] = useState<string>('');
-
-      useEffect(() => {
-        const objectUrl = URL.createObjectURL(file);
-        setUrl(objectUrl);
-        return () => {
-          URL.revokeObjectURL(objectUrl);
-        };
-      }, [file]);
-
-      return (
-        <button type="button" onClick={onRemove}>
-          {url && <img src={url} alt={file.name} />}
-        </button>
-      );
-    };
-    ```
-
-    When a photo is removed or the parent screen unmounts, the blob URL is revoked automatically. For single-file inputs (avatar, cover image), track the active object URL and revoke the previous URL upon replacement, plus an unmount cleanup effect to revoke any pending URL when leaving the screen (precedent: XaDaoXa 2026-09 incident — camera preview leaks across report form re-renders and unmounts).
-
-25. **Long-lived streams and timers must abort on unmount.** A component consuming a streaming response (SSE assistant chat, NDJSON log feed) or background timer must register an unmount cleanup effect that calls `stop()` or triggers an `AbortController`. Without an unmount abort, in-flight fetch readers and underlying TCP sockets stay open after route transitions, continuing to process incoming chunks and updating unmounted component state (precedent: XaDaoXa 2026-09 — `useChatbot` dangling fetch reader on navigation).
-
-
-## Design-port verification (mandatory)
-
-30. **Scripted source edits must assert they changed something.** A find-and-replace whose old string no longer matches (a formatter reordered classes between the read and the write) succeeds silently and prints nothing, and a follow-up "patched" log turns the no-op into a reported done. Every scripted edit ends with an assertion that the file differs — or use an edit operation that fails loudly on no match (precedent: VibeHost 2026-10 — three production builds spent verifying fixes that were never applied).
-
-31. **Verify paint and computed box-model, not class names.** A `data-[x=true]:bg-transparent` sitting next to a gradient, a `w-full` beside `[width:var(--w)]`, an unregistered color utility, or a `px-8 py-7` utility overridden by an unlayered `* { padding: 0 }` reset — all read correctly in source and render nothing (or `0px`). After any design port or state-driven visual change, read `getComputedStyle(el)` from a live page (`backgroundImage`, `width`, `color`, `paddingTop`, `paddingLeft`, `marginLeft`, `maxWidth` on `<main>`, `<aside>`, and `<header>`) rather than trusting the class list. The repo's `lint:landing` guardrail automates the three known shapes; the discipline covers the fourth (precedent: VibeHost 2026-10 — unit tests asserted numbers the markup threw away; Gia Su Anh Minh 2026-10 — `<main className="px-8 py-7">` rendered with `0px` padding across 5 portals until verified via `getComputedStyle(main)`).
-
-32. **A design that ships JavaScript ships its spec in two files.** Motion, timers, auto-advance sequences and computed display values live in the design's scripts, not its markup — grepping the HTML alone concludes features don't exist that the script implements (precedent: VibeHost 2026-10 — "no scroll-in" verdict missed the 15KB motion layer beside the HTML).
-
-33. **Verify both locales' rendered text, in both directions.** Structure checks pass while an entire language leaks: the FAQ accordion was correct with Vietnamese answers on the English page. After any i18n change, scan the built page's text for the other language's function words (not source grep — the catalogue can hold keys nothing renders), Vietnamese-guild-names-type content excepted.
-
-## Cross-screen & host-shell hygiene (mandatory)
-
-34. **Sweep sibling screens on shared card/header fixes and mirror backend DTO normalization in form inputs** —
-    - **Sibling-screen sweep**: When fixing media fallback badges (`PaddleMedia`), currency formatting (`vnd()` with no space before `₫`), or Zalo Mini App native capsule clearance (`SubHeader` right padding so right-aligned actions never collide with the host's minimize/close pill), grep and update every sibling screen (`HomeScreen`, `ShopScreen`, `PaddleDetailScreen`, `CourtScreen`, `TrainerProfileScreen`) in the same commit.
-    - **Input normalization parity**: Strip formatting separators (`value.replace(/[\s.-]/gu, '')`) before testing regex constraints (such as Vietnam mobile numbers `/^0\d{9,10}$/`) and pair positive-number constraints with HTML `min="1"` so stepper controls and submit guards match backend DTO normalization (precedent: Ecopick 2026-10, PR #452).
-
+19. **Port animations by script, preserve library motion, and key page-enter by pathname** — Extract `@keyframes` and usage counts from `.dc.html` by script (never eyeball or rebuild unimported CSS files) and audit all 3 layers (keyframes exist, utility class exists, markup carries class). Keep native motion on library-owned surfaces (`zmp-ui`, `sonner`, `recharts`) unless applying a verified property delta without geometry coupling. Wire route-change animations once via `<div key={pathname} className="cms-in ...">{children}</div>` and assert `getComputedStyle(el).animationName` in e2e (Precedent: XaDaoXa 2026-09).
+20. **Assert scripted edits, inspect companion `.js` specs, and verify live `getComputedStyle` + both locales** —
+    - Every scripted find-and-replace must assert the file changed (formatter reflows turn silent no-ops into false "done" reports — Precedent: VibeHost 2026-10).
+    - Read both `.dc.html` and its companion `.js` files (motion, timers, and computed display values often live in scripts).
+    - Verify live `getComputedStyle(el)` (`paddingTop`, `paddingLeft`, `marginLeft`, `maxWidth`, `width`, `backgroundImage`, `color`) on `<main>`, `<aside>`, and `<header>` in the browser rather than trusting source class strings.
+    - Scan rendered page text in both VI and EN for leaked function words of the other language after any i18n change.
