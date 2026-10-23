@@ -43,6 +43,8 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 13. **`lint-staged` isolation** — Run `oxfmt` + `oxlint --fix` (`eslint --fix` for Next.js) on staged files:
     - Exclude ESLint-owned Next.js apps from the `oxlint` glob (`"!(apps/web|apps/portal)/**/*.{ts,tsx,js,jsx}"`) so Next-only commits never fail with `No files found to lint` (Precedent: Ecopick 2026-10, PR #453).
     - Scope workspace-owned formatters to their workspace and swallow appended file args: `"*.prisma": "bash -c 'pnpm --filter @acme/api exec prisma format' --"`.
+13b. **Pre-commit runs fmt → lint-staged → full `lint` → `typecheck`; full `test` stays in CI** — The hook must be deterministic and DB-free: formatter first (it expands code and exposes `max-lines` overruns), then staged lint, then the repo's own gates (`lint:boundaries` plus custom checks — not just the linter binary CI also runs), then typecheck. Keep the full test suite in CI, where the database is guaranteed: a DB-dependent hook red-bars behavior-untouched commits on a cold cache (Precedent: Gia Su Anh Minh 2026-10 — hook ~5s with `lint` 3.4s cold and `typecheck` 1.3s cached; `test` runs in the CI `test` + `verify` jobs).
+
 14. **Orphan-export check after symbol swaps** — Neither `oxlint` nor `ESLint` flags unused `export` bindings. Whenever an edit removes the last reference to an exported constant, type, or helper, grep the repo for its name and delete the orphan definition in the same commit.
 
 ## Python baseline
