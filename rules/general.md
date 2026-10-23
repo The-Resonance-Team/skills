@@ -1,6 +1,6 @@
 # General Rules — cross-project, framework-agnostic
 
-Applies to every project in the organization. Include this file in `opencode.json` `instructions` for any repo.
+Applies to every project in the organization. Fetch this module for any repo via `CONTEXT.md`.
 
 > **Moved to domain modules**: Axios generics & `postForm` → `rules/frontend.md` (#1–#2); Ponytail React Query mock hooks → `rules/frontend.md` (#3); Tailwind v4 utility names → `rules/frontend.md` (#4); NestJS DTO validation, controller→service seam & `@ApiProperty` → `rules/nestjs.md` (#1, #6, #8); GitHub Actions concurrency (`ci-${{ github.ref }}` / `cd-${{ github.ref_name }}`) → `rules/github-ci.md` (#3); Dockerfile `pnpm` multi-stage shape → `rules/github-vps-deploy.md` (#9).
 

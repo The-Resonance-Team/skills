@@ -1,6 +1,6 @@
 # Lint & Format Baseline — Oxfmt, Oxlint, ESLint (Next.js), Ruff (Python)
 
-Applies to every TypeScript/JavaScript and Python project in the organization. Include this file in `opencode.json` `instructions`. Machine-readable configs ship in `configs/`.
+Applies to every TypeScript/JavaScript and Python project in the organization. Machine-readable configs ship in `configs/`.
 
 ## Scope & tool split
 
