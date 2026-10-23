@@ -27,7 +27,7 @@ Remote instructions are fetched with a 5-second timeout; the repo must stay publ
 ### Mixing instructions, references, and workflows
 
 - **Instructions** (`AGENTS.md` + `CONTEXT.md` + active `rules/*.md` URLs): small, standing rules and conventions relevant on every request.
-- **Workflows** (`workflows/*.md`): step-by-step procedures (`codebase-audit`, `themed-codebase-audit`, `lint-burndown`, `claude-design-to-nextjs`) fetched on demand when their trigger condition fires.
+- **Workflows** (`workflows/*.md`): step-by-step procedures (`codebase-audit`, `themed-codebase-audit`, `lint-burndown`, `claude-design-prompting`, `claude-design-to-nextjs`) fetched on demand when their trigger condition fires.
 - **References** (`references` in `opencode.jsonc`): large external trees attached via `@alias` only when needed (zero standing context cost).
 
 ## Module index & tool configs

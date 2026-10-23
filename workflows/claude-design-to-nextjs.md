@@ -17,6 +17,7 @@ Convert Claude Design (`.dc.html`) exports to production Next.js/React code whil
 ### 1. Design intake
 
 Inspect both the `.dc.html` markup and any companion `.js` / `tokens.css` files (`rules/frontend.md` #20 — motion, timers, and computed display values often live in scripts, not HTML):
+- **Scripted structure scan first**: before reading multi-thousand-line `.dc.html` files in chunks, run a single `rg` / script pass across `*.dc.html` and `*.js` to extract `<template` prop definitions, view IDs (`v*`), modal/drawer flags (`has*`, `m*`), and status arrays. (If the `.dc.html` archive has not been audited for full `C/R/U/D` and lifecycle state completeness yet, run Step 4 of `workflows/claude-design-prompting.md` first.)
 - **Incremental drops (v2 `.zip`)**: extract to a sibling folder and run `diff -rq <old_dir> <new_dir>` + `diff -u` first so you only inspect changed screens/tokens.
 - **Animations**: extract `@keyframes` bodies and `animation:` use-counts by script (`rules/frontend.md` #19), never by eye.
 - **Completion criterion**: component inventory, route map, and data model sketch produced.
