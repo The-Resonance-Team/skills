@@ -1,6 +1,6 @@
 # CONTEXT.md — skills repo glossary & rule router
 
-Consumers add **only this file** to `opencode.json` `instructions`. It is the router: fetch the rule modules and workflows your project needs by URL below. Glossary terms below define the ubiquitous language across all modules.
+Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `SOUL.md`, editor rule files, or `opencode.jsonc`). It is the router: fetch the rule modules and workflows your project needs by URL below. Glossary terms below define the ubiquitous language across all modules.
 
 ## Rule modules
 
@@ -43,9 +43,10 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 
 ## Terms
 
+- **Router** (`CONTEXT.md`) — this single entry-point file wired by consumers, mapping rule modules and workflows to their scope and raw URLs alongside the shared glossary.
 - **Rule module** — one self-contained markdown file under `rules/`, fetched by URL into an agent's context.
-- **Consumer** — a repository that lists this router (or rule module URLs) in its `opencode.json` `instructions` array or `AGENTS.md`.
-- **Instruction** — a single URL entry in a consumer's `instructions` array.
+- **Consumer** — any repository or global agent profile (OpenCode, Claude Code, Codex, Antigravity, Hermes, Cursor, Windsurf, Copilot) that wires this router or `rules/*.md` URLs.
+- **Instruction** — a standing rule entry or remote URL loaded into an agent's context on every session.
 - **Lint baseline** — the standard formatter + linter setup (`Oxfmt` + `Oxlint` / Next.js `ESLint`, `max-lines: 300`) in `rules/linting.md`. Alternatives are not accommodated.
 - **Tool config** — a machine-readable config in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `eslint.config.mjs`, `dependabot.yml`) copied into consumer repos.
 - **Config drift** — a local or per-app config in a consumer repo that contradicts the baseline. Resolved by unification, never accommodation.

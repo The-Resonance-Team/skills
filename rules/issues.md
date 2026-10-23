@@ -1,6 +1,6 @@
 # Issue Rules — grouping, umbrella mechanics & PR closing
 
-Applies to every repo that uses GitHub Issues as its tracker. Include this file in `opencode.json` `instructions` for any such repo.
+Applies to every repo that uses GitHub Issues as its tracker.
 
 ## Grouping
 
