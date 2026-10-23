@@ -54,3 +54,7 @@ Applies to repos deploying from self-hosted GitHub Actions runners to a VPS over
      CMD curl -f http://127.0.0.1:6200/health || exit 1
    CMD ["node", "dist/main.js"]
    ```
+
+## Multi-stage oven/bun Dockerfile shape
+
+10. **Pin `oven/bun:${BUN_VERSION}-alpine` for builder and runner, copy every filtered workspace manifest, and install hoisted** — `oven/bun:latest` is Debian/glibc and cannot load musl Prisma engines; keep one Alpine pin for both stages. A `--filter` install fails when it skips a manifest the closure needs (`workspace ... not on disk`), so copy every depended workspace's `package.json` (and its sources before build). Use `--linker=hoisted` with `--filter` so `tsc -b` resolves `@types/*` from the root (the isolated linker hides them under the filtered workspace). Install the global Prisma CLI with `BUN_INSTALL=/usr/local bun install -g` so it lands on `PATH` for the non-root user (`node -p` version reads work through Bun's Node fallback; `bun pm cache rm` replaces `npm cache clean`). Verify with a full image build plus a boot-and-healthcheck run before merging (Precedent: Gia Su Anh Minh 2026-10 — API and Next.js standalone images build, boot, and serve on `oven/bun:1.4.4`).
