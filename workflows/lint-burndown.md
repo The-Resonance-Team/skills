@@ -39,7 +39,7 @@ Run `npx oxlint . --format json`. Build the ledger as **rule × surface** (`api`
 ### 2. Set the ceiling and the scope
 
 - Per package: `"lint": "oxlint . --max-warnings N"` — scope `.`, not `src`, so e2e specs, seeds, configs, and scripts are covered too. Exclude generated dirs once in `ignorePatterns`.
-- Keep `lint-staged` active (`oxlint --fix` / `eslint --fix` in `lint-staged`, then `bun fmt --staged` — fix-then-format, `rules/linting.md` #13). Never pass `--no-verify`.
+- Keep `lint-staged` active (`oxlint --fix` in `lint-staged`, then `bun fmt --staged` — fix-then-format, `rules/linting.md` #13). Never pass `--no-verify`.
 
 ### 3. Slices → waves of subagents
 

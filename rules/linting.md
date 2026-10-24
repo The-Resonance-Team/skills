@@ -1,4 +1,4 @@
-# Lint & Format Baseline — Oxfmt, Oxlint, ESLint (Next.js), Ruff (Python)
+# Lint & Format Baseline — Oxfmt, Oxlint, Ruff (Python)
 
 Applies to every TypeScript/JavaScript and Python project in the organization. Machine-readable configs ship in `configs/`.
 
@@ -7,8 +7,7 @@ Applies to every TypeScript/JavaScript and Python project in the organization. M
 | Tool   | Applies to                                                             | Job             |
 | ------ | ---------------------------------------------------------------------- | --------------- |
 | Oxfmt  | all TS/JS/JSON/YAML/CSS projects (`configs/.oxfmtrc.json`)             | formatting only |
-| Oxlint | every non-Next.js TS/JS project (`configs/.oxlintrc.json`)             | linting only    |
-| ESLint | Next.js apps (`configs/eslint.config.mjs`, unless Ultracite root-only) | linting only    |
+| Oxlint | all TS/JS projects, Next.js included (`configs/.oxlintrc.json`)        | linting only    |
 | Ruff   | Python packages (`ruff format` + `ruff check`, plus `mypy` & `pytest`) | format + lint   |
 
 Formatting is never linted; linting is never formatted (zero stylistic rules in any linter).
@@ -19,7 +18,7 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 2. **Tailwind class sorting** — Set `"sortTailwindcss": true` in Tailwind projects (built-in, no plugin).
 3. **Markdown is never auto-formatted** — `*.md` stays in `ignorePatterns` so hand-wrapped rules, ADRs, and specs are not reflowed.
 
-## Oxlint baseline (non-Next.js projects)
+## Oxlint baseline (all TS/JS projects)
 
 4. **Root config (`configs/.oxlintrc.json` or Ultracite `oxlint.config.ts`)** —
    - `categories`: `correctness: "error"`, `suspicious: "warn"`, `perf: "warn"`.
@@ -33,25 +32,24 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 9b. **Bun 1.4.4+ `bun fmt` may replace the `oxfmt` binary — never the config** — `bun fmt` reads the repo's oxfmt config and matches its output, but only with that config present. Verify per repo with a bidirectional check (`bun fmt` output passes `oxfmt --check` and vice versa) on the full tree. Do not migrate the config into `bunfig.toml [fmt]`: without the oxfmt config Bun falls back to its own printer, which reformatted 510 of 806 files on Gia Su Anh Minh 2026-10 (same tree: 3 files under oxfmt config), including lines over print width. `bun fmt --staged` (formats and re-stages staged files) may replace the formatter entry in `lint-staged`; keep the linter entry.
 10. **Resolve findings in code or config `overrides`, never inline disable comments** — Baseline `oxlint` ignores inline comments (`eslint-disable-next-line`, `oxlint-ignore-next-line`, `oxlint-disable-next-line`), so inline comments are dead code wearing a disguise. Fix the code, or place legitimate framework/target carve-outs in a scoped `overrides` block in config with a comment explaining why. Grep for `disable-next-line|oxlint-ignore` before claiming zero findings.
 
-## ESLint baseline (Next.js apps only)
+## Next.js linting (`oxlint` `nextjs` plugin)
 
-11. **App-level `eslint.config.mjs` (or root Ultracite `oxlint.config.ts`)** — Standard monorepos place `configs/eslint.config.mjs` at `apps/<app>/eslint.config.mjs` (`eslint-config-next/core-web-vitals`, `eslint-config-next/typescript`, `tseslint.configs.recommended`, `^_` unused-vars patterns, `import/no-duplicates` inline, `eslint-config-prettier` last). *Exception*: Ultracite root-only repos (`ultracite/oxlint/nextjs`, ADR-0005) lint all workspaces with root `oxlint --max-warnings=0` and forbid per-app ESLint configs.
+11. **Root `oxlint` (`plugins: ["nextjs"]`) owns every Next.js app — no per-app `eslint.config.mjs`** — Lint all workspaces, Next.js included, with root `oxlint --max-warnings=0` (`.oxlintrc.json` or `oxlint.config.ts` with `plugins: ["nextjs"]`) and forbid per-app ESLint/Prettier configs. Repos still on per-app `eslint.config.mjs`: port the rules to scoped `overrides` (keep `// ponytail:` trigger comments), delete `apps/<app>/eslint.config.mjs`, drop `eslint*` devDeps (Precedent: VibeHost 2026-10 — root `oxlint --max-warnings=0` lints all six Next.js apps clean).
 12. **`react-hooks` rules stay ON** — Keep `react-hooks/set-state-in-effect`, `react-hooks/immutability`, and `react-hooks/refs` enabled; disable per-project only with a `// ponytail:` trigger comment after confirming a genuine pervasive conflict.
 
 ## Pre-commit & dead exports
 
-13. **`lint-staged` carries lint-fix tasks only — the formatter runs exactly once, after it** — Keep `oxlint --fix` (`eslint --fix` for Next.js) in `lint-staged`. Never list the formatter there when the hook also runs `bun fmt --staged`: one `--staged` run formats every staged file idempotently, a second run only slows the hook (Precedent: VibeHost 2026-10 — `bun fmt` in `lint-staged` duplicated hook-level `bun fmt --staged`). Fix-then-format: `--fix` mutates code, so a fix applied after formatting can leave unformatted code that nothing later catches (formatting is never linted). Hook shape:
+13. **`lint-staged` carries lint-fix tasks only — the formatter runs exactly once, after it** — Keep `oxlint --fix` in `lint-staged`. Never list the formatter there when the hook also runs `bun fmt --staged`: one `--staged` run formats every staged file idempotently, a second run only slows the hook (Precedent: VibeHost 2026-10 — `bun fmt` in `lint-staged` duplicated hook-level `bun fmt --staged`). Fix-then-format: `--fix` mutates code, so a fix applied after formatting can leave unformatted code that nothing later catches (formatting is never linted). Hook shape:
     ```sh
     bunx lint-staged   # oxlint --fix only — no formatter entry
     bun fmt --staged   # single format pass, re-stages
     bun run lint
     bun run typecheck
     ```
-    - Exclude ESLint-owned Next.js apps from the `oxlint` glob (`"!(apps/web|apps/portal)/**/*.{ts,tsx,js,jsx}"`) so Next-only commits never fail with `No files found to lint` (Precedent: Ecopick 2026-10, PR #453).
     - Scope workspace-owned formatters to their workspace and swallow appended file args: `"*.prisma": "bash -c 'pnpm --filter @acme/api exec prisma format' --"`.
 13b. **Pre-commit runs lint-staged → fmt → full `lint` → `typecheck`; full `test` stays in CI** — The hook must be deterministic and DB-free: staged fix first, then `bun fmt --staged` (formats and re-stages — the committed shape), then the repo's own gates (`lint:boundaries` plus custom checks — not just the linter binary CI also runs) on that final shape so `max-lines` is enforced after `bun fmt` expansion, then typecheck. Keep the full test suite in CI, where the database is guaranteed: a DB-dependent hook red-bars behavior-untouched commits on a cold cache (Precedent: Gia Su Anh Minh 2026-10 — hook ~5s with `lint` 3.4s cold and `typecheck` 1.3s cached; `test` runs in the CI `test` + `verify` jobs).
 
-14. **Orphan-export check after symbol swaps** — Neither `oxlint` nor `ESLint` flags unused `export` bindings. Whenever an edit removes the last reference to an exported constant, type, or helper, grep the repo for its name and delete the orphan definition in the same commit.
+14. **Orphan-export check after symbol swaps** — No linter flags unused `export` bindings. Whenever an edit removes the last reference to an exported constant, type, or helper, grep the repo for its name and delete the orphan definition in the same commit.
 
 ## Python baseline
 

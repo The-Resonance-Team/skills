@@ -34,7 +34,7 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | `workflows/claude-design-prompting.md` | Grill the user on design demand, generate multi-surface Claude Design prompts with full CRUD/state coverage, and audit `.dc.html` exports. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-prompting.md` |
 | `workflows/claude-design-to-nextjs.md` | Convert Claude Design (`.dc.html`) exports or specs into pixel-perfect Next.js/React pages verified with Chrome DevTools MCP.   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
-Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, `.oxlintrc.json`, `eslint.config.mjs`, `dependabot.yml`).
+Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`).
 
 ## Language rules (all consumers)
 
@@ -47,8 +47,8 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Rule module** — one self-contained markdown file under `rules/`, fetched by URL into an agent's context.
 - **Consumer** — any repository or global agent profile (OpenCode, Claude Code, Codex, Antigravity, Hermes, Cursor, Windsurf, Copilot) that wires this router or `rules/*.md` URLs.
 - **Instruction** — a standing rule entry or remote URL loaded into an agent's context on every session.
-- **Lint baseline** — the standard formatter + linter setup (`Oxfmt` + `Oxlint` / Next.js `ESLint`, `max-lines: 300`) in `rules/linting.md`. Alternatives are not accommodated.
-- **Tool config** — a machine-readable config in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `eslint.config.mjs`, `dependabot.yml`) copied into consumer repos.
+- **Lint baseline** — the standard formatter + linter setup (`Oxfmt` + `Oxlint`, `max-lines: 300`) in `rules/linting.md`. Alternatives are not accommodated.
+- **Tool config** — a machine-readable config in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`) copied into consumer repos.
 - **Config drift** — a local or per-app config in a consumer repo that contradicts the baseline. Resolved by unification, never accommodation.
 - **Library baseline** — the fixed library-per-concern table in `rules/libraries.md`, chosen by framework. A substitute library for a covered concern is a violation.
 - **Ponytail marker** — a `// ponytail: <ceiling>, <upgrade if ...>` comment marking a deliberate simplification or mock store (`rules/general.md`). A marker without an upgrade trigger is **`no-trigger` debt** and blocks merge.

@@ -73,7 +73,7 @@ For agents that read a tool-specific instruction file instead of `AGENTS.md`, pl
 
 The single source of truth for all rule modules, workflows, and ubiquitous language lives in [`CONTEXT.md`](./CONTEXT.md). Do not duplicate the module table here.
 
-Machine-readable baseline configs ship in [`configs/`](./configs/) (`.oxfmtrc.json`, `.oxlintrc.json`, `eslint.config.mjs`, `dependabot.yml`) and are copied into consumer repos per [`rules/linting.md`](./rules/linting.md) and [`rules/dependabot.md`](./rules/dependabot.md). CI automation packs live in [`skills/pr-analysis/`](./skills/pr-analysis/SKILL.md).
+Machine-readable baseline configs ship in [`configs/`](./configs/) (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`) and are copied into consumer repos per [`rules/linting.md`](./rules/linting.md) and [`rules/dependabot.md`](./rules/dependabot.md). CI automation packs live in [`skills/pr-analysis/`](./skills/pr-analysis/SKILL.md).
 
 ## Known gaps
 
