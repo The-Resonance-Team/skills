@@ -40,10 +40,16 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 
 ## Pre-commit & dead exports
 
-13. **`lint-staged` isolation** — Run `oxfmt` + `oxlint --fix` (`eslint --fix` for Next.js) on staged files:
+13. **`lint-staged` carries lint-fix tasks only — the formatter runs exactly once, after it** — Keep `oxlint --fix` (`eslint --fix` for Next.js) in `lint-staged`. Never list the formatter there when the hook also runs `bun fmt --staged`: one `--staged` run formats every staged file idempotently, a second run only slows the hook (Precedent: VibeHost 2026-10 — `bun fmt` in `lint-staged` duplicated hook-level `bun fmt --staged`). Fix-then-format: `--fix` mutates code, so a fix applied after formatting can leave unformatted code that nothing later catches (formatting is never linted). Hook shape:
+    ```sh
+    bunx lint-staged   # oxlint --fix only — no formatter entry
+    bun fmt --staged   # single format pass, re-stages
+    bun run lint
+    bun run typecheck
+    ```
     - Exclude ESLint-owned Next.js apps from the `oxlint` glob (`"!(apps/web|apps/portal)/**/*.{ts,tsx,js,jsx}"`) so Next-only commits never fail with `No files found to lint` (Precedent: Ecopick 2026-10, PR #453).
     - Scope workspace-owned formatters to their workspace and swallow appended file args: `"*.prisma": "bash -c 'pnpm --filter @acme/api exec prisma format' --"`.
-13b. **Pre-commit runs fmt → lint-staged → full `lint` → `typecheck`; full `test` stays in CI** — The hook must be deterministic and DB-free: formatter first (it expands code and exposes `max-lines` overruns), then staged lint, then the repo's own gates (`lint:boundaries` plus custom checks — not just the linter binary CI also runs), then typecheck. Keep the full test suite in CI, where the database is guaranteed: a DB-dependent hook red-bars behavior-untouched commits on a cold cache (Precedent: Gia Su Anh Minh 2026-10 — hook ~5s with `lint` 3.4s cold and `typecheck` 1.3s cached; `test` runs in the CI `test` + `verify` jobs).
+13b. **Pre-commit runs lint-staged → fmt → full `lint` → `typecheck`; full `test` stays in CI** — The hook must be deterministic and DB-free: staged fix first, then `bun fmt --staged` (formats and re-stages — the committed shape), then the repo's own gates (`lint:boundaries` plus custom checks — not just the linter binary CI also runs) on that final shape so `max-lines` is enforced after `bun fmt` expansion, then typecheck. Keep the full test suite in CI, where the database is guaranteed: a DB-dependent hook red-bars behavior-untouched commits on a cold cache (Precedent: Gia Su Anh Minh 2026-10 — hook ~5s with `lint` 3.4s cold and `typecheck` 1.3s cached; `test` runs in the CI `test` + `verify` jobs).
 
 14. **Orphan-export check after symbol swaps** — Neither `oxlint` nor `ESLint` flags unused `export` bindings. Whenever an edit removes the last reference to an exported constant, type, or helper, grep the repo for its name and delete the orphan definition in the same commit.
 
