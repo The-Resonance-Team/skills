@@ -44,7 +44,14 @@ Applies to browser clients in the organization (React/Next.js web apps, admin po
     - **Shared lookup maps (`STATUS_COLOR`, `TEMPLATE_LABELS`, icon maps)**: when adding a missing key, enumerate every backend enum value and caller string constant so zero keys fall through silently.
     - **Modal confirm actions**: verify the overlay library does not process `close: true` before `onClick: onConfirm` (silently turning Confirm into Cancel).
     - **Sibling-screen sweep**: when fixing shared cards, currency format (`vnd()`), or Zalo Mini App native capsule right-padding clearance (`SubHeader`), grep and update every sibling screen in the same commit.
-17. **Hide decorative icon-font glyphs from assistive tech** — Add `aria-hidden="true"` to every ligature icon span (`<span className="material-symbols-rounded" aria-hidden="true">upload_file</span>`) so literal ligature text never pollutes button accessible names or breaks `getByRole(..., { exact: true })`; use `aria-label` on icon-only buttons.
+17. **Shared icon vocabulary (`AmIcon` / `ICON`), zero Unicode icon glyphs, and `lint:icons` accessibility gate** —
+    - **Concept-keyed registry in `packages/ui`**: render icons exclusively via `<AmIcon icon={ICON.<concept>} size="md" />` (and `<AmRichIcon icon={RICH_ICON.<concept>} />` on decorative hero/empty-state surfaces). If a domain concept lacks a key, add the concept key to `ICON` in `packages/ui` — never import `lucide-react` in app code or draw Unicode characters/emojis (`✓`, `✕`, `→`, `★`, `▣`, `🔒`) in JSX.
+    - **Guard shared keys in unit tests**: record every pair of concepts that intentionally share one icon component in `ICON_SHARED_KEYS` and assert in `packages/ui/tests/icon.test.ts` that unrecorded duplicates fail the build (Precedent: Gia Su Anh Minh 2026-10, ADR-0008).
+    - **Text vs. icon boundary (`scripts/lint-icons.mjs`)**:
+      - Arrows inside string literals or `<option>` bodies that join two words in a sentence (`"Từ 5.5 → 7.0"`, `↔`, `⇔`) and currency marks (`₫`) remain plain text.
+      - Standalone arrows, action suffixes (`Xem hồ sơ` + `<AmIcon icon={ICON.next} />`), badge ticks, and separators in JSX must use `<AmIcon>`.
+      - Toast messages (`role="status"`) carry plain text only — strip leading `✓` characters so screen readers do not announce `"check mark"`.
+    - **Accessibility gate**: `<AmIcon>` and `<AmRichIcon>` always set `aria-hidden="true" focusable="false"` (and ligature spans set `<span className="material-symbols-rounded" aria-hidden="true">upload_file</span>`). Every icon-only `<button>` or `<a>` (containing `<AmIcon>` with no text label) must carry an `aria-label` or `aria-labelledby`, enforced in CI by `bun run lint:icons`.
 18. **Encapsulate `URL.createObjectURL` & abort streams/timers on unmount** — Never call `URL.createObjectURL` during render or track preview URLs in a parent `useRef(Map)`. Isolate each file preview in a `<PhotoThumbnail file={file} />` child whose `useEffect` creates the URL and revokes it in cleanup:
 
     ```tsx

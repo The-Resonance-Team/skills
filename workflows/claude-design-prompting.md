@@ -59,9 +59,15 @@ Write one self-contained markdown prompt per surface in `docs/drafts/claude-desi
 
 ### 4. Audit `.dc.html` archive & generate in-place patch prompts
 
-When inspecting a `.zip` export from Claude Design:
-1. **Extract once**: unzip the archive directly into `<appDataDir>/brain/<id>/scratch/design/` (or workspace `.tmp-design/`).
-2. **Scripted structure scan first**: before reading multi-thousand-line `.dc.html` files in chunks, run a single `rg` / script pass across `*.dc.html` and `*.js` to list `<template` prop definitions, view IDs (`v*`), modal/drawer flags (`has*`, `m*`), and status arrays.
+When inspecting a `.zip` export from Claude Design (or translating/refining user-supplied patch prompts for an existing archive):
+1. **Extract once into sandbox**: if the `.zip` path sits outside the workspace (e.g. `~/Downloads/*.zip`), copy it to `/tmp/` or `<appDataDir>/brain/<id>/scratch/design/` in one step and `unzip -o` inside the sandbox.
+2. **One-command `x-dc` structure scan first**: Claude Design `.dc.html` files store markup in `<x-dc>`, screen/modal names in `data-screen-label`, component props in `<script type="text/x-dc" data-dc-script data-props="...">`, shared imports in `<dc-import>`, and conditionals in `<sc-if>` / `<sc-for>`. Never read multi-thousand-line `.dc.html` files chunk-by-chunk first. Run one index command across the extracted folder:
+   ```bash
+   rg -n 'data-screen-label=|data-props=|<dc-import|state\s*=|const\s+(NAV|TABS|ST|SEED|RANK)' *.dc.html data.js
+   ```
 3. **Build the Master CRUD Matrix**: audit every domain entity across `Create (C)`, `Read (R)`, `Update (U)`, and `Delete / Cancel / Archive (D)` plus the 6-Point Completeness Contract above.
-4. **Write page-by-page patch prompts**: if any `U`/`D` flow or lifecycle state is missing, write one self-contained prompt per `.dc.html` file in `docs/drafts/claude-design-patch-prompts.md`. Reference the exact existing `.dc.html` filename, view keys (`vOverview`, `vClasses`, `vProf`), prop names, and `design/tokens.css` so Claude Design completes each page in place without regressing existing views.
-- **Completion criterion**: full CRUD audit table delivered, page-by-page patch prompts written to `docs/drafts/claude-design-patch-prompts.md` (when gaps exist), and verified ready for `workflows/claude-design-to-nextjs.md`.
+4. **Write archive-grounded page-by-page patch prompts**: if any `U`/`D` flow or lifecycle state is missing (or when refining user-written prompts), write one self-contained prompt per `.dc.html` file in `docs/drafts/claude-design-patch-prompts.md`. Every prompt must explicitly cite:
+   - Target `.dc.html` filenames and shared `<dc-import>` components (`SiteHeader.dc.html`, `SiteFooter.dc.html`, `TutorCard.dc.html`).
+   - Exact `data-screen-label` section names, `data-props` enum values (`startView`, `demoState`, `verif`, `rank`, `moment`), and modal/drawer state keys (`m.*`, `has*`).
+   - Existing `design/tokens.css` variables (`--am-*`), `data.js` seed ID prefixes (`MS-XXXX` vs `YC-XXXX`), rank keys (`sv`/`gv`), and validation regexes so Claude Design edits in place without inventing conflicting state or tokens.
+- **Completion criterion**: `rg` structural index completed before reading `.dc.html` bodies, full CRUD audit table delivered, and archive-grounded patch prompts written with exact `.dc.html`, `data-screen-label`, `data-props`, and `design/tokens.css` references.
