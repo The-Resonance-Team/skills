@@ -31,9 +31,14 @@ Applies to repos deploying from self-hosted GitHub Actions runners to a VPS over
      run: echo "version=$(node -p 'require("./apps/api/package.json").dependencies.prisma.replace("^","")')" >> "$GITHUB_OUTPUT"
    ```
 
-## Multi-stage Node 26 + pnpm Dockerfile shape
+## Centralized `infra/` directory & multi-stage Dockerfile shapes
 
-9. **Install `pnpm` once in `base`, copy into `runner`, and `--chown` every runtime copy** — Derive `PNPM_MAJOR` from `package.json#packageManager` in `base`, reuse `/root/.local/share/pnpm` in `runner` without a second download, pass `--chown=nestjs:nodejs` on every `COPY --from=`, target `127.0.0.1` in `HEALTHCHECK`, and use exec-form `CMD`:
+9. **Centralize all Dockerfiles and reverse-proxy configs under `infra/` (`infra/docker/`, `infra/nginx/`) with root build context (`context: .`)** —
+   - **Never scatter `Dockerfile` or `.dockerignore` files inside `apps/*/`**: place the API image definition at `infra/docker/api.Dockerfile`, share a single parameterized `infra/docker/portal.Dockerfile` across all Next.js apps (`ARG APP_DIR`, `ARG APP_PACKAGE`, `ARG APP_PORT`), and keep reverse-proxy configs in `infra/nginx/default.conf`.
+   - **One parameterized `portal.Dockerfile` for all Next.js apps**: pass `APP_DIR`, `APP_PACKAGE`, `APP_PORT`, and `NEXT_PUBLIC_API_URL` via `build.args` in `compose.prod.yml` so Bun version bumps, `--linker=hoisted` flags, BuildKit cache mounts (`--mount=type=cache,id=bun-install-cache,target=/root/.bun/install/cache`), and standalone runner stages are maintained in one file instead of duplicated across `apps/*/Dockerfile` (Precedent: Gia Su Anh Minh 2026-10 — 6 portal Dockerfiles collapsed into `infra/docker/portal.Dockerfile`).
+   - **Single root `.dockerignore`**: Docker reads `.dockerignore` from the build context root (`context: .`), so per-app `apps/*/.dockerignore` files are silently ignored dead files — delete them and maintain a single root `.dockerignore`.
+
+10. **Multi-stage Node 26 + pnpm Dockerfile shape (`pnpm` once in `base`, copy into `runner`, `--chown` every runtime copy)** — Derive `PNPM_MAJOR` from `package.json#packageManager` in `base`, reuse `/root/.local/share/pnpm` in `runner` without a second download, pass `--chown=nestjs:nodejs` on every `COPY --from=`, target `127.0.0.1` in `HEALTHCHECK`, and use exec-form `CMD`:
 
    ```dockerfile
    FROM node:26-alpine AS base
@@ -55,6 +60,4 @@ Applies to repos deploying from self-hosted GitHub Actions runners to a VPS over
    CMD ["node", "dist/main.js"]
    ```
 
-## Multi-stage oven/bun Dockerfile shape
-
-10. **Pin `oven/bun:${BUN_VERSION}-alpine` for builder and runner, copy every filtered workspace manifest, and install hoisted** — `oven/bun:latest` is Debian/glibc and cannot load musl Prisma engines; keep one Alpine pin for both stages. A `--filter` install fails when it skips a manifest the closure needs (`workspace ... not on disk`), so copy every depended workspace's `package.json` (and its sources before build). Use `--linker=hoisted` with `--filter` so `bun check` resolves `@types/*` from the root (the isolated linker hides them under the filtered workspace). Install the global Prisma CLI with `BUN_INSTALL=/usr/local bun install -g` so it lands on `PATH` for the non-root user (`node -p` version reads work through Bun's Node fallback; `bun pm cache rm` replaces `npm cache clean`). Verify with a full image build plus a boot-and-healthcheck run before merging (Precedent: Gia Su Anh Minh 2026-10 — API and Next.js standalone images build, boot, and serve on `oven/bun:1.4.4`).
+11. **Multi-stage `oven/bun` Dockerfile shape (`oven/bun:${BUN_VERSION}-alpine`, hoisted filtered install, BuildKit cache mount)** — `oven/bun:latest` is Debian/glibc and cannot load musl Prisma engines; keep one Alpine pin for both stages. A `--filter` install fails when it skips a manifest the closure needs (`workspace ... not on disk`), so copy every depended workspace's `package.json` (and its sources before build). Use `--linker=hoisted` with `--filter` and `--mount=type=cache,id=bun-install-cache,target=/root/.bun/install/cache` so `bun check` and Next output tracing see one flat `node_modules` tree without re-downloading packages across builds. Install the global Prisma CLI with `BUN_INSTALL=/usr/local bun install -g` so it lands on `PATH` for the non-root user (`node -p` version reads work through Bun's Node fallback; `bun pm cache rm` replaces `npm cache clean`). Verify with a full image build plus a boot-and-healthcheck run before merging (Precedent: Gia Su Anh Minh 2026-10 — `infra/docker/api.Dockerfile` and `infra/docker/portal.Dockerfile` on `oven/bun:1.4.4`).

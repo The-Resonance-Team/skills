@@ -1,5 +1,5 @@
 {
   "singleQuote": true,
   "sortPackageJson": false,
-  "ignorePatterns": ["*.md"]
+  "ignorePatterns": ["*.md", "**/next-env.d.ts"]
 }

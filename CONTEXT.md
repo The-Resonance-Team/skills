@@ -31,7 +31,7 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | `workflows/codebase-audit.md`          | Full-codebase audit in package/directory slices against `rules/audit.md` (team-rule compliance, slop, dead code, risk, secrets). | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
 | `workflows/themed-codebase-audit.md`   | Three-theme audit (dead code, duplicated business logic, complex logic) with a grill gate and wave branches.                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/themed-codebase-audit.md`   |
 | `workflows/lint-burndown.md`           | Adopt strict lint preset, clear a lint backlog to zero, ratchet `--max-warnings` down in subagent waves.                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md`           |
-| `workflows/claude-design-prompting.md` | Grill the user on design demand, generate multi-surface Claude Design prompts with full CRUD/state coverage, and audit `.dc.html` exports. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-prompting.md` |
+| `workflows/claude-design-prompting.md` | Grill the user on design demand, generate multi-surface Claude Design prompts (creative freedom + copy/responsive/CRUD guardrails), and audit `.dc.html` exports across CRUD, copy/UX, and responsive axes. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-prompting.md` |
 | `workflows/claude-design-to-nextjs.md` | Convert Claude Design (`.dc.html`) exports or specs into pixel-perfect Next.js/React pages verified with Chrome DevTools MCP.   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
 Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`).
@@ -47,7 +47,7 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Rule module** — one self-contained markdown file under `rules/`, fetched by URL into an agent's context.
 - **Consumer** — any repository or global agent profile (OpenCode, Claude Code, Codex, Antigravity, Hermes, Cursor, Windsurf, Copilot) that wires this router or `rules/*.md` URLs.
 - **Instruction** — a standing rule entry or remote URL loaded into an agent's context on every session.
-- **Lint baseline** — the standard formatter + linter setup (`Oxfmt` + `Oxlint`, `max-lines: 300`) in `rules/linting.md`. Alternatives are not accommodated.
+- **Lint baseline** — the standard formatter + linter setup (`bun fmt` + `Oxlint`, `max-lines: 300`) in `rules/linting.md`. Alternatives are not accommodated.
 - **Tool config** — a machine-readable config in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`) copied into consumer repos.
 - **Config drift** — a local or per-app config in a consumer repo that contradicts the baseline. Resolved by unification, never accommodation.
 - **Library baseline** — the fixed library-per-concern table in `rules/libraries.md`, chosen by framework. A substitute library for a covered concern is a violation.
@@ -56,7 +56,8 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Deep-module boundary** — the default monorepo boundary regime (`oxc/no-barrel-file: "error"` + `.dependency-cruiser.cjs`) where workspace packages are imported only via `package.json#exports` entry points and `export *` folder barrels are forbidden (`rules/frontend.md`, `rules/nestjs.md`).
 - **Icon vocabulary** — the single concept-keyed icon registry (`ICON` + `AmIcon`, and `RICH_ICON` + `AmRichIcon` for decorative surfaces) owned by the shared UI package (`packages/ui`) and guarded by `lint:icons` (`rules/frontend.md` #17, `rules/libraries.md` #8).
 - **Inline multipart upload** — the upload model in `rules/upload.md`: files ride `multipart/form-data` on authenticated business endpoints into `@nestjs/storage` (`StorageDisk` / `uploadToDisk`), with best-effort delete on replace or removal (**media lifecycle**).
-- **Term table** — the User-Facing Copy section of a consumer repo's `GLOSSARY.md` mapping internal terms to displayed VI and EN strings (`rules/i18n.md`).
-- **Machinery leak** — an internal mechanism (`webhook`, `HMAC`, `SLA`, `RLS`), raw enum, status code, or parenthesized English original leaked into a user-facing message value (`rules/i18n.md`).
+- **`DESIGN.md`** — the root design system and UI/UX specification file in a consumer repo (pointed to from `AGENTS.md`), co-locating aesthetic tokens, shared UI primitives, icon vocabulary rules, domain-role component naming, responsive breakpoint rules, and the user-facing copy **Term table** so `GLOSSARY.md` remains a pure domain glossary (`rules/frontend.md` #21, `rules/i18n.md` #8).
+- **Term table** — the User-Facing Copy section of a consumer repo's `DESIGN.md` (or `GLOSSARY.md` in repos without `DESIGN.md`) mapping internal terms to displayed VI and EN strings (`rules/i18n.md`).
+- **Machinery leak** — an internal mechanism (`webhook`, `HMAC`, `SLA`, `RLS`), raw enum, status code, or parenthesized English original leaked into a user-facing message value or `.tsx` source file (`rules/i18n.md`).
 - **Slop** — an AI-generation artifact flagged by `rules/audit.md`: narrating comments, defensive checks on trusted paths, type-bypass casts, single-use abstractions, deep nesting, suppression directives, and value-free tests.
 - **Slice** — a partition of source paths small enough for one subagent's context in `workflows/codebase-audit.md`; every file in a slice receives a **verdict** (`clean` or `file:line` findings).

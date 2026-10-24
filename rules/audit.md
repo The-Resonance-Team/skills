@@ -6,7 +6,7 @@ Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`
 
 1. **Every source file gets a verdict** — `clean` or one or more findings. A slice audit completes when every file in the slice carries a verdict.
 2. **Every finding cites `file:line` evidence** — Include `file:line`, category, and a one-line description. Re-verify dead-code claims with a repo-wide exact-word `rg -w` count before flagging (re-exports and test seams count as live).
-3. **Report before fixing** — Present the merged report and wait for human approval before editing. Re-run `oxfmt`, `oxlint`, typecheck, and tests after applying fixes.
+3. **Report before fixing** — Present the merged report and wait for human approval before editing. Re-run `bun fmt`, `oxlint`, typecheck, and tests after applying fixes.
 
 ## Slop checklist (`category: slop`)
 
@@ -34,7 +34,8 @@ Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`
 
 17. **Rule, config, and library compliance** — Fetch the project's applicable modules from `CONTEXT.md` and check every file against them (`rule`), compare local lint/format/Dependabot configs against `configs/` (`config-drift`), and verify every covered concern uses its assigned library in `rules/libraries.md` (`library`).
 18. **Slice-type checks**:
-    - **Frontend**: interactive controls carry accessible names (`aria-hidden="true"` on icon-font ligatures), keyboard/focus flows work, WCAG AA contrast passes, object URLs revoke on unmount, no unlayered CSS resets overriding Tailwind v4 `@layer utilities`.
+    - **Frontend**: interactive controls carry accessible names (`aria-hidden="true"` on icon-font ligatures), keyboard/focus flows work, WCAG AA contrast passes, object URLs revoke on unmount, no unlayered CSS resets overriding Tailwind v4 `@layer utilities`, and UI/UX tokens, responsive layouts, component naming, and copy adhere to root `DESIGN.md` (`rules/frontend.md` #21).
     - **Prisma**: migrations checked for destructive ops, queried columns indexed, `select` shapes include required relations (`rules/prisma.md`).
     - **API**: every route enforces auth guards, every trust boundary validates with a DTO class, stateful maps bounded, streaming endpoints handle disconnect (`rules/nestjs.md`).
-    - **i18n**: all UI chrome strings live in `{vi,en}` catalogs with parity, zero machinery leaks (`rules/i18n.md`).
+    - **i18n**: all UI chrome strings live in `{vi,en}` catalogs with parity, zero machinery or enum leaks in catalogs or `.tsx` sources (`rules/i18n.md`).
+    - **Infra & Docker**: all `Dockerfile`s (`infra/docker/api.Dockerfile`, parameterized `infra/docker/portal.Dockerfile`) and reverse-proxy configs (`infra/nginx/default.conf`) live under `infra/` with a single root `.dockerignore` and zero scattered `apps/*/Dockerfile` or `apps/*/.dockerignore` files (`rules/github-vps-deploy.md` #9).

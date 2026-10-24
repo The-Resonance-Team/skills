@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["react", "react_perf", "typescript", "import", "jest", "vitest"],
+  "plugins": ["react", "react_perf", "nextjs", "typescript", "import", "jest", "vitest"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",

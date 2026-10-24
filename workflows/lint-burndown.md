@@ -45,13 +45,13 @@ Run `npx oxlint . --format json`. Build the ledger as **rule × surface** (`api`
 
 Partition by directory into disjoint slices of ~60–140 findings (one directory = one subagent owner, 3–5 slices per wave). Every subagent dispatch enforces:
 - Edit only your slice's files. Never run repo-wide fixers or `--fix-suggestions`.
-- Run `oxfmt <paths> && oxlint --max-warnings=0 <paths>`, typecheck, and the slice's tests before reporting (`oxfmt` runs first because formatting expands lines 1.4×–2.5× and exposes `max-lines: 300` violations).
+- Run `bun fmt <paths> && oxlint --max-warnings=0 <paths>`, typecheck, and the slice's tests before reporting (`bun fmt` runs first because formatting expands lines 1.4×–2.5× and exposes `max-lines: 300` violations).
 - Do not add inline `oxlint-disable-next-line` comments (ignored by baseline `oxlint`, `rules/linting.md` #10). Report genuine framework/target conflicts so the coordinator can record a scoped `overrides` entry in config; in ESLint/Ultracite profiles where directives run, use a single-line disable with `-- <reason>` only for true framework conflicts.
 - Never weaken assertions or change runtime behavior to satisfy a rule.
 
 ### 4. Gates
 
-- **After every wave**: run `oxfmt`, `oxlint`, full typecheck, and full test suite on the merged tree (`rules/general.md` #15). Re-count and rebalance the next wave.
+- **After every wave**: run `bun fmt`, `oxlint`, full typecheck, and full test suite on the merged tree (`rules/general.md` #15). Re-count and rebalance the next wave.
 - **Before the ceiling hits 0**: boot the real production build (`pnpm build && node dist/main.js` for NestJS; `next build` for Next.js) to verify DI metadata and Swagger schema generation at runtime, then run `format:check` and e2e suites.
 - **One PR per surface/tranche** with the ratcheted ceiling, un-parked rules, and any ADR updates.
 
@@ -70,7 +70,7 @@ Delete each parked rule override as it hits zero, set every package ceiling to `
 | 5 | Two linters on one surface (`oxlint` + `ESLint`) | Fixers fight over import specifiers and side-effect imports | Scope `lint-staged` and `oxlint` `ignorePatterns` per `rules/linting.md` #11, #13 |
 | 6 | Removing a live barrel file | Breaks cross-repo importers | Count importers first; delete 0-importer barrels in place, migrate live ones in a dedicated slice |
 | 7 | Blunt `--fix-suggestions` | Applies unsafe semantic rewrites (`toSorted` breaking in-place mutation callers) | Never use `--fix-suggestions`; fix per rule with tests as oracle |
-| 8 | Running `oxlint` before `oxfmt` | `oxfmt` expands single-line JSX/objects past `max-lines: 300` at commit time | Always run `oxfmt` before `oxlint` (`rules/linting.md` #9) |
+| 8 | Running `oxlint` before `bun fmt` | `bun fmt` expands single-line JSX/objects past `max-lines: 300` at commit time | Always run `bun fmt` before `oxlint` (`rules/linting.md` #9) |
 
 ## Fix playbook (high-volume rules)
 
