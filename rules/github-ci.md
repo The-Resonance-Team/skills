@@ -4,7 +4,7 @@ Applies to any repo running CI on GitHub Actions. Action refs in workflows must 
 
 ## Entry point, reuse & concurrency
 
-1. **One `ci.yml` entry point for the happy path** — Run lint, typecheck, test, and build from a single top-level `ci.yml` triggered on `push` (`main`) and `pull_request` (`main`), provisioned via `pnpm/setup@v2` (`runtime: node@26`, `install: false`, `cache: false` → `pnpm install --frozen-lockfile --ignore-scripts`) or `oven-sh/setup-bun` in Bun-native repos.
+1. **One `ci.yml` entry point for the happy path** — Run lint, typecheck, test, and build from a single top-level `ci.yml` triggered on `push` (`main`) and `pull_request` (`main`), provisioned via `pnpm/setup@v2` (`runtime: node@26`, `install: false`, `cache: false` → `pnpm install --frozen-lockfile --ignore-scripts`) or `oven-sh/setup-bun@v2` with `bun-version-file: package.json` in Bun-native repos (so the version comes from `packageManager`/`devEngines`, never a hand-typed tag).
 2. **Extract shared build/test logic into reusable workflows (`workflow_call`)** — When CI, release, or deploy workflows share steps, extract a `_*.yml` / `*-reusable.yml` workflow triggered by `on: workflow_call` instead of copying job blocks.
 3. **Concurrency: cancel stale CI on `github.ref`, key CD on `github.ref_name`** — Every workflow declares a `concurrency` block:
    - **CI (`group: ci-${{ github.ref }}`, `cancel-in-progress: true`)**: `github.ref` (`refs/heads/main`, `refs/pull/42/merge`, `refs/tags/v1.0.0`) isolates branch pushes, PR merges, and tags so a newer push cancels its own stale run without colliding across trigger types (`github.ref_name` `42/merge` can collide with a branch name).
