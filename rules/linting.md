@@ -1,4 +1,4 @@
-# Lint & Format Baseline — bun fmt, Oxlint, Ruff (Python)
+# Lint & Format Baseline — bun fmt, bun lint, Ruff (Python)
 
 Applies to every TypeScript/JavaScript and Python project in the organization. Machine-readable configs ship in `configs/`.
 
@@ -7,7 +7,7 @@ Applies to every TypeScript/JavaScript and Python project in the organization. M
 | Tool      | Applies to                                                             | Job             |
 | --------- | ---------------------------------------------------------------------- | --------------- |
 | `bun fmt` | all TS/JS/Next.js/JSON/YAML/CSS projects (`configs/.oxfmtrc.json`)     | formatting only |
-| Oxlint    | all TS/JS and Next.js 16+ projects (`configs/.oxlintrc.json` / `oxlint.config.ts`) | linting only    |
+| `bun lint` | all TS/JS and Next.js 16+ projects (`configs/.oxlintrc.json` / `oxlint.config.ts`, read by `bun lint`) | linting only    |
 | Ruff      | Python packages (`ruff format` + `ruff check`, plus `mypy` & `pytest`) | format + lint   |
 
 Formatting is never linted; linting is never formatted (zero stylistic rules in any linter).
@@ -18,7 +18,7 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 2. **Tailwind class sorting** — Set `"sortTailwindcss": true` in Tailwind projects (built-in, no plugin).
 3. **Markdown is never auto-formatted** — `*.md` stays in `ignorePatterns` so hand-wrapped rules, ADRs, and specs are not reflowed.
 
-## Oxlint baseline (all TS/JS & Next.js 16+ projects)
+## Bun lint baseline (all TS/JS & Next.js 16+ projects)
 
 4. **Root config (`configs/.oxlintrc.json` or Ultracite `oxlint.config.ts`)** —
    - `categories`: `correctness: "error"`, `suspicious: "warn"`, `perf: "warn"`.
@@ -28,19 +28,19 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 6. **`_`-prefix convention (never a silencer for real input)** — `no-unused-vars: ["error", { varsIgnorePattern: "^_", argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }]`. Prefixing a real input (a DTO, route param, or state setter) with `_` to silence lint is a **suppressed binding** bug — wire it or remove it. Valid `_` uses are signature-required placeholders only (guard params, `validate(_value, args)`, react-query `(_data, ...)`, test stubs).
 7. **Discipline rules & NestJS decorator allowance** — `no-console: ["warn", { "allow": ["warn", "error"] }]`, `no-debugger: "warn"`, `no-explicit-any: "error"`, `eslint/no-underscore-dangle: "off"`, `react/no-array-index-key: "warn"`, `react/react-in-jsx-scope: "off"`, `import/no-duplicates: ["error", { "prefer-inline": true }]`, `import/no-named-as-default-member: "off"`, `import/no-unassigned-import: "off"`. NestJS repos add `typescript/no-extraneous-class: ["warn", { "allowWithDecorator": true }]`.
 8. **Scoped test leniency** — Only `**/*.{test,spec}.{ts,tsx}` overrides disable `no-explicit-any`, `expect-expect`, `no-conditional-expect`, `valid-title`, and `require-mock-type-parameters`. App code never inherits test leniency.
-9. **300-line cap (`max-lines: ["error", 300]`) — always run `bun fmt` BEFORE the linter** — `bun fmt` expands compact single-line JSX props, objects, and destructuring by **1.4×–2.5×**. Running the linter before the formatter gives a false-green that fails at commit time under `lint-staged`. Always run the formatter first (`bun fmt <paths> && oxlint --max-warnings=0 <paths>`). Target **≤250 formatted lines** when authoring new components and **≤290 formatted lines** on near-cap edits (Precedent: Gia Su Anh Minh 2026-10 — 65 subagent files expanded past 300 lines on formatting).
-10. **Resolve findings in code or config `overrides`, never inline disable comments** — Baseline `oxlint` ignores inline comments (`eslint-disable-next-line`, `oxlint-ignore-next-line`, `oxlint-disable-next-line`), so inline comments are dead code wearing a disguise. Fix the code, or place legitimate framework/target carve-outs in a scoped `overrides` block in config with a comment explaining why. Grep for `disable-next-line|oxlint-ignore` before claiming zero findings.
+9. **300-line cap (`max-lines: ["error", 300]`) — always run `bun fmt` BEFORE the linter** — `bun fmt` expands compact single-line JSX props, objects, and destructuring by **1.4×–2.5×**. Running the linter before the formatter gives a false-green that fails at commit time under `lint-staged`. Always run the formatter first (`bun fmt <paths> && bun lint --no-script --max-warnings=0 --allow-unsupported <paths>`). Target **≤250 formatted lines** when authoring new components and **≤290 formatted lines** on near-cap edits (Precedent: Gia Su Anh Minh 2026-10 — 65 subagent files expanded past 300 lines on formatting).
+10. **Resolve findings in code or config `overrides`, never inline disable comments** — Baseline `bun lint` ignores inline comments (`eslint-disable-next-line`, `oxlint-ignore-next-line`, `oxlint-disable-next-line`), so inline comments are dead code wearing a disguise. Fix the code, or place legitimate framework/target carve-outs in a scoped `overrides` block in config with a comment explaining why. Grep for `disable-next-line|oxlint-ignore` before claiming zero findings.
 
-## Next.js linting (`oxlint` `nextjs` plugin)
+## Next.js linting (`bun lint`, `nextjs` plugin)
 
-11. **Root `oxlint` (`plugins: ["nextjs"]`) + `bun fmt` by default** — Next.js 16+ repos lint all workspaces with root `oxlint --max-warnings=0` (`plugins: ["nextjs"]` in `.oxlintrc.json` or `oxlint.config.ts`, ADR-0002/0012) and format with `bun fmt`, forbidding per-app ESLint/Prettier configs. Repos still on per-app `eslint.config.mjs`: port the rules to scoped `overrides` (keep `// ponytail:` trigger comments), delete `apps/<app>/eslint.config.mjs`, drop `eslint*` devDeps (Precedent: VibeHost 2026-10 — root `oxlint --max-warnings=0` lints all six Next.js apps clean).
+11. **Root `bun lint --no-script --allow-unsupported` (`plugins: ["nextjs"]`) + `bun fmt` by default** — Next.js 16+ repos lint all workspaces with root `bun lint --no-script --max-warnings=0 --allow-unsupported` (`plugins: ["nextjs"]` in `.oxlintrc.json` or `oxlint.config.ts`, ADR-0002/0012) and format with `bun fmt`, forbidding per-app ESLint/Prettier configs. Repos still on per-app `eslint.config.mjs`: port the rules to scoped `overrides` (keep `// ponytail:` trigger comments), delete `apps/<app>/eslint.config.mjs`, drop `eslint*` devDeps (Precedent: VibeHost 2026-10 — root `bun lint --no-script --max-warnings=0 --allow-unsupported` lints all six Next.js apps clean).
 12. **`react-hooks` rules stay ON** — Keep `react-hooks/set-state-in-effect`, `react-hooks/immutability`, and `react-hooks/refs` enabled; disable per-project only with a `// ponytail:` trigger comment after confirming a genuine pervasive conflict.
 
 ## Pre-commit & dead exports
 
-13. **`lint-staged` carries lint-fix tasks only — the formatter runs exactly once, after it** — Keep `oxlint --fix` in `lint-staged`. Never list the formatter there when the hook also runs `bun fmt --staged`: one `--staged` run formats every staged file idempotently, a second run only slows the hook (Precedent: VibeHost 2026-10 — `bun fmt` in `lint-staged` duplicated hook-level `bun fmt --staged`). Fix-then-format: `--fix` mutates code, so a fix applied after formatting can leave unformatted code that nothing later catches (formatting is never linted). Hook shape:
+13. **`lint-staged` carries lint-fix tasks only — the formatter runs exactly once, after it** — Keep `bun lint --no-script --fix --allow-unsupported` in `lint-staged`. Never list the formatter there when the hook also runs `bun fmt --staged`: one `--staged` run formats every staged file idempotently, a second run only slows the hook (Precedent: VibeHost 2026-10 — `bun fmt` in `lint-staged` duplicated hook-level `bun fmt --staged`). Fix-then-format: `--fix` mutates code, so a fix applied after formatting can leave unformatted code that nothing later catches (formatting is never linted). Hook shape:
     ```sh
-    bunx lint-staged   # oxlint --fix only — no formatter entry
+    bunx lint-staged   # bun lint --no-script --fix --allow-unsupported only — no formatter entry
     bun fmt --staged   # single format pass, re-stages
     bun run lint
     bun run typecheck

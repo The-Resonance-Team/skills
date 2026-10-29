@@ -20,7 +20,7 @@ https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.m
 
 ## Doctrine: park → ratchet → un-park
 
-1. **Set the ceiling** — each package's lint script runs `oxlint . --max-warnings N` at the current finding count. CI stays green and cannot regress.
+1. **Set the ceiling** — each package's lint script runs `bun lint --no-script --max-warnings N --allow-unsupported .` at the current finding count. CI stays green and cannot regress.
 2. **Ratchet** the ceiling down as tranches land. The ceiling stops debt from growing back; the config only reports.
 3. **The ledger is one tracking issue** — never maintain finding counts in config comments (they go stale immediately).
 
@@ -28,30 +28,30 @@ https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.m
 
 Copy `configs/.oxlintrc.json` into the repo root (or root `oxlint.config.ts` in Ultracite repos):
 - Permanent disagreements are **anti-goals**: set them `"off"` in config with a rationale comment (`typescript/parameter-properties` for NestJS DI, `unicorn/filename-case` for PascalCase components).
-- Build/runtime conflicts (SWC decorator metadata, ES target limits, Next.js linter split) go into a scoped `overrides` block in config **with a reason** — off in config, never inline comments (`rules/linting.md` #10: baseline `oxlint` ignores inline `oxlint-disable-next-line` comments).
+- Build/runtime conflicts (SWC decorator metadata, ES target limits, Next.js linter split) go into a scoped `overrides` block in config **with a reason** — off in config, never inline comments (`rules/linting.md` #10: baseline `bun lint` ignores inline `oxlint-disable-next-line` comments).
 
 ## Process
 
 ### 1. Measure → ledger
 
-Run `npx oxlint . --format json`. Build the ledger as **rule × surface** (`api`, `web`, `miniapp`, `portal`, `scripts`, `packages`) with a total per rule in the tracking issue. A rule is un-parkable only when every surface reaches zero.
+Run `bun lint --no-script --format json --allow-unsupported .`. Build the ledger as **rule × surface** (`api`, `web`, `miniapp`, `portal`, `scripts`, `packages`) with a total per rule in the tracking issue. A rule is un-parkable only when every surface reaches zero.
 
 ### 2. Set the ceiling and the scope
 
-- Per package: `"lint": "oxlint . --max-warnings N"` — scope `.`, not `src`, so e2e specs, seeds, configs, and scripts are covered too. Exclude generated dirs once in `ignorePatterns`.
-- Keep `lint-staged` active (`oxlint --fix` in `lint-staged`, then `bun fmt --staged` — fix-then-format, `rules/linting.md` #13). Never pass `--no-verify`.
+- Per package: `"lint": "bun lint --no-script --max-warnings N --allow-unsupported ."` — scope `.`, not `src`, so e2e specs, seeds, configs, and scripts are covered too. Exclude generated dirs once in `ignorePatterns`.
+- Keep `lint-staged` active (`bun lint --no-script --fix --allow-unsupported` in `lint-staged`, then `bun fmt --staged` — fix-then-format, `rules/linting.md` #13). Never pass `--no-verify`.
 
 ### 3. Slices → waves of subagents
 
 Partition by directory into disjoint slices of ~60–140 findings (one directory = one subagent owner, 3–5 slices per wave). Every subagent dispatch enforces:
 - Edit only your slice's files. Never run repo-wide fixers or `--fix-suggestions`.
-- Run `bun fmt <paths> && oxlint --max-warnings=0 <paths>`, typecheck, and the slice's tests before reporting (`bun fmt` runs first because formatting expands lines 1.4×–2.5× and exposes `max-lines: 300` violations).
-- Do not add inline `oxlint-disable-next-line` comments (ignored by baseline `oxlint`, `rules/linting.md` #10). Report genuine framework/target conflicts so the coordinator can record a scoped `overrides` entry in config; in ESLint/Ultracite profiles where directives run, use a single-line disable with `-- <reason>` only for true framework conflicts.
+- Run `bun fmt <paths> && bun lint --no-script --max-warnings=0 --allow-unsupported <paths>`, typecheck, and the slice's tests before reporting (`bun fmt` runs first because formatting expands lines 1.4×–2.5× and exposes `max-lines: 300` violations).
+- Do not add inline `oxlint-disable-next-line` comments (ignored by baseline `bun lint`, `rules/linting.md` #10). Report genuine framework/target conflicts so the coordinator can record a scoped `overrides` entry in config; in ESLint/Ultracite profiles where directives run, use a single-line disable with `-- <reason>` only for true framework conflicts.
 - Never weaken assertions or change runtime behavior to satisfy a rule.
 
 ### 4. Gates
 
-- **After every wave**: run `bun fmt`, `oxlint`, full typecheck, and full test suite on the merged tree (`rules/general.md` #15). Re-count and rebalance the next wave.
+- **After every wave**: run `bun fmt`, `bun lint --no-script --allow-unsupported`, full typecheck, and full test suite on the merged tree (`rules/general.md` #15). Re-count and rebalance the next wave.
 - **Before the ceiling hits 0**: boot the real production build (`pnpm build && node dist/main.js` for NestJS; `next build` for Next.js) to verify DI metadata and Swagger schema generation at runtime, then run `format:check` and e2e suites.
 - **One PR per surface/tranche** with the ratcheted ceiling, un-parked rules, and any ADR updates.
 
@@ -67,10 +67,10 @@ Delete each parked rule override as it hits zero, set every package ceiling to `
 | 2 | `import type` for constructor-injected deps | Erased import → `design:paramtypes` is `undefined` → `UnknownDependenciesException` at boot | Keep value imports for DI; turn the specifier-style rule off for the API in config |
 | 3 | Downgrading a rule with a bare `'warn'` | Replaces the config entry and **drops its options** (e.g. `namedComponents: 'arrow-function'`) | Repeat the rule's options array in every `warn` entry |
 | 4 | Fix uses syntax above `tsconfig` `target`/`lib` | Named capture groups (ES2018) or `toSorted` (ES2023) fail downstream typecheck | Check `target`/`lib` first; use compatible syntax |
-| 5 | Two linters on one surface (`oxlint` + `ESLint`) | Fixers fight over import specifiers and side-effect imports | Scope `lint-staged` and `oxlint` `ignorePatterns` per `rules/linting.md` #11, #13 |
+| 5 | Two linters on one surface (`bun lint --no-script --allow-unsupported` + `ESLint`) | Fixers fight over import specifiers and side-effect imports | Scope `lint-staged` and `bun lint --no-script --allow-unsupported` `ignorePatterns` per `rules/linting.md` #11, #13 |
 | 6 | Removing a live barrel file | Breaks cross-repo importers | Count importers first; delete 0-importer barrels in place, migrate live ones in a dedicated slice |
 | 7 | Blunt `--fix-suggestions` | Applies unsafe semantic rewrites (`toSorted` breaking in-place mutation callers) | Never use `--fix-suggestions`; fix per rule with tests as oracle |
-| 8 | Running `oxlint` before `bun fmt` | `bun fmt` expands single-line JSX/objects past `max-lines: 300` at commit time | Always run `bun fmt` before `oxlint` (`rules/linting.md` #9) |
+| 8 | Running `bun lint --no-script --allow-unsupported` before `bun fmt` | `bun fmt` expands single-line JSX/objects past `max-lines: 300` at commit time | Always run `bun fmt` before `bun lint --no-script --allow-unsupported` (`rules/linting.md` #9) |
 
 ## Fix playbook (high-volume rules)
 

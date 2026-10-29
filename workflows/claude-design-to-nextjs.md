@@ -39,7 +39,7 @@ Cross-check all labels, statuses, component names, responsive layouts, and entit
 
 Build each screen/slice adhering strictly to `rules/frontend.md` and `rules/general.md`:
 - **Tailwind v4 cascade layers & `@source` (`rules/frontend.md` #5)**: never copy unlayered `* { margin: 0; padding: 0; }` resets or unlayered custom classes from `.dc.html` / `tokens.css` alongside `@import "tailwindcss"` (unlayered rules override every `@layer utilities` `p-*`/`m-*`/`mx-auto` class). Put element resets in `@layer base`, custom classes in `@layer components`, and add `@source "../";` + shared UI package `@source` paths in `apps/*/src/app/globals.css`.
-- **≤250-line post-`bun fmt` file budget (`rules/linting.md` #9)**: `bun fmt` expands single-line JSX props, objects, and destructuring by 1.4×–2.5×. Author each view, modal, hook, and data file under ~250 lines and always run `bun fmt <paths>` *before* `oxlint --max-warnings=0 <paths>`.
+- **≤250-line post-`bun fmt` file budget (`rules/linting.md` #9)**: `bun fmt` expands single-line JSX props, objects, and destructuring by 1.4×–2.5×. Author each view, modal, hook, and data file under ~250 lines and always run `bun fmt <paths>` *before* `bun lint --no-script --max-warnings=0 --allow-unsupported <paths>`.
 - **Deep-module boundaries (`rules/frontend.md` #7)**: import workspace packages only via `package.json#exports` entry points and app-internal files directly by path; do not create `export *` folder barrels unless the repo uses the legacy barrel convention.
 - **`.dc.html` mechanical translation gates (`lint:tokens`, `lint:icons`, `leak.test.ts`)**:
   - **No raw `#hex` or bracketed `[Npx]` utilities (`lint:tokens`, `rules/frontend.md` #6)**: `.dc.html` templates use inline hex and pixel styles (`style="background:#FFFCF6;font-size:13.5px"`). Translate every color and dimension to `@theme inline` semantic tokens in `packages/ui/tokens.css` (`bg-paper`, `bg-surface`, `border-line-strong`, `text-ink-3`, `bg-brand-700`, `bg-accent-600`, `font-serif`, `font-mono`) or `var(--am-*)`.
@@ -48,12 +48,12 @@ Build each screen/slice adhering strictly to `rules/frontend.md` and `rules/gene
   - **CSS-first responsive breakpoints, zero `window.innerWidth` layout flash**: translate `.dc.html` grids and shells to Tailwind v4 responsive utilities (`sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`). Never use `useState(1280)` + `window.innerWidth` resize hooks for layout switching (causes SSR/hydration flash on mobile) or un-breakpointed inline `style={{ gridTemplateColumns: "268px minmax(0, 1fr)" }}` on app shells, master-detail split panes, or multi-column forms/modals. Ensure every portal retains 100% navigation reachability below `1024px` and wraps `7×3` schedule/comparison grids in `overflow-x-auto`.
 - **Data & forms (`rules/frontend.md` #3, #11–#13)**: use Ponytail mock hooks (`// ponytail: ... Upgrade if: ...` inside `useQuery`/`useMutation`) only when the API endpoint does not exist yet; wire real endpoints immediately when available. Mirror backend DTOs in `<form>-schema.ts` (`react-hook-form` + `zodResolver`).
 - **Route structure**: full-page create/edit uses a shared route editor across `/path/new` and `/path/[id]/edit` (`rules/frontend.md` #9); escape literal JSX entities (`&apos;`, `&quot;`, `&lt;`, `&gt;`).
-- **Completion criterion**: `bun fmt`, `oxlint --max-warnings=0`, `lint:boundaries`, `lint:tokens`, `lint:icons`, typecheck (`bun check` / `tsc --noEmit`), and unit tests pass with zero warnings.
+- **Completion criterion**: `bun fmt`, `bun lint --no-script --max-warnings=0 --allow-unsupported`, `lint:boundaries`, `lint:tokens`, `lint:icons`, typecheck (`bun check` / `tsc --noEmit`), and unit tests pass with zero warnings.
 
 ### 5. Two-axis code review
 
 Run `/code-review` against the base SHA along **Standards** (`rules/frontend.md`, `rules/i18n.md`, `rules/general.md`, Fowler smells) and **Spec** (missing, scope creep, wrong).
-- **Completion criterion**: every finding resolved and re-verified with `bun fmt` + `oxlint`.
+- **Completion criterion**: every finding resolved and re-verified with `bun fmt` + `bun lint --no-script --allow-unsupported`.
 
 ### 6. Live Chrome DevTools verification & UX refinement
 

@@ -6,7 +6,7 @@ Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`
 
 1. **Every source file gets a verdict** — `clean` or one or more findings. A slice audit completes when every file in the slice carries a verdict.
 2. **Every finding cites `file:line` evidence** — Include `file:line`, category, and a one-line description. Re-verify dead-code claims with a repo-wide exact-word `rg -w` count before flagging (re-exports and test seams count as live).
-3. **Report before fixing** — Present the merged report and wait for human approval before editing. Re-run `bun fmt`, `oxlint`, typecheck, and tests after applying fixes.
+3. **Report before fixing** — Present the merged report and wait for human approval before editing. Re-run `bun fmt`, `bun lint --no-script --allow-unsupported`, typecheck, and tests after applying fixes.
 
 ## Slop checklist (`category: slop`)
 
@@ -19,7 +19,7 @@ Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`
 
 ## Suppression & test checklists (`category: suppression` / `test`)
 
-10. **Zero inline suppression directives** — Grep each slice for `eslint-disable`, `oxlint-disable`, `oxlint-ignore`, `biome-ignore`, `ts-ignore`, `ts-expect-error`, and `prettier-ignore`. In baseline `oxlint`, inline disables are ignored dead code (`rules/linting.md` #10): fix the code or move legitimate framework carve-outs into a scoped config `overrides` block with a reason comment. In ESLint/typecheck where directives run, any surviving directive must be single-line with a blocker reason.
+10. **Zero inline suppression directives** — Grep each slice for `eslint-disable`, `oxlint-disable`, `oxlint-ignore`, `biome-ignore`, `ts-ignore`, `ts-expect-error`, and `prettier-ignore`. In baseline `bun lint`, inline disables are ignored dead code (`rules/linting.md` #10): fix the code or move legitimate framework carve-outs into a scoped config `overrides` block with a reason comment. In ESLint/typecheck where directives run, any surviving directive must be single-line with a blocker reason.
 11. **Every test fails on a real regression** — Flag tests with no assertions, tautologies (`expect(true).toBe(true)`), and mock-echoes (asserting what a mock was stubbed to return). Replace slop tests covering live behavior with behavioral tests in the same pass — never just delete coverage.
 
 ## Production-risk & dead-code checklists (`category: risk` / `dead-code`)
