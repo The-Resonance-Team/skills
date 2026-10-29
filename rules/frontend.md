@@ -83,3 +83,9 @@ Applies to browser clients in the organization (React/Next.js web apps, admin po
 ## Purity wall for pure modules (mechanical)
 
 22. **Pure modules must not import UI or React-query hooks** — Files named `*-vm.ts`, `*-api.ts`, `*-model.ts`, or `*-model.tsx` must stay free of `@giasuanhminh/ui` (and any UI package) and of `@tanstack/react-query` hooks, so `bun test` can import them: the UI package pulls `next/font`, which crashes the Bun test runner. Enforce with a deterministic check (`no-restricted-imports` scoped to those globs, or a depcruise rule) rather than review. If a pure module needs an icon or component, return a discriminator (`"success" | "failure"`) and map it to the icon in the consuming component. Precedent: giasuanhminh refactor 2026-10.
+
+## Bundle hygiene (mechanical)
+
+23. **Default `optimizePackageImports` for barrel-heavy deps** — add `optimizePackageImports: ["@sentry/nextjs", "zod", "axios", "shiki", "@shikijs/langs"]` (and any other barrel-exported dependency) to `experimental` in every app's `next.config`. Cheap, safe, reduces client bundle size. Precedent: VibeHost 2026-10 bundle audit.
+
+24. **`next/dynamic` for above-the-fold-but-deferrable islands** — large client components that are not needed for first paint (status boards, charts, editors) should be loaded with `next/dynamic({ ssr: false })` to split them out of the initial bundle. Precedent: VibeHost 2026-10 bundle audit.

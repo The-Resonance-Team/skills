@@ -43,3 +43,7 @@ Applies to any repo running CI on GitHub Actions. Action refs in workflows must 
 
 - **Keep the hook fast**: the hook runs `lint-staged` + `bun fmt --staged` only. Full `lint`/`typecheck`/`test` run in CI (`lint`, `typecheck`, `test`, `build` jobs). Heavy hooks push developers to `--no-verify` and defeat the guard.
 - **Commit messages**: keep body lines ≤ 100 chars; relax to 120 if the repo's commitlint config allows. Avoid angle brackets in subjects if commitlint rejects them.
+
+## Bundle regression (mechanical)
+
+- **Bundle size budget in CI** — run `next build` + `next analyze` (or a size-limit check) on PRs and fail on regressions in client source paths or attributed compressed size. Catches catalog leaks and accidental barrel imports before merge. Precedent: VibeHost 2026-10 bundle audit.

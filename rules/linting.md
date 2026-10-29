@@ -58,3 +58,7 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 
 - **Short identifiers**: single-letter bindings are allowed only from the established set `u/r/k/e/s/w/d/n/o` (user, request, key, event, slot/session, withdrawal, day, count). Two-letter abbreviations (`cf`, `ae`, `wb`, ...) are not allowed unless listed in the repo's ADR-0028 §3 exception list. Enforce with an `id-length` rule (min 2) plus the allowlist, so new slop is caught at commit time rather than in a follow-up rename pass. Precedent: giasuanhminh refactor 2026-10.
 - **Package gate**: for any package with tests, the gate is `bun test --check` (type-checks the test files and everything they import) before `bun test`. Run it in CI and locally.
+
+## Type-only imports (mechanical)
+
+- **Type-only imports on their own line** — `import type { X } from "..."`, never `import { type X }`. The inline form leaves a side-effect import at runtime. Enforce with `typescript(no-import-type-side-effects)` (already in oxlint). Precedent: VibeHost 2026-10.
