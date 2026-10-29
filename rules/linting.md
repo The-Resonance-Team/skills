@@ -53,3 +53,8 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 ## Python baseline
 
 15. **One root `ruff.toml`: `ruff format` + `ruff check` + `mypy` + `pytest`** — Select `E`, `F`, `I`, `UP`, `B`, `SIM`, `PTH`, `RUF` and ignore `E501`. Disable `RUF001`–`RUF003` in `ruff.toml` for projects carrying Vietnamese copy or mathematical symbols (en-dash `–`, `×`, `−`, Greek letters θ/α). Never create per-package `ruff.toml` files.
+
+## Slop-name guard (mechanical)
+
+- **Short identifiers**: single-letter bindings are allowed only from the established set `u/r/k/e/s/w/d/n/o` (user, request, key, event, slot/session, withdrawal, day, count). Two-letter abbreviations (`cf`, `ae`, `wb`, ...) are not allowed unless listed in the repo's ADR-0028 §3 exception list. Enforce with an `id-length` rule (min 2) plus the allowlist, so new slop is caught at commit time rather than in a follow-up rename pass. Precedent: giasuanhminh refactor 2026-10.
+- **Package gate**: for any package with tests, the gate is `bun test --check` (type-checks the test files and everything they import) before `bun test`. Run it in CI and locally.

@@ -38,3 +38,8 @@ Applies to any repo running CI on GitHub Actions. Action refs in workflows must 
    - Run default Turbopack (`next build`, never `--webpack`) with `experimental.turbopackRustReactCompiler: true`.
    - Set `typescript: { ignoreBuildErrors: Boolean(process.env.CI) }` in `next.config.ts` to skip running `tsc` a second time inside `next build`.
    - Set `experimental: { turbopackFileSystemCacheForBuild: !process.env.CI }` to skip the ~45s end-of-build SSTable disk flush on ephemeral CI checkouts (Precedent: Ecopick 2026-10, PR #453 — `CI/build` dropped from `12m 22s` to `1m 40s`).
+
+## Pre-commit hook scope (mechanical)
+
+- **Keep the hook fast**: the hook runs `lint-staged` + `bun fmt --staged` only. Full `lint`/`typecheck`/`test` run in CI (`lint`, `typecheck`, `test`, `build` jobs). Heavy hooks push developers to `--no-verify` and defeat the guard.
+- **Commit messages**: keep body lines ≤ 100 chars; relax to 120 if the repo's commitlint config allows. Avoid angle brackets in subjects if commitlint rejects them.
