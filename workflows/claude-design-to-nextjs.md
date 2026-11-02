@@ -1,11 +1,11 @@
 ---
 name: claude-design-to-nextjs
 description: >-
-  Convert Claude Design (.dc.html) exports and product specs into pixel-perfect
-  Next.js/React pages using team rules, domain modeling, two-axis code review,
-  and live Chrome DevTools MCP verification. Use when converting a Claude Design
-  export to Next.js/React, auditing design vs spec gaps, or verifying pixel-perfect
-  UI parity.
+  Convert Claude Design (.dc.html) zip exports and product specs into
+  pixel-perfect Next.js/React pages using team rules, domain modeling, two-axis
+  code review, and live Chrome DevTools MCP verification. Use when converting a
+  Claude Design export or zip to Next.js/React, auditing design vs spec gaps, or
+  verifying pixel-perfect UI parity.
 ---
 
 # Claude Design to Next.js/React Workflow
@@ -13,6 +13,17 @@ description: >-
 Convert Claude Design (`.dc.html`) exports to production Next.js/React code while enforcing `rules/frontend.md`, `rules/i18n.md`, and `rules/linting.md`.
 
 ## Process
+
+### 0. Zip intake → `apps/<app>`
+
+When the input is a `.zip`, prepare the workspace before step 1:
+- **Sandbox first**: copy the zip to the approved temp dir, hash it, and `unzip` outside the repo. Never unzip into the working tree; never edit the archive.
+- **Scan once, then read ranges**: run the step-1 `x-dc` scan plus `rg -o 'style="|sc-if|sc-for|\{\{'`, and record counts for inline styles, off-grid px values, fractional font sizes, Unicode glyphs, iframes, CDN imports, and image slots.
+- **Inventory before code**: map every screen/view and query parameter to a target route; mark design-only surfaces (component sheets, screen canvases, state catalogues, notes, device frames) as "do not ship".
+- **Extract the contract**: write `design-contract.json` with tokens, type scale, spacing map, copy keys, icon map, screen map, data shapes, and the run state machine; mirror the decisions in `DESIGN.md`.
+- **Scaffold before porting**: add `apps/<app>`, `packages/ui`, and `packages/i18n` to the workspace; prove `format:check`, `lint`, `tsc --noEmit`, and `build` are green with no design code. Fix the scaffold before charging a port failure.
+- **Pick one pilot slice**: the densest interactive surface bound to a real artifact (data grid, calendar, review table), not the landing page. Convert that slice through steps 1–6 before scaling.
+- **Completion criterion**: inventory, contract, green scaffold, and one slice chosen.
 
 ### 1. Design intake & workspace mapping
 
@@ -62,3 +73,11 @@ Verify the live rendered app against the `.dc.html` reference using Chrome DevTo
 2. `evaluate_script()` → assert `getComputedStyle(el)` box-model (`paddingTop`, `paddingLeft`, `marginLeft`, `maxWidth`, `width`, `backgroundImage`, `color`) on `<main>`, `<aside>`, and `<header>` matches the design (catches unlayered CSS reset collisions where `px-8 py-7` computes to `0px`).
 3. `take_snapshot()` & `take_screenshot()` → verify spacing, typography, token colors, responsive breakpoints, keyboard/focus flows, loading/empty/error states, and both VI/EN locales for leaked untranslated words. (Save screenshots inside workspace-local `.tmp-screenshots/` and delete `.tmp-screenshots/` plus any Next 16 generated `apps/*/AGENTS.md` before committing.)
 - **Completion criterion**: pixel-perfect computed layout verified in Chrome DevTools, 0 console errors, clean `git status`, and all verification gates green.
+
+## Conversion method check
+
+Before a full port, run the pilot slice twice from the same scaffold, fixture, and timebox:
+- **Arm A — markup-first**: translate the `.dc.html` markup to JSX; clean tokens and icons only when a gate fails.
+- **Arm B — contract-first**: write the contract first, then components against it; use the markup only to confirm geometry.
+
+Measure rework cycles to first green, time to parity, first-run gate failures, and quality debt. Adopt the arm with fewer rework cycles. If parity RMSE differs by more than 0.015, the more accurate arm wins. Record the result in the PR or ADR. Do not average a failed hard gate into a score.
