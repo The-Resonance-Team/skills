@@ -4,7 +4,7 @@ This module was split into topic modules. Fetch the ones your project needs inst
 
 | Old sections                         | New module                      |
 | ------------------------------------ | ------------------------------- |
-| CI §§1–5, 28                         | `rules/github-ci.md`            |
+| CI §§1–5, 28                         | `rules/github-actions.md`       |
 | Releases §§6–10, 14                  | `rules/github-releases.md`      |
 | Issue triage §§11–13                 | `rules/issues.md`               |
 | PR automation §§15, 16, 19, 20       | `rules/github-pr-automation.md` |

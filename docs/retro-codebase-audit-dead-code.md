@@ -33,7 +33,7 @@ breakage (new multer/js-yaml/svgo advisories) — fixed via workspace overrides.
 reviewed and merged into its base with zero checks ever executing; the failure
 only surfaces after rebase onto `main`. Either extend the trigger to stacked
 bases or adopt "stacked PRs still target main" as policy.
-→ Candidate rule for `rules/github-ci.md`.
+→ Candidate rule for `rules/github-actions.md`.
 
 ## 2. Scan-agent confidence is not verification
 

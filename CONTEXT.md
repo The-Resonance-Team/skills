@@ -17,7 +17,7 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | `rules/libraries.md`            | All TS/JS projects                                                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`            |
 | `rules/upload.md`               | APIs and clients with file uploads / object storage                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`               |
 | `rules/issues.md`               | Repos with a GitHub issue tracker                                        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/issues.md`               |
-| `rules/github-ci.md`            | Repos running CI on GitHub Actions                                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-ci.md`            |
+| `rules/github-actions.md`           | GitHub Actions CI, concurrency, path filtering, runner/cache, step parallelism | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-actions.md`           |
 | `rules/github-releases.md`      | Repos cutting releases or maintaining release branches                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-releases.md`      |
 | `rules/github-vps-deploy.md`    | Self-hosted runners deploying to a VPS over SSH                          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-vps-deploy.md`    |
 | `rules/github-pr-automation.md` | Repos with PR automation (`/autofix`, path labels, semantic titles)      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-pr-automation.md` |
@@ -34,7 +34,7 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | `workflows/lint-burndown.md`           | Adopt strict lint preset, clear a lint backlog to zero, ratchet `--max-warnings` down in subagent waves.                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md`           |
 | `workflows/qa.md`                      | Full UI/UX QA pass: seeded stack, 3-device screenshot sweep, parallel vision audit, presentational fixes, triaged report.        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/qa.md`                      |
 | `workflows/claude-design-prompting.md` | Grill the user on design demand, generate multi-surface Claude Design prompts (creative freedom + copy/responsive/CRUD guardrails), and audit `.dc.html` exports across CRUD, copy/UX, and responsive axes. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-prompting.md` |
-| `workflows/claude-design-to-nextjs.md` | Convert Claude Design (`.dc.html`) exports or specs into pixel-perfect Next.js/React pages verified with Chrome DevTools MCP.   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
+| `workflows/claude-design-to-nextjs.md` | Convert Claude Design (`.dc.html`) exports or specs into pixel-perfect Next.js/React pages verified with Chrome DevTools MCP. Includes zip intake to `apps/<app>` and a conversion method check. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
 Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`).
 

@@ -30,7 +30,7 @@ forced a real run — then the pre-commit hook failed on files the branch never
 touched, with an unchanged TS version. A cache hit is a claim that inputs are
 unchanged, not that the tree is healthy: any task whose inputs rarely change
 (`typecheck` on a stable package) can stay green indefinitely over rot.
-→ Rule 7 in `rules/github-ci.md` (this commit).
+→ Rule 7 in `rules/github-actions.md` (this commit).
 
 ## 2. Default worker counts assume a bigger box than self-hosted gives
 
@@ -41,7 +41,7 @@ then OOM-killed `137` under `pool:threads` (threads share one process; the
 "lighter" pool was the heavier one here). Fix was empirical because runner RAM is
 undocumented: `forks` + CI-only `--maxWorkers=2`. Two failed CI cycles were the
 price of guessing.
-→ Rule 8 in `rules/github-ci.md` (this commit). Standing gap: publish runner
+→ Rule 8 in `rules/github-actions.md` (this commit). Standing gap: publish runner
 specs (RAM/CPU) where agents can read them; sizing is still guesswork.
 
 ## 3. Age-gated registries block fresh majors; exempt exact pins
