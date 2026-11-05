@@ -32,9 +32,13 @@ Applies to any repo managing pull requests on GitHub. Pin all action refs to ful
 2. **Auto-label PRs by changed file path** — Use `dorny/paths-filter@v4` (with `pull-requests: read` so no checkout is needed) + `actions/github-script@v7` on `pull_request: [opened, synchronize]` to apply surface labels (`api`, `web`, `portal`, `miniapp`, `docs`).
 3. **Enforce conventional PR titles** — Validate `pull_request` titles (`[opened, edited, synchronize]`) with `amannn/action-semantic-pull-request@v5` so squash-merge commits always satisfy `commitlint`.
 
+## Review gate
+
+4. **CI and migration PRs get a second review before merge** — A PR that changes `.github/workflows/**`, `.github/actions/**`, or `prisma/migrations/**` has a blast radius outside its diff: a workflow edit can break every job, and a migration edit can break production data. Require the `reviewer` agent or a human review on those paths; green CI alone is not enough. Precedent: Ecopick 2026-11 — a missing migration reached `main` and broke the e2e seed, and CI-only PRs skipped the pipeline entirely.
+
 ## Branch cleanup on merge
 
-4. **Always merge with `gh pr merge --delete-branch` and prune local refs** — Merge PRs with:
+5. **Always merge with `gh pr merge --delete-branch` and prune local refs** — Merge PRs with:
 
    ```sh
    gh pr merge <number> --squash --delete-branch
