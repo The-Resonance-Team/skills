@@ -29,6 +29,7 @@ Applies to any repo running Playwright e2e tests against a real backend and real
 12. **Free known ports before full and isolated runs** — Kill stale listeners (`lsof -tiTCP:<port> -sTCP:LISTEN | xargs -r kill`) and clear leftover `BASE_URL` env overrides so `webServer` never attaches to a stale server from a prior run.
 13. **Configure `{ mode: 'serial' }` when tests in a `describe` share `beforeAll` state** — Under `fullyParallel`, Playwright scatters tests in one `describe` across workers (`beforeAll` runs once per worker); add `test.describe.configure({ mode: 'serial' })` whenever tests share setup or sequence.
 14. **Distinguish `--workers=1` contention from real failures** — Re-run a suspect failure in isolation with `--workers=1` against a clean server: if it passes, it is shared-DB parallel contention (document it); if it still fails, fix the test helper or app code before shipping.
+14b. **Browser jobs select a capable runner and install the browser in the job** — Do not assume a self-hosted pool is homogeneous: a host with a `PREEMPT_RT` kernel can hang every Chrome build at startup (100% CPU, no CDP). Require a capability label (`runs-on: [self-hosted, linux, playwright]`) and run `bunx playwright install chromium` in the job — a no-op on provisioned hosts, a recovery path after a cache wipe. Precedent: Ecopick 2026-11 — 120 specs failed on `sang-server-3`; the xiro runners were labelled `playwright`.
 
 ## Coverage manifests (mandatory, when tracked)
 

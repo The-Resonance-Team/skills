@@ -80,6 +80,16 @@ resolve: {
 
 12. **No runtime statutory config in DB** — tax rates/feature thresholds resolve from the hardcoded versioned ledger, not from `prisma` reads (ADR 0042 pattern).
 
+## Migrations (mandatory)
+
+13. **Every model change ships a migration in the same commit** — `prisma validate` and `prisma format` do not compare `prisma/models/**` with `prisma/migrations`. CI's `migrate reset` applies migrations only, so a model edit without a migration passes validation and fails at runtime on the first query that reads the new column (`P2022`). `db push` development hides this. Precedent: Ecopick 2026-11 — 13 columns, the e2e seed failed on `marketing_opt_in`.
+
+14. **CI fails on schema/migration drift** — Add to the `prisma` job:
+    ```sh
+    bun x prisma migrate diff --from-migrations prisma/migrations --to-schema prisma --exit-code
+    ```
+    Exit `0` is in sync, `2` is drift. `migrate status` compares applied migration rows, not the schema, so it does not catch this.
+
 ## Diagnosing a blank/wrong client field (mandatory)
 
-13. **A blank or wrong-looking field on the client is often a `select` that never joined the relation — check the server response before patching the client fallback.** A frontend `sellerName: raw.sellerName ?? ''` mapper is a symptom, not a bug, if `raw.sellerName` was never sent because the endpoint's `select` (a shared `MANAGE_SELECT`/`LIST_SELECT` object, or an inline one) never included `seller: { select: { citizen: { select: { fullName: true } } } }` in the first place. Compare against a peer endpoint that renders the same underlying data correctly (a detail vs. list variant of the same entity, an admin vs. public read) before assuming the bug is in the mapper — a `select` shape shared across list/detail/create/update endpoints (`rules/nestjs.md` rule 11) missing one relation produces the identical gap on every consumer of that shape, not just the one screen where it was first noticed.
+15. **A blank or wrong-looking field on the client is often a `select` that never joined the relation — check the server response before patching the client fallback.** A frontend `sellerName: raw.sellerName ?? ''` mapper is a symptom, not a bug, if `raw.sellerName` was never sent because the endpoint's `select` (a shared `MANAGE_SELECT`/`LIST_SELECT` object, or an inline one) never included `seller: { select: { citizen: { select: { fullName: true } } } }` in the first place. Compare against a peer endpoint that renders the same underlying data correctly (a detail vs. list variant of the same entity, an admin vs. public read) before assuming the bug is in the mapper — a `select` shape shared across list/detail/create/update endpoints (`rules/nestjs.md` rule 11) missing one relation produces the identical gap on every consumer of that shape, not just the one screen where it was first noticed.

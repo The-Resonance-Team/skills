@@ -20,6 +20,8 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 
 ## Bun lint baseline (all TS/JS & Next.js 16+ projects)
 
+3a. **`bun lint --no-script` needs a Bun build that supports it** — Bun 1.4.4 stable does not; the canary does. On a build without the flag, `bun lint` runs the package `lint` script and appends its arguments. A script named `lint` that calls `bun lint` then re-runs itself until `E2BIG`, exits `0`, and turbo caches the result as a success. Assert the flag in CI from a directory without a `package.json`: `(cd "$(mktemp -d)" && bun lint --help | grep -q -- --no-script)`. Pin a canary build at a separate path when needed; never trust the local Bun version (Precedent: Ecopick 2026-11 — every lint job cancelled for a week, 401 MB job log).
+
 4. **Root config (`configs/.oxlintrc.json` or Ultracite `oxlint.config.ts`)** —
    - `categories`: `correctness: "error"`, `suspicious: "warn"`, `perf: "warn"`.
    - `plugins`: `["react", "react_perf", "nextjs", "typescript", "import", "jest", "vitest"]`.
@@ -29,6 +31,8 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 7. **Discipline rules & NestJS decorator allowance** — `no-console: ["warn", { "allow": ["warn", "error"] }]`, `no-debugger: "warn"`, `no-explicit-any: "error"`, `eslint/no-underscore-dangle: "off"`, `react/no-array-index-key: "warn"`, `react/react-in-jsx-scope: "off"`, `import/no-duplicates: ["error", { "prefer-inline": true }]`, `import/no-named-as-default-member: "off"`, `import/no-unassigned-import: "off"`. NestJS repos add `typescript/no-extraneous-class: ["warn", { "allowWithDecorator": true }]`.
 8. **Scoped test leniency** — Only `**/*.{test,spec}.{ts,tsx}` overrides disable `no-explicit-any`, `expect-expect`, `no-conditional-expect`, `valid-title`, and `require-mock-type-parameters`. App code never inherits test leniency.
 9. **300-line cap (`max-lines: ["error", 300]`) — always run `bun fmt` BEFORE the linter** — `bun fmt` expands compact single-line JSX props, objects, and destructuring by **1.4×–2.5×**. Running the linter before the formatter gives a false-green that fails at commit time under `lint-staged`. Always run the formatter first (`bun fmt <paths> && bun lint --no-script --max-warnings=0 --allow-unsupported <paths>`). Target **≤250 formatted lines** when authoring new components and **≤290 formatted lines** on near-cap edits (Precedent: Gia Su Anh Minh 2026-10 — 65 subagent files expanded past 300 lines on formatting).
+9a. **The CI format gate runs before lint, as its own step or job** — A lint failure must not hide formatting debt. Authors run `bun fmt` then `bun lint`; CI runs `format:check` before `lint` (or in a parallel job), so both results are visible in one run. Precedent: Ecopick 2026-11 — 37 unformatted files on `main` stayed hidden while the lint step failed.
+
 10. **Resolve findings in code or config `overrides`, never inline disable comments** — Baseline `bun lint` ignores inline comments (`eslint-disable-next-line`, `oxlint-ignore-next-line`, `oxlint-disable-next-line`), so inline comments are dead code wearing a disguise. Fix the code, or place legitimate framework/target carve-outs in a scoped `overrides` block in config with a comment explaining why. Grep for `disable-next-line|oxlint-ignore` before claiming zero findings.
 
 ## Next.js linting (`bun lint`, `nextjs` plugin)
