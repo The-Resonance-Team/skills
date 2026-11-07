@@ -35,7 +35,7 @@ install_safe() {
     echo ""
     echo "Run with --install to auto-install safe tools (gh, ctx7, firecrawl, browse, bun)."
     echo "Human-only (follow official docs):"
-    echo "- browse extension pairing: run 'browse install', open the status page in Chrome"
+    echo "- browse extension pairing: run 'browse install', open the status page in Chrome (https://opencode.ai/product/browse)"
     echo "- sentry: run 'sentry auth login' (persists refresh token in ~/.config/sentry/cli.db)"
     echo "- turbo/vercel: run 'turbo login' to link repo and enable Remote Caching"
     echo "- tokens: create in vendor dashboards, paste via clipboard into ~/.config/opencode/.env"

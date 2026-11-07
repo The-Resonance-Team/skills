@@ -22,7 +22,7 @@ Read `~/.config/opencode/docs/tooling.md` before a task that uses GitHub, Sentry
 
 On `command not found` or `browse doctor` failure, run `~/workspace/skills/profiles/setup-device.sh` (raw: `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/profiles/setup-device.sh`).
 
-Auto-install (safe, no secrets): `gh`, `ctx7`, `firecrawl`, `browse` binary, `bun` + baseline configs. Human-only (print official doc steps, never auto): `browse` extension pairing, `sentry auth login`, `turbo login`, any token creation.
+Auto-install (safe, no secrets): `gh`, `ctx7`, `firecrawl`, `browse` binary, `bun` + baseline configs. Human-only (print official doc steps, never auto): `browse` extension pairing (https://opencode.ai/product/browse), `sentry auth login`, `turbo login`, any token creation.
 
 ## Browser tools
 
