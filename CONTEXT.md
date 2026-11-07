@@ -10,6 +10,7 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | `rules/nestjs.md`               | NestJS API (`apps/api`)                                                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`               |
 | `rules/prisma.md`               | TS/NestJS repos on Prisma 7                                              | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`               |
 | `rules/frontend.md`             | Web, portal, miniapp                                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`             |
+| `rules/miniapp.md`              | Zalo Mini App (`apps/miniapp`)                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/miniapp.md`              |
 | `rules/i18n.md`                 | Projects with message catalogs, multi-locale UI, user-facing copy        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                 |
 | `rules/qa.md`                   | Next.js-style frontends with a screenshot QA harness over seeded data    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/qa.md`                   |
 | `rules/e2e-testing.md`          | Repos with Playwright e2e tests against a real API                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`          |
