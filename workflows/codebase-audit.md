@@ -45,6 +45,17 @@ Present the merged table plus a count per category and the total files audited. 
 
 On approval, apply fixes slice by slice. After all fixes: run lint, typecheck, and tests; the pass completes when they pass and the diff contains no new findings. Deleted dead code stays deleted — restore only what a failing test proves alive.
 
+### 5a. Wave gates & two-axis review
+
+Do not run one large fix pass. Partition the approved findings into **waves** by dependency risk (safety → contracts → money → API boundaries → frontends → fixtures → deletions). Each wave lands in one commit per slice.
+
+- **Per slice**: run the owning package's formatter, typecheck, lint, and targeted tests before moving on.
+- **Per wave**: run the root gate (`bun fmt --check`, `bun lint`, `bun typecheck`, the full unit suite) and, where the repo has them, the composed API e2e and production builds.
+- **Per wave review**: dispatch two read-only reviewers against the wave's fixed point. One checks **standards** (the repo's `rules/*.md` and design/copy contracts); one checks **spec** (the approved audit report and the plan). Each reports hard violations and judgement calls, quoting `file:line`.
+- **Fix hard findings before the next wave.** Record a checkpoint with the fixed point and review range in the plan. A wave is done only when the root gate and both reviews are green.
+
+This is the cheapest place to catch a wrong abstraction: the review agent has the diff and no exploration cost, while the implementation agent still holds the wave context.
+
 ### 6. Operating rhythm
 
 Run when asked, or on a standing arrangement:

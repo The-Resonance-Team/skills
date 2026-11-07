@@ -89,3 +89,9 @@ Applies to browser clients in the organization (React/Next.js web apps, admin po
 23. **Default `optimizePackageImports` for barrel-heavy deps** — add `optimizePackageImports: ["@sentry/nextjs", "zod", "axios", "shiki", "@shikijs/langs"]` (and any other barrel-exported dependency) to `experimental` in every app's `next.config`. Cheap, safe, reduces client bundle size. Precedent: VibeHost 2026-10 bundle audit.
 
 24. **`next/dynamic` for above-the-fold-but-deferrable islands** — large client components that are not needed for first paint (status boards, charts, editors) should be loaded with `next/dynamic({ ssr: false })` to split them out of the initial bundle. Precedent: VibeHost 2026-10 bundle audit.
+
+## Route gates & registries (mandatory)
+
+25. **Auth-gate allowlists normalize home and ship a negative test** — A public-path list stores `/` for home, never `''`; the matcher is `pathname === p || pathname.startsWith(p + '/')`. With `''`, `startsWith('/')` makes every route public. Add a unit test that a private path stays closed and the public landing page stays open. Precedent: Ecopick 2026-11 — `PUBLIC_PATHS` contained `''`; the proxy gate was inert and every live route was masked as public.
+26. **One typed route/role registry per app** — Path, role, view id, breadcrumb, and public/private live in one module. No parallel role arrays, crumb maps, or `go('view')` literals. A missing route is a type error; a new public page is one row. Precedent: Ecopick 2026-11 — role vocabulary lived in three files and view/path maps in five.
+27. **Cache appliers read the factory's prefix length, not raw indexes** — A cache module that patches a query key must derive its offset from the key factory (`portalKeys.kyc.verification.base.length`) and compare discriminators. `queryKey[4]`/`[5]` silently binds to a different key when the factory grows.

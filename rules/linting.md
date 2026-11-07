@@ -54,6 +54,17 @@ Formatting is never linted; linting is never formatted (zero stylistic rules in 
 
 14. **Orphan-export check after symbol swaps** — No linter flags unused `export` bindings. Whenever an edit removes the last reference to an exported constant, type, or helper, grep the repo for its name and delete the orphan definition in the same commit.
 
+## Mechanical guards outside the linter (mandatory)
+
+The linter cannot see a pass-through alias, an inline suppression, or a stale generated file. Add these checks to the repo's `lint` script (or a pre-commit step) and run them on changed files:
+
+- **Pass-through re-exports** — fail on `export { X as Y } from '...'` outside a package entrypoint or an intentional public barrel. The fix is to update every in-repo caller, not to preserve the old name (`rules/general.md` #13). Command shape: `rg -nE "export \{[^}]* as [^}]*\} from" <changed files>` with the entrypoint allowlist.
+- **Inline suppressions** — fail on any new `eslint-disable`, `oxlint-disable`, `oxlint-ignore`, or `@ts-ignore` in changed source. Resolve the finding, or put a scoped config override with a reason (`rules/linting.md` #10). Command shape: `rg -nE "(eslint|oxlint|ts)-(disable|ignore)" <changed files>`.
+- **Type-bypass casts** — review every new `as never` or `as unknown as` in non-test source. They are allowed only at an adapter boundary that the type system cannot express; the cast gets a comment naming the boundary. A cast used to silence a mismatch is a bug.
+- **Generated files stay current** — every `*:generate` script has a matching `*:check` that rewrites to a temp file or compares content, and the root `lint`/CI runs `check`. A generated file without a check is a cache that will drift.
+
+Run the guards after `bun fmt`, because formatting changes line numbers. The gate is green only when the commands return no unallowlisted hit.
+
 ## Python baseline
 
 15. **One root `ruff.toml`: `ruff format` + `ruff check` + `mypy` + `pytest`** — Select `E`, `F`, `I`, `UP`, `B`, `SIM`, `PTH`, `RUF` and ignore `E501`. Disable `RUF001`–`RUF003` in `ruff.toml` for projects carrying Vietnamese copy or mathematical symbols (en-dash `–`, `×`, `−`, Greek letters θ/α). Never create per-package `ruff.toml` files.

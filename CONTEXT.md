@@ -13,6 +13,7 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | `rules/i18n.md`                 | Projects with message catalogs, multi-locale UI, user-facing copy        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                 |
 | `rules/qa.md`                   | Next.js-style frontends with a screenshot QA harness over seeded data    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/qa.md`                   |
 | `rules/e2e-testing.md`          | Repos with Playwright e2e tests against a real API                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`          |
+| `rules/fixtures.md`             | Repos with seed scripts, fixture generators, or a deterministic test DB  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/fixtures.md`             |
 | `rules/linting.md`              | All TS/JS and Python projects                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`              |
 | `rules/libraries.md`            | All TS/JS projects                                                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`            |
 | `rules/upload.md`               | APIs and clients with file uploads / object storage                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/upload.md`               |
@@ -64,3 +65,7 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Machinery leak** — an internal mechanism (`webhook`, `HMAC`, `SLA`, `RLS`), raw enum, status code, or parenthesized English original leaked into a user-facing message value or `.tsx` source file (`rules/i18n.md`).
 - **Slop** — an AI-generation artifact flagged by `rules/audit.md`: narrating comments, defensive checks on trusted paths, type-bypass casts, single-use abstractions, deep nesting, suppression directives, and value-free tests.
 - **Slice** — a partition of source paths small enough for one subagent's context in `workflows/codebase-audit.md`; every file in a slice receives a **verdict** (`clean` or `file:line` findings).
+- **Fixture contract** — the seed/fixture rules in `rules/fixtures.md`: production algorithms imported, one model registry, per-domain RNG, one timezone anchor, one persona registry, write-time schema assertions.
+- **Persona registry** — the one account list (name, email, role, route, password) shared by the seed's protected-account guard, `auth.setup`, and the e2e specs (`rules/fixtures.md` #5, `rules/e2e-testing.md` #17).
+- **Codemod gate** — a checked-in `scripts/<name>.ts` for a bulk edit, with a `--check`/dry-run mode and per-file occurrence assertions; the only allowed shape for a rename across more than five files (`rules/general.md` #23).
+- **Wave gate** — the per-wave root gate plus two-axis (standards + spec) review in `workflows/codebase-audit.md` §5a; hard findings block the next wave.
