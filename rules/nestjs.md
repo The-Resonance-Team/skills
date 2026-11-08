@@ -2,7 +2,7 @@
 
 Applies to `apps/api`-style NestJS services in the organization. Include this file only for NestJS repos.
 
-> **Pointers**: Time handling (`date-fns` + `TZDate` in `Asia/Ho_Chi_Minh`) follows `rules/general.md` (#9). File upload & media lifecycle rules live in `rules/upload.md`. Full Prisma 7 setup lives in `rules/prisma.md`.
+> **Pointers**: Time handling (`date-fns` + `TZDate` in `Asia/Ho_Chi_Minh`) follows `rules/general.md` (#9). File upload & media lifecycle rules live in `rules/upload.md`. Full Prisma 7 setup lives in `rules/prisma.md`. AI models, agent functions and embeddings follow `rules/nestjs-ai.md`.
 
 ## DTO validation & wire contract (mandatory)
 

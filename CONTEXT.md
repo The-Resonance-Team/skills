@@ -8,6 +8,7 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | ------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | `rules/general.md`              | All projects                                                             | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/general.md`              |
 | `rules/nestjs.md`               | NestJS API (`apps/api`)                                                  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs.md`               |
+| `rules/nestjs-ai.md`            | NestJS services with AI features (`@nestjs/ai` models, agents, embeddings) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs-ai.md`            |
 | `rules/prisma.md`               | TS/NestJS repos on Prisma 7                                              | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`               |
 | `rules/frontend.md`             | Web, portal, miniapp                                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`             |
 | `rules/miniapp.md`              | Zalo Mini App (`apps/miniapp`)                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/miniapp.md`              |
@@ -55,6 +56,9 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Tool config** — a machine-readable config in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`) copied into consumer repos.
 - **Config drift** — a local or per-app config in a consumer repo that contradicts the baseline. Resolved by unification, never accommodation.
 - **Library baseline** — the fixed library-per-concern table in `rules/libraries.md`, chosen by framework. A substitute library for a covered concern is a violation.
+- **AI seam** — the one application service that wraps `AiService` and owns model choice, usage events and app-specific caching; call sites go through it (`rules/nestjs-ai.md`).
+- **Model registry** — the named `models` and `embeddingModels` configured once in `AiModule.forRoot()`; the single place a provider and model ID are chosen (`rules/nestjs-ai.md`).
+- **Agent function** — a provider method decorated with `@AgentFunction()` that `@nestjs/ai` offers to a model as a tool; it runs through Nest enhancers with context type `'ai'` (`rules/nestjs-ai.md`).
 - **Bun-first** — the library selection check in `rules/libraries.md` #15: on Bun runtimes, check latest `bun.com/docs/runtime/*` built-ins (`Bun.Image`, `Bun.file`, `Bun.s3`, `Bun.redis`, `Bun.SQL`, `Bun.password`) before adding a library. A new library for a covered built-in is a violation.
 - **Ponytail marker** — a `// ponytail: <ceiling>, <upgrade if ...>` comment marking a deliberate simplification or mock store (`rules/general.md`). A marker without an upgrade trigger is **`no-trigger` debt** and blocks merge.
 - **`_`-prefix convention** — intentionally-unused signature placeholders carry a leading `_` (`^_` ignore pattern). A `_`-prefixed binding that swallows real input (DTO, route param, state setter) is a **suppressed binding** (`rules/linting.md`).
@@ -66,7 +70,7 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Machinery leak** — an internal mechanism (`webhook`, `HMAC`, `SLA`, `RLS`), raw enum, status code, or parenthesized English original leaked into a user-facing message value or `.tsx` source file (`rules/i18n.md`).
 - **Slop** — an AI-generation artifact flagged by `rules/audit.md`: narrating comments, defensive checks on trusted paths, type-bypass casts, single-use abstractions, deep nesting, suppression directives, and value-free tests.
 - **Slice** — a partition of source paths small enough for one subagent's context in `workflows/codebase-audit.md`; every file in a slice receives a **verdict** (`clean` or `file:line` findings).
-- **Fixture contract** — the seed/fixture rules in `rules/fixtures.md`: production algorithms imported, one model registry, per-domain RNG, one timezone anchor, one persona registry, write-time schema assertions.
+- **Fixture contract** — the seed/fixture rules in `rules/fixtures.md`: production algorithms imported, one fixture registry for model names and dimensions, per-domain RNG, one timezone anchor, one persona registry, write-time schema assertions.
 - **Persona registry** — the one account list (name, email, role, route, password) shared by the seed's protected-account guard, `auth.setup`, and the e2e specs (`rules/fixtures.md` #5, `rules/e2e-testing.md` #17).
 - **Codemod gate** — a checked-in `scripts/<name>.ts` for a bulk edit, with a `--check`/dry-run mode and per-file occurrence assertions; the only allowed shape for a rename across more than five files (`rules/general.md` #23).
 - **Wave gate** — the per-wave root gate plus two-axis (standards + spec) review in `workflows/codebase-audit.md` §5a; hard findings block the next wave.

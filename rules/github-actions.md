@@ -64,6 +64,8 @@ Applies to any repo running CI on GitHub Actions. Action refs in workflows must 
    - Set `typescript: { ignoreBuildErrors: Boolean(process.env.CI) }` in `next.config.ts` to skip running `tsc` a second time inside `next build`.
    - Set `experimental: { turbopackFileSystemCacheForBuild: !process.env.CI }` to skip the ~45s end-of-build SSTable disk flush on ephemeral CI checkouts (Precedent: Ecopick 2026-10, PR #453 — `CI/build` dropped from `12m 22s` to `1m 40s`).
 
+10. **Workflow changes update the workflow guard in the same commit** — Adding or removing a job or a `runs-on` line changes the counts and job-scoped assertions in `.github/tests/`. Update the guard and run `bun test ./.github/tests` before pushing. The count is a change detector, not a maintenance bug: `main` went red when the scheduled `force-gate` job landed without it (XaDaoXa 2026-11, PR #355).
+
 ## Step-level parallelism (GitHub Actions 2026-06)
 
 Run independent steps inside one job concurrently instead of splitting jobs. Four keywords:
