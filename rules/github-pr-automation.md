@@ -47,3 +47,15 @@ Applies to any repo managing pull requests on GitHub. Pin all action refs to ful
    ```
 
    GitHub's `delete_branch_on_merge` repo setting only removes the remote ref once at merge time (leaving local branches behind, and never re-deleting a branch if a stale local push recreates `head_ref_restored`). Never push to a branch after its PR merges; open follow-up work on a fresh branch.
+
+## Agent PR discipline (after opening a PR)
+
+6. **Wait for CI and fix it before declaring a PR done** — After opening a PR, poll `gh pr checks <n>` until every required check reaches a terminal state (success/failure/cancelled). On failure, read the failing job log (`gh run view <run> --log-failed`), fix the **root cause** (not the symptom), push, and re-poll. Never paper over a red check with `test.skip`, deleting a marker, a blind retry, or weakening an assertion. Stop and escalate to the user after **2 failed fix attempts on the same check**, or on any failure needing a design decision, secret, or infra change. A PR is not "ready" while a required check is red or pending, unless the user explicitly waives it in-session (record the waiver in the PR body).
+
+7. **No auto-merge without explicit user permission** — The agent must not run `gh pr merge`, enable auto-merge (`gh pr merge --auto`), or otherwise merge a PR unless the user explicitly says so in this session ("merge it", "auto-merge when green", "you can merge"). Green CI, a label, a PR-body note, or an issue reference never authorizes a merge. Even when all checks are green and review comments are resolved, report the PR URL + check summary and wait for the user's go-ahead.
+
+8. **Prefer squash merge** — When the user authorizes a merge, use `gh pr merge <n> --squash --delete-branch` (per #5) unless the user specifies another strategy. Never switch to merge-commit or rebase without an explicit request.
+
+## Agent suggestions on workflows
+
+9. **Ask before suggesting or applying workflow optimizations** — Full rule in `rules/github-actions.md` (agent suggestions section): when the agent finds something optimizable in `.github/workflows/**` or `.github/actions/**`, it must ask the user before suggesting or applying the change. Never silently rewrite a workflow or open an "optimization" PR without explicit permission.

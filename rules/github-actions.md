@@ -99,3 +99,7 @@ steps:
 ## Bundle regression (mechanical)
 
 - **Bundle size budget in CI** — run `next build` + `next analyze` (or a size-limit check) on PRs and fail on regressions in client source paths or attributed compressed size. Catches catalog leaks and accidental barrel imports before merge. Precedent: VibeHost 2026-10 bundle audit.
+
+## Agent suggestions (optimization)
+
+11. **Ask before suggesting or applying workflow optimizations** — When the agent finds something optimizable in `.github/workflows/**` or `.github/actions/**` (slow jobs, redundant steps, cache gaps, missing path filters, worker caps, missing `timeout-minutes`), it must **ask the user** whether to suggest or apply the optimization instead of editing the workflow or proposing a change on its own. Report the finding and the estimated impact, then wait for the user's go-ahead. Never silently rewrite a workflow, change a job graph, or open an "optimization" PR without explicit permission. (Cross-reference: `rules/github-pr-automation.md` #9.)
