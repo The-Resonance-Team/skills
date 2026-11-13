@@ -38,6 +38,7 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | `workflows/qa.md`                      | Full UI/UX QA pass: seeded stack, 3-device screenshot sweep, parallel vision audit, presentational fixes, triaged report.        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/qa.md`                      |
 | `workflows/claude-design-prompting.md` | Grill the user on design demand, generate multi-surface Claude Design prompts (creative freedom + copy/responsive/CRUD guardrails), and audit `.dc.html` exports across CRUD, copy/UX, and responsive axes. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-prompting.md` |
 | `workflows/claude-design-to-nextjs.md` | Convert Claude Design (`.dc.html`) exports or specs into pixel-perfect Next.js/React pages verified with Chrome DevTools MCP. Includes zip intake to `apps/<app>` and a conversion method check. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
+| `workflows/home-repo-setup.md` | Set up a Home Repo: inventory repos and shared agent material, agree a consolidation plan, and apply it safely (grilled decisions, lazy glossary, gated dry-run/apply). | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/home-repo-setup.md` |
 
 Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`).
 
