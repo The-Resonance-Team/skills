@@ -27,12 +27,14 @@ Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLA
 | `rules/github-supply-chain.md`  | Actions + registries (CodeQL, SHA pinning, `pnpm/setup` isolation)       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-supply-chain.md`  |
 | `rules/dependabot.md`           | Repos with `.github/dependabot.yml`                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`           |
 | `rules/audit.md`                | Any repo or slice under audit                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                |
+| `rules/test-comment-audit.md`   | Low-value test and comment-code audits                                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/test-comment-audit.md`   |
 
 ## Workflows
 
 | Workflow                               | When to fetch (trigger)                                                                                                          | Fetch URL                                                                                               |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `workflows/codebase-audit.md`          | Full-codebase audit in package/directory slices against `rules/audit.md` (team-rule compliance, slop, dead code, risk, secrets). | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
+| `workflows/test-comment-audit.md`      | Audit low-value tests and comment-code slop in slices, fix from approved report. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/test-comment-audit.md`      |
 | `workflows/themed-codebase-audit.md`   | Three-theme audit (dead code, duplicated business logic, complex logic) with a grill gate and wave branches.                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/themed-codebase-audit.md`   |
 | `workflows/lint-burndown.md`           | Adopt strict lint preset, clear a lint backlog to zero, ratchet `--max-warnings` down in subagent waves.                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md`           |
 | `workflows/qa.md`                      | Full UI/UX QA pass: seeded stack, 3-device screenshot sweep, parallel vision audit, presentational fixes, triaged report.        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/qa.md`                      |
