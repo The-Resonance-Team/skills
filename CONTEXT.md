@@ -1,6 +1,6 @@
 # CONTEXT.md — skills repo glossary & rule router
 
-Consumers wire **only this file** as their standing router (in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `SOUL.md`, editor rule files, or `opencode.jsonc`). It is the router: fetch the rule modules and workflows your project needs by URL below. Glossary terms below define the ubiquitous language across all modules.
+Consumers wire **only this file** as their standing router via native `instructions[]` (`opencode.jsonc`), not via `AGENTS.md` copy. When already loaded via native instructions, do not re-fetch this file. It is the router: fetch the rule modules and workflows your project needs by raw URL below for up-to-date guidance. Offline fallback: local clone.
 
 ## Rule modules
 

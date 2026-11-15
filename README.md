@@ -27,7 +27,7 @@ Fetch and follow every `rules/*.md` module and `workflows/*.md` procedure from i
 
 ### 2. OpenCode v2 (`opencode.jsonc` + `AGENTS.md`)
 
-> **OpenCode v2 remote rule note:** OpenCode v2 parses and retains `"instructions"` in `opencode.jsonc` for v1 compatibility, **but v2 does not resolve `"instructions"` entries (remote HTTP/HTTPS URLs or globs) into active model context yet**. Active standing rules in v2 load from `AGENTS.md` (`~/.config/opencode/AGENTS.md` or `<repo>/AGENTS.md`). Pair `AGENTS.md` with `"references"` in `opencode.jsonc`: OpenCode v2 clones `The-Resonance-Team/skills`, refreshes `main` asynchronously, and advertises `@skills` in the system prompt.
+> **OpenCode v2 native instructions:** v2 resolves `"instructions"` in `opencode.jsonc` into active model context (fetched at config load, 5s timeout, keeps last good copy). Use raw URLs for up-to-date rules. Pair with `"references"` for on-demand repo access: `references` advertises `@skills` pointer only, `instructions[]` injects content.
 
 1. Configure `~/.config/opencode/opencode.jsonc` (global) or `opencode.jsonc` (per project):
 
@@ -42,8 +42,9 @@ Fetch and follow every `rules/*.md` module and `workflows/*.md` procedure from i
       "description": "Team engineering router (CONTEXT.md), rule modules (rules/*.md), workflows (workflows/*.md), and tool baseline configs (configs/*)"
     }
   },
-  // Retained for OpenCode v1 compatibility (parsed but inactive in v2; 5s fetch timeout):
+  // Native v2 instructions (active): raw-first for up-to-date rules. references = on-demand mount, instructions[] = auto-loaded baseline.
   "instructions": [
+    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/profiles/xirothedev.md",
     "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md"
   ]
 }

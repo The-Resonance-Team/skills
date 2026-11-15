@@ -1,16 +1,11 @@
 # xirothedev global profile
 
-Portable standing instructions for all devices. This file is the source of truth. Devices fetch it raw every session. Project `AGENTS.md` files add repo-specific guidance on top.
-
-Source: `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/profiles/xirothedev.md`
-Local clone: `~/workspace/skills/profiles/xirothedev.md`
-Template: `~/workspace/skills/profiles/.env.example`
-Setup: `~/workspace/skills/profiles/setup-device.sh`
+Portable standing instructions for all devices. Loaded via native `instructions[]`; do not re-fetch this file. Project `AGENTS.md` files add repo-specific guidance on top.
 
 ## Engineering Rules & Workflows (The-Resonance-Team/skills)
 
-Always read the router at `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md` (local clone at `~/workspace/skills/CONTEXT.md`).
-Fetch and follow every `rules/*.md` module and `workflows/*.md` procedure from its tables whose scope matches this repository and current task (`rules/general.md` for all projects, plus e.g. `rules/nestjs.md` for NestJS APIs, `rules/frontend.md` for web/portal). Do not load every module into context — per-scope only.
+Router `CONTEXT.md` is already loaded via native `instructions[]`; do not re-fetch it.
+Fetch and follow every `rules/*.md` module and `workflows/*.md` procedure from its tables whose scope matches this repository and current task (`rules/general.md` for all projects, plus e.g. `rules/nestjs.md` for NestJS APIs, `rules/frontend.md` for web/portal). Use raw URLs from its tables so guidance stays up to date. Offline fallback: `~/workspace/skills/CONTEXT.md`. Do not load every module into context — per-scope only.
 
 ## Tooling & accounts
 
@@ -20,7 +15,7 @@ Read `~/.config/opencode/docs/tooling.md` before a task that uses GitHub, Sentry
 
 ## Device setup
 
-On `command not found` or `browse doctor` failure, run `~/workspace/skills/profiles/setup-device.sh` (raw: `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/profiles/setup-device.sh`).
+On `command not found` or `browse doctor` failure, fetch and run `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/profiles/setup-device.sh` (offline fallback: `~/workspace/skills/profiles/setup-device.sh`).
 
 Auto-install (safe, no secrets): `gh`, `ctx7`, `firecrawl`, `browse` binary, `bun` + baseline configs. Human-only (print official doc steps, never auto): `browse` extension pairing (https://opencode.ai/product/browse), `sentry auth login`, `turbo login`, any token creation.
 
