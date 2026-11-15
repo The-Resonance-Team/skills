@@ -95,3 +95,30 @@ Applies to browser clients in the organization (React/Next.js web apps, admin po
 25. **Auth-gate allowlists normalize home and ship a negative test** — A public-path list stores `/` for home, never `''`; the matcher is `pathname === p || pathname.startsWith(p + '/')`. With `''`, `startsWith('/')` makes every route public. Add a unit test that a private path stays closed and the public landing page stays open. Precedent: Ecopick 2026-11 — `PUBLIC_PATHS` contained `''`; the proxy gate was inert and every live route was masked as public.
 26. **One typed route/role registry per app** — Path, role, view id, breadcrumb, and public/private live in one module. No parallel role arrays, crumb maps, or `go('view')` literals. A missing route is a type error; a new public page is one row. Precedent: Ecopick 2026-11 — role vocabulary lived in three files and view/path maps in five.
 27. **Cache appliers read the factory's prefix length, not raw indexes** — A cache module that patches a query key must derive its offset from the key factory (`portalKeys.kyc.verification.base.length`) and compare discriminators. `queryKey[4]`/`[5]` silently binds to a different key when the factory grows.
+
+## Modern Web Platform & Baseline standards (mandatory)
+
+28. **IME composition safety on custom Enter keydown listeners (`isImeSafeEnter`)** —
+    - Never bind custom `keydown` listeners on `<input>` or `<textarea>` checking `event.key === "Enter"` without gating on composition. In CJK and Vietnamese IME (Telex/VNI), pressing `Enter` confirms word conversion candidates; ungated listeners prematurely submit forms, blur inputs, or trigger actions mid-composition.
+    - Gate on both `isComposing` and Safari's fallback `keyCode === 229` (WebKit bug 165004, where `compositionend` dispatches before `keydown`), encapsulated in a shared `@scope/ui/input` helper:
+      ```ts
+      export function isImeComposing(event: { isComposing?: boolean; nativeEvent?: { isComposing?: boolean }; keyCode?: number }): boolean {
+        return Boolean(('nativeEvent' in event && event.nativeEvent?.isComposing) || ('isComposing' in event && event.isComposing) || ('keyCode' in event && event.keyCode === 229));
+      }
+      export function isImeSafeEnter(event: { key: string; isComposing?: boolean; nativeEvent?: { isComposing?: boolean }; keyCode?: number }): boolean {
+        return event.key === 'Enter' && !isImeComposing(event);
+      }
+      ```
+    - Native `<form>` implicit submission handles IME automatically and needs no custom handler (Precedent: VibeHost 2026-11 MWG audit).
+
+29. **Standard cross-browser scrollbars in `@layer base` (`scrollbar-color` & `scrollbar-width`)** —
+    - Never style scrollbars with vendor-prefixed `::-webkit-scrollbar` alone (ignored by Firefox). Declare standard Baseline `scrollbar-color: var(--line-2) transparent; scrollbar-width: thin;` wrapped in `@layer base` for Tailwind v4 cascade hygiene.
+    - Keep `::-webkit-scrollbar` pseudo-elements alongside standard CSS without `@supports not` suppression so Chromium/WebKit preserve refined gutter and thumb insets while Firefox renders branded colors (Precedent: VibeHost 2026-11 MWG audit).
+
+30. **Form controls style `:user-invalid` and `aria-invalid`** —
+    - Shared text controls (`Input`, `Textarea` in `@scope/ui`) must style `aria-invalid:border-danger/80 aria-invalid:focus-visible:ring-danger/50 user-invalid:border-danger/80 user-invalid:focus-visible:ring-danger/50`.
+    - Error borders appear only after initial user interaction or submit attempt, preventing premature error borders on untouched inputs while synchronizing programmatic accessibility state (`aria-invalid`) with visual pseudo-states (Precedent: VibeHost 2026-11 MWG audit).
+
+31. **Primary media LCP prioritization (`fetchpriority="high"` / `priority`)** —
+    - Primary above-the-fold raster media (hero graphics, blog cover images, main product banners) rendered via `next/image` must set `priority` to emit early `<link rel="preload">` hints and `fetchpriority="high"`, eliminating Largest Contentful Paint (LCP) delays.
+    - Retain `loading="lazy"` on below-the-fold or non-critical raster assets (e.g. partner logo walls) to prevent network contention with initial render scripts (Precedent: VibeHost 2026-11 MWG audit, ADR-0023).

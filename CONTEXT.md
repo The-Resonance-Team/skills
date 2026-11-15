@@ -76,3 +76,5 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Persona registry** — the one account list (name, email, role, route, password) shared by the seed's protected-account guard, `auth.setup`, and the e2e specs (`rules/fixtures.md` #5, `rules/e2e-testing.md` #17).
 - **Codemod gate** — a checked-in `scripts/<name>.ts` for a bulk edit, with a `--check`/dry-run mode and per-file occurrence assertions; the only allowed shape for a rename across more than five files (`rules/general.md` #23).
 - **Wave gate** — the per-wave root gate plus two-axis (standards + spec) review in `workflows/codebase-audit.md` §5a; hard findings block the next wave.
+- **Baseline target** — the web-features Baseline compatibility level: Baseline Widely Available by default with zero polyfills; Baseline Newly Available permitted only with progressive enhancement or zero-dependency fallbacks (`rules/frontend.md` #28–31).
+- **IME safety gate** — the check on custom Enter `keydown` listeners (`isImeSafeEnter`: `isComposing || keyCode === 229`) preventing premature submit/blur during CJK and Vietnamese IME conversion (`rules/frontend.md` #28).
