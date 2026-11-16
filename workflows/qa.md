@@ -36,6 +36,10 @@ Archive the previous screenshot trees (before/after is half the audit's value), 
 
 **Manifest triage before any PNG is read**: statuses (5xx = infra), console errors per shot (a broken seed surfaces as 403s on every privileged call; empty-`src` images log per-row warnings; handled conflicts are noise), and final URLs (unexpected redirects mean the route list went stale). Fix infra before auditing — a sweep over a half-broken stack wastes the whole pass.
 
+### 3a. Fault injection pass (mocked exception states)
+
+A seeded sweep only proves the happy path renders — the error UI is never exercised (`rules/qa.md` #16). Before the vision audit, force exceptions on one representative route per API surface through Chrome DevTools MCP: `mock_network` with a local fixture `body` (bad payload shape, empty list), or `upstream` redirected to a stub server returning the real 5xx status/headers or a dead endpoint (failed request). Configure mocks **before** navigating, then re-shoot the affected routes at all three devices and fold those PNGs into the step-4 target list — audit them against `rules/qa.md` #7/#8 (designed empty/error states, disabled silhouettes). Verify each mock actually hit (filter-less `mock_network` shows hit counts; service workers can bypass mocks), and `remove_network_mock` everything before any perf trace (mocks disable the HTTP cache and skew measurement). **Completion criterion:** every API surface has at least one mocked-failure PNG reviewed.
+
 ### 4. Vision audit (parallel review agents)
 
 Fan out read-only review agents over app sections — **at most 2 concurrently** (the environment's concurrency limit; a third bounces), each reading ≤ ~90 PNGs plus its manifest slice. The dispatch prompt carries: the design-system context, audit criteria (overflow/clipping at mobile, tab/scroll affordance, empty/error states, spacing/contrast, locale bugs), the expected states NOT to flag (404 variants, banned-identity errors, seeded placeholder data), and the **downscale rule**: full-page PNGs are downscaled during review — a copy claim from unreadable pixels is filed as low-confidence, never asserted. Name the previously retracted misreads so agents do not rediscover them. **Completion criterion:** every route reviewed; every finding cites the PNG and either names a source location or is marked low-confidence.
@@ -60,6 +64,7 @@ Invoke these through the Skill tool at the phase named; availability varies by c
 | ----- | ----- | ----- |
 | 2 (stack up) | `diagnosing-bugs` | The rebind/cache/403 traps are misdiagnosis magnets — structured root-cause before touching anything. |
 | 2–3 (sweep) | `webapp-testing` | Playwright harness patterns: server lifecycle, networkidle waits, element discovery when a route needs DOM inspection. |
+| 3a (fault injection) | Chrome DevTools MCP | `mock_network` / `remove_network_mock` for mocked exception states (fixture `body` or a 5xx `upstream` stub); `set_logpoints` instead of editing in `console.log` while diagnosing. |
 | 5 (verify → classify) | `diagnosing-bugs` | The DOM checks behind low-confidence findings are runtime inspections, not pixel reads. |
 | 6 (fix loop) | `building-components` | Component standards for the fixes: accessibility, composition, state, styling under the project's design system. |
 | 7 (report) | `triage` | File backend-slice findings as issues with the repo's label workflow instead of leaving them in the report. |

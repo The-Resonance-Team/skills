@@ -22,7 +22,7 @@ Auto-install (safe, no secrets): `gh`, `ctx7`, `firecrawl`, `browse` binary, `bu
 ## Browser tools
 
 - `browse`: default for open/check/click/type in user's real Chrome (has logins). Inspect with `snapshot()` first, verify with URL.
-- `chrome-devtools`: only for Lighthouse, perf trace, heap snapshot, console/network inspection.
+- `chrome-devtools`: for Lighthouse, perf trace, heap snapshot, console/network inspection, and real-browser runtime debugging. Use these instead of editing source or faking data: `set_logpoints` (log runtime variables at a source location via source maps, output in `list_console_messages`, no source edits), `mock_network` / `remove_network_mock` (replace a response body from a local fixture file, or redirect `upstream` to a test server serving real statuses — a 5xx body or a dead endpoint — to exercise error/edge states; needs `--categoryNetworkMocks=true` in `opencode.jsonc`). Configure mocks before navigating; remove them after (mocks disable the HTTP cache and break perf measurements); service workers can bypass mocks. Keep the version in `opencode.jsonc` at the latest release (`npm view chrome-devtools-mcp version`).
 
 ## Ponytail (global, full mode)
 

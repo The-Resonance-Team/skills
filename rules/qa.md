@@ -83,3 +83,14 @@ Rules proven by a full-app QA pass that found ~35 defects; each rule cites its i
 
 15. **Archive the previous sweep.** Before/after trees are how a fix is proven; overwriting loses the
     comparison and the re-shoot becomes assertion instead of evidence.
+
+16. **Exception states are mocked, not trusted; runtime values use logpoints.** A seeded sweep only ever
+    exercises happy paths — code review never proves the error UI. Force the failure in the live browser
+    through Chrome DevTools MCP: `mock_network` serves a local fixture `body` in place of a real API
+    response, or redirects a route's `upstream` to a stub server returning the real status and headers
+    (a 5xx body, or a dead endpoint to simulate a failed request); re-shoot the page and audit the error
+    state against rule 7. Configure mocks before navigating, check hit counts with a filter-less
+    `mock_network` call, remove them with `remove_network_mock` after (mocks disable the HTTP cache and
+    skew any perf measurement), and mind that service workers can bypass mocks. When diagnosing what a
+    line actually saw, set `set_logpoints` on the source location (resolved via source maps; output lands
+    in `list_console_messages`) instead of editing in a `console.log` and waiting for a rebuild.
