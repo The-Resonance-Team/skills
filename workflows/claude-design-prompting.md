@@ -2,9 +2,9 @@
 name: claude-design-prompting
 description: >-
   Interview the user to discover UI/UX design demand, generate multi-surface
-  Claude Design prompts that balance creative freedom with production copy,
-  responsive, and CRUD guardrails, audit .dc.html exports, and generate in-place
-  patch prompts. Use when writing prompts for Claude Design or AI UI generators,
+  Claude Design prompts that open with the correct trigger prefix and balance
+  creative freedom with production copy, responsive, and CRUD guardrails, audit
+  .dc.html exports, and generate in-place patch prompts. Use when writing prompts for Claude Design or AI UI generators,
   grilling the user on app/portal features before design, or auditing a .dc.html
   archive for production readiness.
 ---
@@ -46,6 +46,26 @@ Interview the user along the frontier (`❓ **Q1** - **<Title>**: ... ➡️ **R
 
 Write one self-contained markdown prompt per surface in `docs/drafts/claude-design-prompts.md`. Balance **creative latitude** (letting Claude Design's design priors shine) with **non-negotiable production guardrails**:
 
+- **Trigger prefix — open every prompt with the right one** (`CONTEXT.md#terms`): Claude Design sets the deliverable type from a fixed opening phrase. Selecting a template fills this phrase; the same phrase as the first pasted line selects that deliverable type. Use this map:
+
+  | Template button | Trigger prefix |
+  | --- | --- |
+  | Blank | *(none)* |
+  | Mobile app design | `Design a mobile app for` |
+  | Slides | `Make a slide deck about` |
+  | Document | `Write a document:` |
+  | Wireframe | `Wireframe the screens for` |
+  | Animation | `Animate` |
+  | UI mockups | `Make UI mockups for` |
+  | Résumé | `Make a résumé for` |
+  | 3D object | `Model a 3D object:` |
+  | Research | `Put together a research report on` |
+  | HTML email | `Design an HTML email for` |
+  | Color + type pairing | `Explore color and type pairings for` |
+
+  - Use `Design a mobile app for` (Mobile app design) for every Step 3 surface prompt.
+  - Select the matching template in Claude Design, then paste the prompt with the prefix as its literal first line. A wrong prefix yields the wrong deliverable (for example, a document instead of screens).
+  - Write one surface line after the prefix to complete the sentence (`Design a mobile app for the Parent Portal at 375px, 768px, and 1280px.`) before the outcome framing and guardrails.
 - **Prompt 1 (`Public Landing Page` & Discovery)**: grant Claude Design full creative freedom to propose the information architecture, visual aesthetic, typography, color palette, and `design/tokens.css` in the workspace `design` folder.
 - **Prompts 2..N (`Auth Surface` & `Role Surfaces`)**: instruct Claude Design at the top of each prompt to inspect `design/tokens.css` and existing `.dc.html` files in the workspace first and reuse the exact tokens, breakpoint scale, and component language.
 - **Outcome framing, zero layout micro-management**:
@@ -71,7 +91,7 @@ Write one self-contained markdown prompt per surface in `docs/drafts/claude-desi
   4. **Authenticated vs Guest States on Public Surfaces**: shared headers (`SiteHeader.dc.html`) and public booking/apply modals must include a state toggle (in the Prototype Toolbar) for `guest` vs signed-in roles (`client`, `student`, `tutor`, `admin`) and Tutor verification states (`UNVERIFIED`, `PENDING`, `REJECTED`, `VERIFIED`).
   5. **Auth Negative & Multi-Profile States**: include invalid password/PIN error states, Parent-locked child account screens, expired OTP states, and an active-session profile switcher for shared family devices.
   6. **Self-Service Account Settings & Admin User Directory**: include an Account & Profile Settings view (personal info, password/PIN, saved addresses, notification preferences) in every portal, and a unified `Users` directory (search, link/unlink Parent–Student, suspend/unlock) in the Admin Portal.
-- **Completion criterion**: all surface prompts are written to `docs/drafts/claude-design-prompts.md` and presented to the user, satisfying all 4 Production Guardrails and all 6 CRUD Completeness points while preserving layout freedom for Claude Design.
+- **Completion criterion**: all surface prompts are written to `docs/drafts/claude-design-prompts.md` and presented to the user, each opening with `Design a mobile app for` plus one surface line, satisfying all 4 Production Guardrails and all 6 CRUD Completeness points while preserving layout freedom for Claude Design.
 
 ### 4. Audit `.dc.html` archive & generate in-place patch prompts
 
@@ -85,7 +105,7 @@ When inspecting a `.zip` export from Claude Design (or generating follow-up patc
    - **Axis A — Master CRUD & Lifecycle Matrix**: verify `Create (C)`, `Read (R)`, `Update (U)`, and `Delete / Cancel / Archive (D)` plus the 6-Point Completeness Contract across every domain entity.
    - **Axis B — Copy, Prototype Isolation & UX Flow Quality**: scan for leaked internal jargon (`SLA`, `Portal/Cổng`, gateway brand mechanics, `Giải ngân/Đối soát`, unverified `%` claims, English UI loanwords), inline prototype controls mixed into product chrome, badge-overloaded cards (`> 4` badges), sub-`12px` instructional text, and high-friction task gaps.
    - **Axis C — Responsive & Breakpoint Parity (`375px` · `768px` · `1280px`)**: inspect `@media` rules and grid templates (`grid-template-columns`) across all surfaces to catch breakpoint drift, missing mobile/tablet navigation bars, truncated mobile nav items, uncollapsed multi-column split panes, and unscrollable `7×3` schedule or comparison grids.
-4. **Write archive-grounded patch prompts**: group fixes into clear, copy-pasteable prompts (e.g. Copy Changelog Prompt, UI/UX & Flow Refinement Prompt, Responsive & Mobile/Tablet Breakpoint Prompt, or per-`.dc.html` CRUD Patch Prompts) in `docs/drafts/claude-design-patch-prompts.md`. Every prompt must explicitly cite:
+4. **Write archive-grounded patch prompts**: group fixes into clear, copy-pasteable prompts (e.g. Copy Changelog Prompt, UI/UX & Flow Refinement Prompt, Responsive & Mobile/Tablet Breakpoint Prompt, or per-`.dc.html` CRUD Patch Prompts) in `docs/drafts/claude-design-patch-prompts.md`. Start every patch prompt with `Make UI mockups for` (UI mockups template) so Claude Design edits the existing screens. Every prompt must explicitly cite:
    - Target `.dc.html` filenames (or app component names) and shared `<dc-import>` components (`SiteHeader.dc.html`, `SiteFooter.dc.html`, `TutorCard.dc.html`).
    - Exact `data-screen-label` section names, `data-props` enum values (`startView`, `demoState`, `verif`, `rank`, `moment`), and modal/drawer state keys (`m.*`, `has*`).
    - Existing `design/tokens.css` variables (`--am-*`), `data.js` seed ID prefixes (`MS-XXXX` vs `YC-XXXX`), rank keys (`sv`/`gv`), and validation regexes so Claude Design edits in place without inventing conflicting state or tokens.
