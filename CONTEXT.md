@@ -12,6 +12,7 @@ Consumers wire **only this file** as their standing router via native `instructi
 | `rules/prisma.md`               | TS/NestJS repos on Prisma 7                                              | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`               |
 | `rules/frontend.md`             | Web, portal, miniapp                                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`             |
 | `rules/miniapp.md`              | Zalo Mini App (`apps/miniapp`)                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/miniapp.md`              |
+| `rules/mobile-store-submission.md` | Native iOS/Android store submission and rejection prevention           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/mobile-store-submission.md` |
 | `rules/i18n.md`                 | Projects with message catalogs, multi-locale UI, user-facing copy        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                 |
 | `rules/qa.md`                   | Next.js-style frontends with a screenshot QA harness over seeded data    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/qa.md`                   |
 | `rules/e2e-testing.md`          | Repos with Playwright e2e tests against a real API                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`          |
@@ -78,3 +79,5 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Wave gate** — the per-wave root gate plus two-axis (standards + spec) review in `workflows/codebase-audit.md` §5a; hard findings block the next wave.
 - **Baseline target** — the web-features Baseline compatibility level: Baseline Widely Available by default with zero polyfills; Baseline Newly Available permitted only with progressive enhancement or zero-dependency fallbacks (`rules/frontend.md` #28–31).
 - **IME safety gate** — the check on custom Enter `keydown` listeners (`isImeSafeEnter`: `isComposing || keyCode === 229`) preventing premature submit/blur during CJK and Vietnamese IME conversion (`rules/frontend.md` #28).
+- **Store submission** — the act of sending one built native mobile app to the Apple App Store or Google Play for review and release (`rules/mobile-store-submission.md`).
+- **Rejection pattern** — a repeated cause of app rejection that maps to one store guideline and one known fix (`rules/mobile-store-submission.md`).
