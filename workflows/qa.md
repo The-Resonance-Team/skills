@@ -40,6 +40,16 @@ Archive the previous screenshot trees (before/after is half the audit's value), 
 
 A seeded sweep only proves the happy path renders — the error UI is never exercised (`rules/qa.md` #16). Before the vision audit, force exceptions on one representative route per API surface through Chrome DevTools MCP: `mock_network` with a local fixture `body` (bad payload shape, empty list), or `upstream` redirected to a stub server returning the real 5xx status/headers or a dead endpoint (failed request). Configure mocks **before** navigating, then re-shoot the affected routes at all three devices and fold those PNGs into the step-4 target list — audit them against `rules/qa.md` #7/#8 (designed empty/error states, disabled silhouettes). Verify each mock actually hit (filter-less `mock_network` shows hit counts; service workers can bypass mocks), and `remove_network_mock` everything before any perf trace (mocks disable the HTTP cache and skew measurement). **Completion criterion:** every API surface has at least one mocked-failure PNG reviewed.
 
+### 3b. Real-user functional pass
+
+Run the functional browser pass under `rules/real-user-qa.md`:
+
+```
+https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/real-user-qa.md
+```
+
+Use browse MCP for the signed-in session and chrome-devtools MCP for console and network evidence; record both in one coverage matrix. **Completion criterion:** every affected route, control, mutation, state, and viewport has a row with URL, result, and evidence.
+
 ### 4. Vision audit (parallel review agents)
 
 Fan out read-only review agents over app sections — **at most 2 concurrently** (the environment's concurrency limit; a third bounces), each reading ≤ ~90 PNGs plus its manifest slice. The dispatch prompt carries: the design-system context, audit criteria (overflow/clipping at mobile, tab/scroll affordance, empty/error states, spacing/contrast, locale bugs), the expected states NOT to flag (404 variants, banned-identity errors, seeded placeholder data), and the **downscale rule**: full-page PNGs are downscaled during review — a copy claim from unreadable pixels is filed as low-confidence, never asserted. Name the previously retracted misreads so agents do not rediscover them. **Completion criterion:** every route reviewed; every finding cites the PNG and either names a source location or is marked low-confidence.
