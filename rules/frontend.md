@@ -1,6 +1,6 @@
 # Frontend Rules — web, portal, miniapp
 
-Applies to browser clients in the organization (React/Next.js web apps, admin portals, mobile-web miniapps). Repos with i18n additionally include `rules/i18n.md`.
+Applies to browser clients in the organization (React/Next.js web apps, admin portals, mobile-web miniapps). Repos with i18n additionally include `rules/i18n.md`. For any HTML, CSS, or client-side JS work, load the `modern-web-guidance` skill first (rule 44).
 
 ## API consumption & Ponytail mock hooks (mandatory)
 
@@ -142,3 +142,7 @@ Applies to every agent that writes browser UI. The agent owns verification befor
 41. **Give the correction loop exit criteria** — Set a maximum number of correction iterations and explicit pass/fail conditions before the loop starts. Stop at the limit, report the remaining failures, and ask for a human decision. An open-ended loop wastes tokens. Mechanical check: assert the step limit exists in the agent instruction file (prompt or skill) in CI.
 42. **Split browser modes by purpose** — Use the signed-in browser (browse MCP) for functional workflow walks as rule `rules/real-user-qa.md` #3 requires. Use a clean isolated browser (`--isolated`) for performance traces, visual audits, screenshots, and generated reports: extensions, cached data, and personal data cannot change the result. Judgement call: the reviewer checks that reported audit screenshots come from the clean instance.
 43. **Ship a verified QA report with the diff** — The report carries a visual comparison against the design spec source from rule #39 (pixel diff plus screenshots at each supported viewport), Core Web Vitals and performance diagnostics from the trace, Lighthouse scores for SEO, best practices, and accessibility, and pass/fail rows for interactions, console errors, and state changes. Mechanical check: assert the report file exists in CI; the reviewer judges its content.
+
+## Modern Web Guidance (mandatory)
+
+44. **Load Modern Web Guidance before HTML, CSS, or client-side JS work** — When a task writes, reviews, or ports browser UI, load the `modern-web-guidance` skill first (install with `npx modern-web-guidance@latest install` when absent). The skill is the authoritative source for web platform APIs, performance, accessibility, and Baseline targeting; rules 28–38 are the repo-specific additions. Where the skill and a base-model habit disagree, follow the skill. Scan a finished slice with `npx modern-web-guidance legacy-scan <slice> --json` before review (`rules/audit.md` #37). Mechanical check: assert the skill is present in the agent config in CI; the reviewer checks the scan output on the diff. Precedent: Policybazaar and Pensionbazaar 2026-11 — base models were ~70% aligned with best practice and 12 guidance rules closed the gap.
