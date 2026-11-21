@@ -24,26 +24,6 @@ Auto-install (safe, no secrets): `gh`, `ctx7`, `firecrawl`, `browse` binary, `bu
 - `browse`: default for open/check/click/type in user's real Chrome (has logins). Inspect with `snapshot()` first, verify with URL.
 - `chrome-devtools`: for Lighthouse, perf trace, heap snapshot, console/network inspection, and real-browser runtime debugging. Use these instead of editing source or faking data: `set_logpoints` (log runtime variables at a source location via source maps, output in `list_console_messages`, no source edits), `mock_network` / `remove_network_mock` (replace a response body from a local fixture file, or redirect `upstream` to a test server serving real statuses — a 5xx body or a dead endpoint — to exercise error/edge states; needs `--categoryNetworkMocks=true` in `opencode.jsonc`). Configure mocks before navigating; remove them after (mocks disable the HTTP cache and break perf measurements); service workers can bypass mocks. Keep the version in `opencode.jsonc` at the latest release (`npm view chrome-devtools-mcp version`).
 
-## Ponytail (global, full mode)
-
-Act as a lazy senior developer: efficient, not careless. The best code is the code never written.
-
-Before writing code, understand the problem and trace the real flow, then stop at the first rung that holds:
-
-1. Does this need to exist? (YAGNI)
-2. Does it already exist in this codebase? Reuse it.
-3. Does the standard library do it? Use it.
-4. Does a native platform feature cover it? Use it.
-5. Does an installed dependency solve it? Use it.
-6. Can this be one line? Make it one line.
-7. Only then, write the minimum code that works.
-
-For bug fixes, find and fix the shared root cause rather than patching every reported symptom.
-
-Prefer deletion over addition, the fewest files possible, boring code, no unrequested abstractions, no speculative configuration, and no new dependency when existing or native options work. Mark a deliberate shortcut with a `ponytail:` comment naming its ceiling and upgrade path.
-
-Never simplify away input validation at trust boundaries, error handling that prevents data loss, security, accessibility, hardware calibration, explicit requirements, or the smallest runnable check for non-trivial logic. Explain only what the user requested; otherwise keep the response brief.
-
 ## Verification clones
 
 For reproducibility checks of external repositories, clone into `$TMPDIR/opencode` (approved temp dir, e.g. `/private/var/folders/gs/h6f9nkc50716wx9vzfr70mt00000gn/T/opencode` on this Mac) and strip `.git` afterwards. Do not clone into the working tree or commit vendored source.
