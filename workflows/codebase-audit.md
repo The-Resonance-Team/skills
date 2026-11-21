@@ -19,14 +19,15 @@ List source directories and packages (`ls`, `package.json` workspaces). Partitio
 
 ### 2. Dispatch subagents
 
-Run one subagent per slice, in parallel. Each dispatch prompt carries three things:
+Run one subagent per slice, in parallel. Each dispatch prompt carries five things:
 
 1. The slice's paths.
 2. The checklist (paste the fetched `rules/audit.md`, or its URL).
 3. The report format below.
 4. The slice's type (frontend, Prisma, API, i18n, or general) so the subagent applies the matching slice-type checklist entries.
+5. The comment rubric in `rules/audit.md` #4, with a `file:line` verdict for every comment in the slice.
 
-Each subagent returns a findings table for its slice. Its completion criterion: **every source file in the slice carries a verdict**, and every finding cites `file:line` evidence.
+Each subagent returns a findings table for its slice. Its completion criterion: **every source file and every comment in the slice carries a verdict**, and every finding cites `file:line` evidence.
 
 ### 3. Merge
 
@@ -35,7 +36,7 @@ Dedupe findings that two slices share (one symbol flagged twice). Merge into one
 | Category | Severity | Location | Finding | Fix |
 | -------- | -------- | -------- | ------- | --- |
 
-Categories come from the checklist: `slop`, `suppression`, `test`, `dead-code`, `risk`, `rule`, `config-drift`, `library`, `ownership`.
+Categories come from the checklist: `slop`, `comment`, `suppression`, `test`, `dead-code`, `risk`, `rule`, `config-drift`, `library`, `ownership`.
 
 ### 4. Report gate
 
@@ -43,7 +44,7 @@ Present the merged table plus a count per category and the total files audited. 
 
 ### 5. Fix pass
 
-On approval, apply fixes slice by slice. After all fixes: run lint, typecheck, and tests; the pass completes when they pass and the diff contains no new findings. Deleted dead code stays deleted — restore only what a failing test proves alive.
+On approval, apply fixes slice by slice. For `comment` findings: delete tautology and stale comments, delete excuse comments and file one aggregate issue, and promote a decision to an ADR only when it passes the three-test bar. After bulk comment edits, inspect the diff numstat and run `git diff --check`; expect only deletions and no whitespace-only lines. After all fixes: run lint, typecheck, and tests; the pass completes when they pass and the diff contains no new findings. Deleted dead code stays deleted — restore only what a failing test proves alive.
 
 ### 5a. Wave gates & two-axis review
 

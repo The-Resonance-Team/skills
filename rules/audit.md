@@ -10,7 +10,12 @@ Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`
 
 ## Slop checklist (`category: slop`)
 
-4. **Comments carry what code cannot** — Flag comments that restate the adjacent line or narrate obvious steps; keep only intent, rationale, or gotchas.
+4. **Comments carry what code cannot** — Classify every comment and keep only the ones that carry non-obvious information:
+   - **Tautology** — restates the adjacent code; delete it.
+   - **Stale** — names removed code or a past implementation; delete it.
+   - **Excuse** — justifies a hack (`TODO:`, `FIXME`, `ponytail:`, `workaround`); delete it and file one aggregate issue for the fix.
+   - **Decision** — records a non-obvious choice; keep it in place, and move it to an ADR only when it is hard to reverse, surprising without context, and the result of a real trade-off.
+   When a comment is ambiguous and deletion would lose information, keep it and open an issue. Never delete a whole design block because a marker appears deep inside it. Ratchet removals against a pinned commit with `git diff`, so no generated baseline file needs maintenance when code changes.
 5. **Trusted paths run bare** — Flag defensive null-checks, try/catch wrappers, and fallback defaults on internal calls whose contract we control end to end.
 6. **Types are real types** — Flag `as any`, `as unknown as T`, `@ts-ignore`, and bare `!` non-null assertions that silence the compiler instead of validating or typing the boundary.
 7. **Abstractions earn their second use** — Flag single-implementation interfaces, single-product factories, and pass-through wrappers; inline them.
