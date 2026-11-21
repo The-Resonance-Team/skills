@@ -22,6 +22,7 @@ Fetch and follow every `rules/*.md` module and `workflows/*.md` procedure from i
 | **Google Antigravity (AGY)** | `~/.gemini/GEMINI.md` | `<repo>/AGENTS.md`, `<repo>/GEMINI.md`, or `.agents/rules/resonance.md` (24 KB per-file cap; 20k-token rules budget). |
 | **Nous Hermes Agent** | `~/.hermes/SOUL.md` (slot #1 prompt) | `<repo>/AGENTS.md` (walks down from Git root to CWD; personal overrides go in `AGENTS.override.md`). |
 | **Cursor** | Cursor Settings → Rules | `<repo>/AGENTS.md` (or `.cursor/rules/resonance.mdc` with `alwaysApply: true` frontmatter). |
+| **Pi** | `~/.pi/agent/AGENTS.md` | Pi does not fetch `instructions[]`. Install [`configs/pi/team-rules.ts`](./configs/pi/team-rules.ts) (see [Pi](#4-pi)). |
 
 ---
 
@@ -64,9 +65,23 @@ For agents that read a tool-specific instruction file instead of `AGENTS.md`, pl
 | **Windsurf** | `~/.codeium/windsurf/memories/global_rules.md` | Add the router block to `.windsurf/rules/resonance.md`. |
 | **GitHub Copilot** | — | Add the router block to `.github/copilot-instructions.md` (or `.github/instructions/resonance.instructions.md` with `applyTo: "**"` frontmatter). |
 
+---
+
+### 4. Pi (`~/.pi/agent`)
+
+Pi loads `AGENTS.md`, but it has no native `instructions[]` fetch. [`configs/pi/team-rules.ts`](./configs/pi/team-rules.ts) is that fetch: at session start it loads the same two standing files as OpenCode (`profiles/xirothedev.md`, `CONTEXT.md`) from raw URLs (5s timeout, last-good cache, then `~/workspace/skills`). Per-scope `rules/*.md` and `workflows/*.md` stay on demand. Do not copy `CONTEXT.md` into `AGENTS.md`.
+
+```sh
+mkdir -p ~/.pi/agent/extensions
+ln -sfn ~/workspace/skills/configs/pi/team-rules.ts ~/.pi/agent/extensions/team-rules.ts
+ln -sfn ~/workspace/skills/configs/pi/AGENTS.md ~/.pi/agent/AGENTS.md
+```
+
+Restart Pi or run `/reload`. `~/AGENTS.md` still says not to re-fetch those two files; that line applies only when `<team_rules>` is already in the prompt. `configs/pi/AGENTS.md` is the override when the section is missing.
+
 ### Mixing instructions, references, and workflows
 
-- **Instructions** (`AGENTS.md` / `CLAUDE.md` / `GEMINI.md` + `CONTEXT.md` + active `rules/*.md` URLs): small, standing rules and conventions relevant on every request.
+- **Instructions** (`AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / Pi `<team_rules>` + `CONTEXT.md` + active `rules/*.md` URLs): small, standing rules and conventions relevant on every request.
 - **Workflows** (`workflows/*.md`): step-by-step procedures (`codebase-audit`, `themed-codebase-audit`, `lint-burndown`, `claude-design-prompting`, `claude-design-to-nextjs`) fetched on demand when their trigger condition fires.
 - **References** (`references` in `opencode.jsonc`): cached Git repositories or external trees attached via `@alias` only when needed (zero standing context cost beyond the description line).
 
@@ -74,7 +89,7 @@ For agents that read a tool-specific instruction file instead of `AGENTS.md`, pl
 
 The single source of truth for all rule modules, workflows, and ubiquitous language lives in [`CONTEXT.md`](./CONTEXT.md). Do not duplicate the module table here.
 
-Machine-readable baseline configs ship in [`configs/`](./configs/) (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`) and are copied into consumer repos per [`rules/linting.md`](./rules/linting.md) and [`rules/dependabot.md`](./rules/dependabot.md). CI automation packs live in [`skills/pr-analysis/`](./skills/pr-analysis/SKILL.md).
+Machine-readable baseline configs ship in [`configs/`](./configs/) (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`) and are copied into consumer repos per [`rules/linting.md`](./rules/linting.md) and [`rules/dependabot.md`](./rules/dependabot.md). The Pi loader is [`configs/pi/team-rules.ts`](./configs/pi/team-rules.ts). CI automation packs live in [`skills/pr-analysis/`](./skills/pr-analysis/SKILL.md).
 
 ## Known gaps
 

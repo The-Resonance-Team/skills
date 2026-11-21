@@ -17,6 +17,20 @@ check_env() {
 
 check_env
 
+link_pi_rules() {
+  src="$HOME/workspace/skills/configs/pi"
+  if [ ! -f "$src/team-rules.ts" ]; then
+    echo "missing $src/team-rules.ts"
+    return 0
+  fi
+  mkdir -p "$HOME/.pi/agent/extensions"
+  ln -sfn "$src/team-rules.ts" "$HOME/.pi/agent/extensions/team-rules.ts"
+  ln -sfn "$src/AGENTS.md" "$HOME/.pi/agent/AGENTS.md"
+  echo "ok pi team rules"
+}
+
+link_pi_rules
+
 for tool in gh sentry ctx7 firecrawl browse bun; do
   if have "$tool"; then
     echo "ok $tool: $(command -v "$tool")"

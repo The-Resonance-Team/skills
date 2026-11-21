@@ -54,7 +54,7 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 
 - **Router** (`CONTEXT.md`) — this single entry-point file wired by consumers, mapping rule modules and workflows to their scope and raw URLs alongside the shared glossary.
 - **Rule module** — one self-contained markdown file under `rules/`, fetched by URL into an agent's context.
-- **Consumer** — any repository or global agent profile (OpenCode, Claude Code, Codex, Antigravity, Hermes, Cursor, Windsurf, Copilot) that wires this router or `rules/*.md` URLs.
+- **Consumer** — any repository or global agent profile (OpenCode, Claude Code, Codex, Antigravity, Hermes, Cursor, Windsurf, Copilot, Pi) that wires this router or `rules/*.md` URLs.
 - **Instruction** — a standing rule entry or remote URL loaded into an agent's context on every session.
 - **Lint baseline** — the standard formatter + linter setup (`bun fmt` + `Oxlint`, `max-lines: 300`) in `rules/linting.md`. Alternatives are not accommodated.
 - **Tool config** — a machine-readable config in `configs/` (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`) copied into consumer repos.
