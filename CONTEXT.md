@@ -17,6 +17,7 @@ Consumers wire **only this file** as their standing router via native `instructi
 | `rules/qa.md`                   | Next.js-style frontends with a screenshot QA harness over seeded data    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/qa.md`                   |
 | `rules/real-user-qa.md`         | Any browser UI change; functional pass over affected screens, controls, and workflows | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/real-user-qa.md` |
 | `rules/e2e-testing.md`          | Repos with Playwright e2e tests against a real API                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`          |
+| `rules/test-determinism.md`     | Repos where CI runs tests under a pinned runtime version                 | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/test-determinism.md`      |
 | `rules/fixtures.md`             | Repos with seed scripts, fixture generators, or a deterministic test DB  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/fixtures.md`             |
 | `rules/linting.md`              | All TS/JS and Python projects                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`              |
 | `rules/libraries.md`            | All TS/JS projects                                                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`            |
