@@ -6,6 +6,8 @@ Applies to `apps/api`-style NestJS services in the organization. Include this fi
 
 > **NestJS authority**: the official [nestjs/agent-skills](https://github.com/nestjs/agent-skills) on branch `master` owns current Nest APIs and first-party packages. Read these raw files before writing Nest code. This module keeps only organization decisions and incident-proven rules; where a rule here overlaps a skill, the skill is the authority.
 >
+> Skills: [nestjs](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs) · [nestjs-auth](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-auth) · [nestjs-data](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-data) · [nestjs-feature](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-feature) · [nestjs-production](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-production) · [nestjs-testing](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-testing).
+>
 > - Base — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs/SKILL.md
 > - Docs map — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs/references/docs-map.md
 > - Auth — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-auth/SKILL.md
