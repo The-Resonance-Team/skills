@@ -122,6 +122,6 @@ This prevents supply-chain attacks from tag mutation.
 
 ## Files created/modified
 
-- `rules/github-workflows.md` — expanded from 118 lines to ~500 lines with 26 rules
+- the former `rules/github-workflows.md` (now `rules/github-actions.md`, `rules/github-releases.md`, `rules/issues.md`, `rules/github-supply-chain.md`, `rules/github-vps-deploy.md`) — expanded from 118 lines to ~500 lines with 26 rules
 - `CONTEXT.md` — updated scope description, added 4 new terms
 - `docs/retro-github-workflows-research.md` — this file

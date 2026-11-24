@@ -6,7 +6,7 @@ version: 2
 updates:
   # package.json dependencies. `npm` is correct for a pnpm repo. A repo with a
   # bun.lock needs `bun` here, not `npm`: npm_and_yarn cannot read bun.lock and
-  # aborts the job. See rules/dependabot.md section 1a.
+  # aborts the job. See rules/dependabot.md rule 1.
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:

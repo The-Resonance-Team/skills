@@ -17,12 +17,12 @@ consumed by Ecopick-Platform via local clone + `AGENTS.md`).
 | Rules encode mandatory standards only, concrete pattern + anti-pattern, keep short (~100 lines then split) | `skills/AGENTS.md:9-12` |
 | Trunk-based: edit `rules/*.md` directly, commit directly to `main`, no PR workflow | `skills/AGENTS.md:16` |
 | `CONTEXT.md` is the single source of truth for the module index, updated in the same commit on add/rename | `skills/AGENTS.md:17` |
-| Lifecycle: extend before adding; deprecate with a pointer, never silently delete; wrong content fails loudly at consumers | `skills/AGENTS.md:28-29` |
-| Renames break consumers: ship new files + stub at old URL + update every known consumer, same day, stub carries a review date | `skills/AGENTS.md:30` |
-| Config baselines in `configs/` change in the same commit as the rule text, proven by an incident or validator output | `skills/AGENTS.md:31` |
+| Lifecycle: extend before adding; deprecate with a pointer, never silently delete; wrong content fails loudly at consumers | `skills/AGENTS.md` "Rule lifecycle" (lines 24–29) |
+| Renames break consumers: ship new files + stub at old URL + update every known consumer, same day, stub carries a review date | `skills/AGENTS.md` #2–3 (lines 27–28) |
+| Config baselines in `configs/` change in the same commit as the rule text, proven by an incident or validator output | `skills/AGENTS.md` #4 (line 29) |
 | Ecopick wires the modules by local clone: `AGENTS.md` names the `CONTEXT.md` + 7 rule modules to read and the 5 configs to copy | `Ecopick-Platform/AGENTS.md:7` |
 | No `opencode.json` and no `.opencode/` directory exist in Ecopick-Platform (searched to depth 3): consumption is manual, not a remote `instructions` fetch | verified by `find`, 2026-09-04 |
-| The manual incident-to-rule step is already encoded: `general.md` rule 10 tells the agent to say a rule is wrong/missing, ask the user, then edit `rules/*.md` and push to `main`; never silently deviate | `skills/rules/general.md:78-80` |
+| The manual incident-to-rule step is already encoded: `general.md` rule 10 tells the agent to say a rule is wrong/missing, ask the user, then edit `rules/*.md` and push to `main`; never silently deviate | `skills/rules/general.md` #8 (line 25) |
 | OpenCode supports remote rule URLs in `instructions`, fetched with a 5-second timeout; all instruction files combine with `AGENTS.md` | `https://opencode.ai/docs/rules/` ("Custom Instructions", "Referencing External Files") |
 | OpenCode rule precedence: local `AGENTS.md` walk-up, then global, then Claude-Code fallback; first match per category wins | `https://opencode.ai/docs/rules/` ("Precedence") |
 
@@ -32,21 +32,21 @@ This already happens manually. The git history is the proof:
 
 | Incident | Rule it produced |
 | -------- | ---------------- |
-| `package-manager-versions` shipped in the baseline, Dependabot validator failed a consumer PR | `fix:` commit `41f2544`; rule text records it at `skills/rules/dependabot.md:21`; machine check added in `skills/.github/workflows/hygiene.yml:22-30` |
-| Enabling `minimumReleaseAge` failed CI on four under-age lockfile entries on first run | `skills/rules/dependabot.md:72` ("Worked incident (2026-09)") |
-| First CodeQL run on a private repo failed on GHAS entitlement | `skills/rules/github-supply-chain.md:36` |
-| Secret scanner on mutable ref; pinned to SHA | `skills/rules/github-supply-chain.md:50` |
-| Parallel self-hosted jobs raced `pnpm/action-setup` (`ENOENT chmod pnpm`) | `skills/rules/github-supply-chain.md:56`; consumer-side fix in Ecopick `cb2fe671` |
-| `curl` from GitHub API inside SSH fails intermittently; `localhost` resolves to IPv6; `continue-on-error` hides failures | `skills/rules/github-vps-deploy.md:10-12`, `:35`, `:124-136` |
-| PR merged without closing its issue (keyword not adjacent to reference) | `skills/rules/issues.md:45` (restosuite #35), rule at `:43-48` |
+| `package-manager-versions` shipped in the baseline, Dependabot validator failed a consumer PR | `fix:` commit `41f2544`; rule text records it at `skills/rules/dependabot.md` #2 (line 17); machine check added in `skills/.github/workflows/hygiene.yml:22-30` |
+| Enabling `minimumReleaseAge` failed CI on four under-age lockfile entries on first run | `skills/rules/dependabot.md` #7 (line 28) ("Worked incident (2026-09)") |
+| First CodeQL run on a private repo failed on GHAS entitlement | `skills/rules/github-supply-chain.md` #1 (line 7) |
+| Secret scanner on mutable ref; pinned to SHA | `skills/rules/github-supply-chain.md` #2 (line 8) |
+| Parallel self-hosted jobs raced `pnpm/action-setup` (`ENOENT chmod pnpm`) | `skills/rules/github-supply-chain.md` #3 (line 20); consumer-side fix in Ecopick `cb2fe671` |
+| `curl` from GitHub API inside SSH fails intermittently; `localhost` resolves to IPv6; `continue-on-error` hides failures | `skills/rules/github-vps-deploy.md` #1 (lines 7–14), #2 (line 16), #7 (line 26) |
+| PR merged without closing its issue (keyword not adjacent to reference) | `skills/rules/issues.md` #8 (line 35) (restosuite #35) |
 | Full-repo QA pass distilled into 5 rule modules | commits `b153364`, `d3250cb` |
 | Consumer mirror: invalid ecosystem dropped, pnpm derived, trufflehog pinned | Ecopick `b4ed0cbd`, `3e5ad06d`, `cb2fe671` |
 
 The emergent record format is the one-line incident stamp (`Worked incident (2026-09): ...`,
-`Incident 2026-09: ...`), used in `dependabot.md:21,72`, `github-supply-chain.md:36,50,56,79`,
+`Incident 2026-09: ...`), used in `dependabot.md` #2, #7, `github-supply-chain.md` #1–4,
 `hygiene.yml:22`. Systematizing (a) means formalizing this stamp plus the gate, not new machinery:
 
-- The gate already exists in two places: `general.md:80` (ask the user before updating rules)
+- The gate already exists in two places: `general.md` #8 (ask the user before updating rules)
   and the audit report gate (`workflows/codebase-audit.md:42`, fix only after human approves).
 - The consumer-side pattern done right: ADR notes the upstream rule follow-up at decision time,
   e.g. "Library baseline `libraries.md` chưa có row i18n — thêm row `i18n → next-intl` khi merge"
@@ -64,7 +64,7 @@ The sensors already exist and already emit rule-typed findings:
 
 | Sensor | What it emits | Source |
 | ------ | ------------- | ------ |
-| Codebase audit, team-rule checklist | Findings under category `rule`: "a rule violated anywhere in the slice" | `skills/rules/audit.md:47-50`; merge table `workflows/codebase-audit.md:33-38`; every finding cites `file:line` (`:29`) |
+| Codebase audit, team-rule checklist | Findings under category `rule`: "a rule violated anywhere in the slice" | `skills/rules/audit.md` #17 (lines 39–41); merge table `workflows/codebase-audit.md:33-38`; every finding cites `file:line` (`:29`) |
 | Code-review skill, Standards axis | Per-hunk violations citing the standard (file + rule); deliberately not merged with Spec findings | `~/.agents/skills/code-review/SKILL.md:60-64`, `:76`, `:82-86` |
 | CI checks (consumer) | lint / typecheck / prisma / test / build gates; secret scan with pinned TruffleHog behind GHCR login | `Ecopick-Platform/.github/workflows/ci.yml:40-47`, `:76-99`, `:148-162` |
 | CI checks (rules repo) | Config-baseline validator; router-URL reachability check | `skills/.github/workflows/hygiene.yml:1-11`, `:24-30`; `skills/.github/workflows/check-router-links.yml:17-23` |
@@ -77,8 +77,8 @@ What mining can and cannot do here:
   search-before-create at `:7-11`), then promote to rule edits through the (a) gate.
 - CAN: turn a whole class of prose rules into machine checks, following the hygiene.yml precedent
   (the `package-manager-versions` incident became an allowlist validator, `hygiene.yml:23-30`).
-  Candidates: `ponytail:` ledger harvest (`general.md:66` ships the grep), suppression-directive
-  grep (`audit.md:24`, `linting.md:38-39`), identifier-length scan (`general.md:94` ships the grep).
+  Candidates: `ponytail:` ledger harvest (`general.md` #6 ships the grep), suppression-directive
+  grep (`audit.md:24`, `linting.md:38-39`), identifier-length scan (`general.md` #10 (line 30) ships the grep).
 - CANNOT: detect breaches of judgment rules (ladder, naming, STE100) without a human verdict —
   the audit workflow knows this, which is why fixes wait for report approval
   (`workflows/codebase-audit.md:42`) and the review skill marks smells as judgement calls
@@ -106,11 +106,11 @@ Honest accounting of what signal exists:
   - `AUDIT.md` scorecard trend per category (`workflows/codebase-audit.md:52-55`): a rule whose
     violations never appear in audits is either internalized or dead — the trend cannot tell
     which, but it can nominate staleness candidates for human review.
-  - `ponytail:` ledger harvest (`general.md:66-68`): `no-trigger` markers are dated debt with
+  - `ponytail:` ledger harvest (`general.md` #6): `no-trigger` markers are dated debt with
     upgrade conditions — countable, greppable, already prescribed pre-ship.
   - Router link checks (`check-router-links.yml:17-23`): dead modules surface mechanically.
   - Pruning is already governed: deprecate-with-pointer, delete only factually-wrong content
-    (`AGENTS.md:29`), renames carry review dates (`AGENTS.md:30`).
+    (`AGENTS.md` #2 (line 27)), renames carry review dates (`AGENTS.md` #2–3 (lines 27–28)).
 
 Verdict: partially viable. Adopt the cheap proxies (scorecard trend + scheduled staleness review),
 reject automated follow/cite/ignore scoring — the signal does not exist in any primary source,
@@ -124,12 +124,12 @@ Four independent grounds, each primary-sourced:
 1. Blast radius with no review gate. The repo commits straight to `main` (`AGENTS.md:16`) and
    consumers fetch by URL with a 5-second timeout (OpenCode rules docs). A bad autonomous edit
    propagates to every consumer on next fetch; factually-wrong content "fails loudly at
-   consumers" (`AGENTS.md:29`). There is no PR workflow to catch it — autonomy plus trunk-based
+   consumers" (`AGENTS.md` #2 (line 27)). There is no PR workflow to catch it — autonomy plus trunk-based
    equals unreviewed blast radius.
 2. Rename/stability economics. Module URLs sit in consumers' `instructions`; a rename already
-   ships three parts same-day plus consumer updates (`AGENTS.md:30`). An autonomous rewriter
+   ships three parts same-day plus consumer updates (`AGENTS.md` #2–3 (lines 27–28)). An autonomous rewriter
    optimizing for clarity would rename freely and bill humans for the migration each time.
-3. The rules' own gate forbids it. `general.md:80` requires asking the user before updating
+3. The rules' own gate forbids it. `general.md` #8 requires asking the user before updating
    rules; the audit workflow requires report approval before any fix (`codebase-audit.md:42`).
    Autonomy would violate the standards it rewrites — a self-contradicting mechanism.
 4. Production precedent in-repo: detection and analysis may automate, remediation stays human.
@@ -154,11 +154,11 @@ Adopt (a) first, (b) second, (c) as cheap proxies, forbid (d). Ordered, minimal 
 
 - `AGENTS.md`, "Rule lifecycle" section: add the incident-to-rule checklist —
   (i) every new/changed rule carries a one-line `Worked incident (YYYY-MM): <symptom> → <fix>`
-  stamp (the format already used at `rules/dependabot.md:21,72`,
-  `rules/github-supply-chain.md:36,50,56,79`); (ii) config changes ride the same commit
-  (already required at `AGENTS.md:31`); (iii) human approves before commit (already required
-  by `rules/general.md:80`, restated for the repo owner's own sessions).
-- `Ecopick-Platform/AGENTS.md:9-13` deltas: add one line — session incidents that reveal a
+  stamp (the format already used at `rules/dependabot.md` #2, #7,
+  `rules/github-supply-chain.md` #1–4); (ii) config changes ride the same commit
+  (already required at `AGENTS.md` #4 (line 29)); (iii) human approves before commit (already required
+  by `rules/general.md` #8, restated for the repo owner's own sessions).
+- `Ecopick-Platform/AGENTS.md` "Repo-local deltas" (lines 9–12): add one line — session incidents that reveal a
   missing/wrong team rule get recorded as an ADR one-liner naming the upstream follow-up,
   following `docs/adr/0033-i18n-next-intl-shared-catalog-hybrid-routing.md:7`.
 
@@ -169,8 +169,8 @@ Adopt (a) first, (b) second, (c) as cheap proxies, forbid (d). Ordered, minimal 
   `:52-55`) become one grouped skills-repo issue (`rules/issues.md:15`), and the issue's
   resolution is a rule edit through mechanism 1.
 - Convert the greppable rules into checks following the `hygiene.yml:23-30` pattern before any
-  new sensor is built: `ponytail:` no-trigger harvest (`general.md:66-68`), suppression grep
-  (`rules/audit.md:24`), identifier scan (`general.md:94`).
+  new sensor is built: `ponytail:` no-trigger harvest (`general.md` #6), suppression grep
+  (`rules/audit.md:24`), identifier scan (`general.md` #10 (line 30)).
 - Opt-in experiment only: `.opencode/plugins/rule-capture.ts` (new file; no `.opencode/`
   exists in either repo) on `session.idle`/`session.error` (events at
   `https://opencode.ai/docs/plugins/`) drafting an incident note for human review — draft only,
@@ -181,28 +181,28 @@ Adopt (a) first, (b) second, (c) as cheap proxies, forbid (d). Ordered, minimal 
 - New `skills/.github/workflows/rule-review.yml`: quarterly scheduled run (mirror the Monday
   cron style of `hygiene.yml:10` / `check-router-links.yml:10`) that opens a review issue listing
   modules untouched for N months plus the `AUDIT.md` trend — human decides prune/rewrite/keep.
-  Advisory only; lifecycle rules (`AGENTS.md:28-30`) still govern the outcome.
+  Advisory only; lifecycle rules (`AGENTS.md` "Rule lifecycle" #1–4) still govern the outcome.
 
 ### Explicit limits (what must stay human)
 
 - No autonomous pushes to the skills repo `main` — ever. Rule edits are human-committed
-  (consistent with `AGENTS.md:16` trunk-based + `general.md:80` ask-first).
+  (consistent with `AGENTS.md:16` trunk-based + `general.md` #8 ask-first).
 - No autonomous renames, splits, or deletions of modules (consumer-migration cost,
-  `AGENTS.md:28-30`).
+  `AGENTS.md` "Rule lifecycle" #1–4).
 - No compliance scoring from mention frequency (no supporting signal in any primary source).
 - Agents may draft rule text and incident stamps; the human gate in (a) is the only path to `main`.
 
 ## Sources consulted
 
-- `skills/AGENTS.md` (31 lines), `skills/CONTEXT.md` (76 lines)
-- `skills/rules/dependabot.md` (72), `skills/rules/github-supply-chain.md` (79),
-  `skills/rules/github-vps-deploy.md` (161), `skills/rules/general.md` (122, rule 10 + ladder/ledger),
-  `skills/rules/linting.md` (53), `skills/rules/audit.md` (59), `skills/rules/issues.md` (168),
-  `skills/rules/github-pr-automation.md` (1-60)
-- `skills/workflows/codebase-audit.md` (55), `skills/.github/workflows/hygiene.yml` (31),
+- `skills/AGENTS.md` (29 lines), `skills/CONTEXT.md` (79 lines)
+- `skills/rules/dependabot.md` (37), `skills/rules/github-supply-chain.md` (34),
+  `skills/rules/github-vps-deploy.md` (70), `skills/rules/general.md` (68, rule 10 + ladder/ledger),
+  `skills/rules/linting.md` (79), `skills/rules/audit.md` (49), `skills/rules/issues.md` (36),
+  the former `skills/rules/github-pr-automation.md` (deleted; the workflow-optimization rule moved to `skills/rules/github-actions.md` #11)
+- `skills/workflows/codebase-audit.md` (67), `skills/.github/workflows/hygiene.yml` (31),
   `skills/.github/workflows/check-router-links.yml` (24)
 - `skills` git log (incident→rule commits `41f2544`, `6b63431`, `3058ecc`, `75c4deb`, `3ac4b98`, `b153364`, `d3250cb`)
-- `Ecopick-Platform/AGENTS.md` (13), `Ecopick-Platform/.github/workflows/ci.yml` (238),
+- `Ecopick-Platform/AGENTS.md` (12), `Ecopick-Platform/.github/workflows/ci.yml` (502),
   `Ecopick-Platform/docs/adr/0033-opencode-incident-agent.md` (44),
   `0033-i18n-next-intl-shared-catalog-hybrid-routing.md` (1-15),
   `0033-referral-fee-accrual.md` (1-15); Ecopick git log (`b4ed0cbd`, `3e5ad06d`, `cb2fe671`)
@@ -212,5 +212,6 @@ Adopt (a) first, (b) second, (c) as cheap proxies, forbid (d). Ordered, minimal 
   returns 404 — hooks live under `/plugins/` events, and agent scoping under `/agents/` permissions)
 - Convention model: `skills/docs/retro-github-workflows-research.md` (127 lines)
 - Deliberately not cited: GitHub REST API (no endpoint-level claim is made; mining is framed on
-  the in-repo `gh` CLI at `rules/issues.md:7-11,21-25,36-38` and `github-script` at
-  `rules/issues.md:56-83`, `rules/github-pr-automation.md:18-44`)
+  the in-repo `gh` CLI at `rules/issues.md` #1–7 (lines 7–31) and `github-script` guidance formerly
+  at `rules/issues.md:56-83` (no longer present; file is now 36 lines) and in the former
+  `rules/github-pr-automation.md` (deleted; the workflow-optimization rule moved to `rules/github-actions.md` #11))

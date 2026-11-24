@@ -11,13 +11,10 @@ Consumers wire **only this file** as their standing router via native `instructi
 | `rules/nestjs-ai.md`            | NestJS services with AI features (`@nestjs/ai` models, agents, embeddings) | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/nestjs-ai.md`            |
 | `rules/prisma.md`               | TS/NestJS repos on Prisma 7                                              | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/prisma.md`               |
 | `rules/frontend.md`             | Web, portal, miniapp                                                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/frontend.md`             |
-| `rules/miniapp.md`              | Zalo Mini App (`apps/miniapp`)                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/miniapp.md`              |
-| `rules/mobile-store-submission.md` | Native iOS/Android store submission and rejection prevention           | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/mobile-store-submission.md` |
 | `rules/i18n.md`                 | Projects with message catalogs, multi-locale UI, user-facing copy        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/i18n.md`                 |
 | `rules/qa.md`                   | Next.js-style frontends with a screenshot QA harness over seeded data    | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/qa.md`                   |
 | `rules/real-user-qa.md`         | Any browser UI change; functional pass over affected screens, controls, and workflows | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/real-user-qa.md` |
 | `rules/e2e-testing.md`          | Repos with Playwright e2e tests against a real API                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/e2e-testing.md`          |
-| `rules/test-determinism.md`     | Repos where CI runs tests under a pinned runtime version                 | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/test-determinism.md`      |
 | `rules/fixtures.md`             | Repos with seed scripts, fixture generators, or a deterministic test DB  | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/fixtures.md`             |
 | `rules/linting.md`              | All TS/JS and Python projects                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md`              |
 | `rules/libraries.md`            | All TS/JS projects                                                       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/libraries.md`            |
@@ -26,18 +23,15 @@ Consumers wire **only this file** as their standing router via native `instructi
 | `rules/github-actions.md`           | GitHub Actions CI, concurrency, path filtering, runner/cache, step parallelism | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-actions.md`           |
 | `rules/github-releases.md`      | Repos cutting releases or maintaining release branches                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-releases.md`      |
 | `rules/github-vps-deploy.md`    | Self-hosted runners deploying to a VPS over SSH                          | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-vps-deploy.md`    |
-| `rules/github-pr-automation.md` | Repos with PR automation (`/autofix`, path labels, semantic titles)      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-pr-automation.md` |
 | `rules/github-supply-chain.md`  | Actions + registries (CodeQL, SHA pinning, `pnpm/setup` isolation)       | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/github-supply-chain.md`  |
 | `rules/dependabot.md`           | Repos with `.github/dependabot.yml`                                      | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/dependabot.md`           |
 | `rules/audit.md`                | Any repo or slice under audit                                            | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md`                |
-| `rules/test-comment-audit.md`   | Low-value test and comment-code audits                                   | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/test-comment-audit.md`   |
 
 ## Workflows
 
 | Workflow                               | When to fetch (trigger)                                                                                                          | Fetch URL                                                                                               |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `workflows/codebase-audit.md`          | Full-codebase audit in package/directory slices against `rules/audit.md` (team-rule compliance, slop, dead code, risk, secrets). | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/codebase-audit.md`          |
-| `workflows/test-comment-audit.md`      | Audit low-value tests and comment-code slop in slices, fix from approved report. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/test-comment-audit.md`      |
 | `workflows/themed-codebase-audit.md`   | Three-theme audit (dead code, duplicated business logic, complex logic) with a grill gate and wave branches.                     | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/themed-codebase-audit.md`   |
 | `workflows/lint-burndown.md`           | Adopt strict lint preset, clear a lint backlog to zero, ratchet `--max-warnings` down in subagent waves.                         | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/lint-burndown.md`           |
 | `workflows/qa.md`                      | Full UI/UX QA pass: seeded stack, 3-device screenshot sweep, parallel vision audit, presentational fixes, triaged report.        | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/qa.md`                      |
@@ -83,5 +77,3 @@ Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, 
 - **Wave gate** — the per-wave root gate plus two-axis (standards + spec) review in `workflows/codebase-audit.md` §5a; hard findings block the next wave.
 - **Baseline target** — the web-features Baseline compatibility level: Baseline Widely Available by default with zero polyfills; Baseline Newly Available permitted only with progressive enhancement or zero-dependency fallbacks (`rules/frontend.md` #28–31).
 - **IME safety gate** — the check on custom Enter `keydown` listeners (`isImeSafeEnter`: `isComposing || keyCode === 229`) preventing premature submit/blur during CJK and Vietnamese IME conversion (`rules/frontend.md` #28).
-- **Store submission** — the act of sending one built native mobile app to the Apple App Store or Google Play for review and release (`rules/mobile-store-submission.md`).
-- **Rejection pattern** — a repeated cause of app rejection that maps to one store guideline and one known fix (`rules/mobile-store-submission.md`).

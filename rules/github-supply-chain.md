@@ -31,4 +31,4 @@ Applies to any repo running GitHub Actions and installing packages from registri
 4. **Never use `corepack` to manage `pnpm`** — Node removed `corepack` in v25+ (gone in Node 25/26), and its shim adds per-command overhead. Derive the `pnpm` version from `package.json#packageManager` across every surface:
    - **Dev machine**: pnpm ≥10 `manage-package-manager-versions` (on by default).
    - **CI**: `pnpm/setup@v2` with no `version` input (`pnpm/action-setup` is legacy pnpm ≤10 only).
-   - **Docker**: derive `PNPM_MAJOR` from `package.json` in the `base` stage (`rules/github-vps-deploy.md` #9).
+   - **Docker**: derive `PNPM_MAJOR` from `package.json` in the `base` stage (`rules/github-vps-deploy.md` #10).

@@ -3,9 +3,9 @@ name: check-router-links
 on:
   push:
     branches: [main]
-    paths: [CONTEXT.md, .github/workflows/check-router-links.yml]
+    paths: [CONTEXT.md, rules/**, workflows/**, .github/workflows/check-router-links.yml]
   pull_request:
-    paths: [CONTEXT.md]
+    paths: [CONTEXT.md, rules/**, workflows/**]
   schedule:
     - cron: "0 6 * * 1"
 
@@ -14,10 +14,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch every URL in CONTEXT.md
+      - name: Fetch every rule URL in the router and rule/workflow files
         run: |
           fail=0
-          for url in $(grep -oE 'https://raw\.githubusercontent\.com/[^ `|)]+' CONTEXT.md | sort -u); do
+          for url in $(grep -hoE 'https://raw\.githubusercontent\.com/[^ `|)]+' CONTEXT.md rules/*.md workflows/*.md | sort -u); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$url")
             if [ "$code" != 200 ]; then echo "BROKEN ($code): $url"; fail=1; fi
           done

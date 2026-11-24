@@ -82,7 +82,7 @@ Restart Pi or run `/reload`. `~/AGENTS.md` still says not to re-fetch those two 
 ### Mixing instructions, references, and workflows
 
 - **Instructions** (`AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / Pi `<team_rules>` + `CONTEXT.md` + active `rules/*.md` URLs): small, standing rules and conventions relevant on every request.
-- **Workflows** (`workflows/*.md`): step-by-step procedures (`codebase-audit`, `themed-codebase-audit`, `lint-burndown`, `claude-design-prompting`, `claude-design-to-nextjs`) fetched on demand when their trigger condition fires.
+- **Workflows** (`workflows/*.md`): step-by-step procedures (`codebase-audit`, `themed-codebase-audit`, `lint-burndown`, `qa`, `claude-design-prompting`, `claude-design-to-nextjs`) fetched on demand when their trigger condition fires.
 - **References** (`references` in `opencode.jsonc`): cached Git repositories or external trees attached via `@alias` only when needed (zero standing context cost beyond the description line).
 
 ## Module index & tool configs

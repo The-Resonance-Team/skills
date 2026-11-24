@@ -30,7 +30,7 @@ forced a real run — then the pre-commit hook failed on files the branch never
 touched, with an unchanged TS version. A cache hit is a claim that inputs are
 unchanged, not that the tree is healthy: any task whose inputs rarely change
 (`typecheck` on a stable package) can stay green indefinitely over rot.
-→ Rule 7 in `rules/github-actions.md` (this commit).
+→ Rule 6 in `rules/github-actions.md` (this commit).
 
 ## 2. Default worker counts assume a bigger box than self-hosted gives
 
@@ -41,13 +41,13 @@ then OOM-killed `137` under `pool:threads` (threads share one process; the
 "lighter" pool was the heavier one here). Fix was empirical because runner RAM is
 undocumented: `forks` + CI-only `--maxWorkers=2`. Two failed CI cycles were the
 price of guessing.
-→ Rule 8 in `rules/github-actions.md` (this commit). Standing gap: publish runner
+→ Rule 7 in `rules/github-actions.md` (this commit). Standing gap: publish runner
 specs (RAM/CPU) where agents can read them; sizing is still guesswork.
 
 ## 3. Age-gated registries block fresh majors; exempt exact pins
 
 `minimumReleaseAge: 10080` rejected `vitest@5.0.0` (published <7d). Fix followed
-the existing mechanism (`dependabot.md` rule 72): exact-pin exempts for the
+the existing mechanism (`rules/dependabot.md` rule 7): exact-pin exempts for the
 requested versions only (`vitest`, `@vitest/coverage-v8`, `@vitest/mocker`,
 `@vitest/spy`, `tinybench`), so future releases stay gated. No new rule — applied
 the old one. Gotcha for next time: the error lists every under-age transitive dep,
