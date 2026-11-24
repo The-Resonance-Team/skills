@@ -17,7 +17,8 @@ jobs:
       - name: Fetch every rule URL in the router and rule/workflow files
         run: |
           fail=0
-          for url in $(grep -hoE 'https://raw\.githubusercontent\.com/[^ `|)]+' CONTEXT.md rules/*.md workflows/*.md | sort -u); do
+          # Brace URLs in rule docs are shorthand for a set of files, not fetchable URLs.
+          for url in $(grep -hoE 'https://raw\.githubusercontent\.com/[^ `|)]+' CONTEXT.md rules/*.md workflows/*.md | grep -v '{' | sort -u); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$url")
             if [ "$code" != 200 ]; then echo "BROKEN ($code): $url"; fail=1; fi
           done
