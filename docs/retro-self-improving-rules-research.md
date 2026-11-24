@@ -194,10 +194,10 @@ Adopt (a) first, (b) second, (c) as cheap proxies, forbid (d). Ordered, minimal 
 
 ## Sources consulted
 
-- `skills/AGENTS.md` (29 lines), `skills/CONTEXT.md` (79 lines)
+- `skills/AGENTS.md` (29 lines), `skills/CONTEXT.md` (84 lines)
 - `skills/rules/dependabot.md` (37), `skills/rules/github-supply-chain.md` (34),
   `skills/rules/github-vps-deploy.md` (70), `skills/rules/general.md` (68, rule 10 + ladder/ledger),
-  `skills/rules/linting.md` (79), `skills/rules/audit.md` (49), `skills/rules/issues.md` (36),
+  `skills/rules/linting.md` (79), `skills/rules/audit.md` (48), `skills/rules/issues.md` (36),
   the former `skills/rules/github-pr-automation.md` (deleted; the workflow-optimization rule moved to `skills/rules/github-actions.md` #11)
 - `skills/workflows/codebase-audit.md` (67), `skills/.github/workflows/hygiene.yml` (31),
   `skills/.github/workflows/check-router-links.yml` (24)

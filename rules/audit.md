@@ -1,6 +1,6 @@
 # Codebase Audit Rules — team-rule compliance, slop, dead code, production risk
 
-Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`), a test/comment-code audit, or a diff/slice audit.
+Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`) or a diff/slice audit.
 
 ## Verdicts & evidence
 
@@ -12,7 +12,6 @@ Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`
 
 4. **Comments carry what code cannot** — Classify every comment and keep only the ones that carry non-obvious information:
    - **Tautology** — restates the adjacent code; delete it.
-   - **Narrating** — restates the adjacent steps; delete it. Keep intent, rationale, gotchas, and non-obvious invariants.
    - **Stale** — names removed code or a past implementation; delete it.
    - **Excuse** — justifies a hack (`TODO:`, `FIXME`, `ponytail:`, `workaround`); delete it and file one aggregate issue for the fix.
    - **Decision** — records a non-obvious choice; keep it in place, and move it to an ADR only when it is hard to reverse, surprising without context, and the result of a real trade-off.
@@ -26,7 +25,7 @@ Applies to any repo running a full-codebase audit (`workflows/codebase-audit.md`
 ## Suppression & test checklists (`category: suppression` / `test`)
 
 10. **Zero inline suppression directives** — Grep each slice for `eslint-disable`, `oxlint-disable`, `oxlint-ignore`, `biome-ignore`, `ts-ignore`, `ts-expect-error`, and `prettier-ignore`. In baseline `bun lint`, inline disables are ignored dead code (`rules/linting.md` #10): fix the code or move legitimate framework carve-outs into a scoped config `overrides` block with a reason comment. In ESLint/typecheck where directives run, any surviving directive must be single-line with a blocker reason.
-11. **Every test fails on a real regression** — Flag tests with no assertions, tautologies (`expect(true).toBe(true)`, comparing a value to itself), mock-echoes (asserting a mock returns the stubbed value), mock-wiring (asserting only that a stub was called with stubbed args), trivial projections (1:1 field copies with no branch), constant pins (a named constant equals its literal), weak assertions (bare `typeof`, `.toHaveLength(1)` with no shape check, `.success` only), repeated scripted cases (one branch for equivalent inputs — collapse to a table-driven case), and single-branch gates (one of four boolean combinations). Replace slop tests covering live behavior with behavioral tests in the same pass. Delete only duplicates or constant pins with no behavior to assert.
+11. **Every test fails on a real regression** — Flag tests with no assertions, tautologies (`expect(true).toBe(true)`), and mock-echoes (asserting what a mock was stubbed to return). Replace slop tests covering live behavior with behavioral tests in the same pass — never just delete coverage.
 
 ## Production-risk & dead-code checklists (`category: risk` / `dead-code`)
 
