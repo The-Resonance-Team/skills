@@ -79,3 +79,10 @@ local server.
 push to `main` that touches rule content or this project. It needs three repo
 secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and
 `RULES_MCP_TOKEN`. The last one must differ from the Code Mode MCP token.
+
+Setup status on 2026-11-25: the Worker was deployed through Cloudflare MCP and
+then through Wrangler with the same config. A scoped account token named
+`rules-mcp-cd` was created through Cloudflare MCP with Workers Scripts Read,
+Workers Scripts Write, Workers AI Read, and Workers AI Metadata Read. All three
+GitHub secrets were set with `gh secret set`. The build, secret upload, and
+deploy steps were run locally with that token before the workflow was trusted.

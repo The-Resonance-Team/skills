@@ -50,7 +50,8 @@ fetch step with semantic discovery and exact retrieval.
 
 ## Open items
 
-The repo owner must add `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and
-`RULES_MCP_TOKEN` as GitHub Actions secrets before CD can deploy. The deploy
-does not proceed until they exist. `RULES_MCP_TOKEN` must differ from the Code
-Mode MCP token.
+Resolved on 2026-11-25. A scoped Cloudflare account token `rules-mcp-cd` was
+created through Cloudflare MCP. The three GitHub Actions secrets are set. The
+build, secret upload, and deploy steps were verified locally, and the Worker
+was deployed through both Cloudflare MCP and Wrangler. `RULES_MCP_TOKEN`
+differs from the Code Mode MCP token.
