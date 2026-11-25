@@ -41,6 +41,10 @@ Consumers wire **only this file** as their standing router via native `instructi
 | `workflows/claude-design-prompting.md` | Grill the user on design demand, generate multi-surface Claude Design prompts (creative freedom + copy/responsive/CRUD guardrails), and audit `.dc.html` exports across CRUD, copy/UX, and responsive axes. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-prompting.md` |
 | `workflows/claude-design-to-nextjs.md` | Convert Claude Design (`.dc.html`) exports or specs into pixel-perfect Next.js/React pages verified with Chrome DevTools MCP. Includes zip intake to `apps/<app>` and a conversion method check. | `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/workflows/claude-design-to-nextjs.md` |
 
+## Free resources
+
+- [Free resources index](./free-resources/INDEX.md) — optional reference notes for free plans and low-cost upgrades. Open a provider file only when the task needs it. These files are not standing rules.
+
 Machine-readable tool configs ship in `configs/` of this repo (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`).
 
 ## Language rules (all consumers)
