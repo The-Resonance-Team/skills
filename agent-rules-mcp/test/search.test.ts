@@ -51,9 +51,14 @@ describe('rule lookup', () => {
   });
 
   test('keeps exact semantic matches first for catalog topics outside the query fixtures', async () => {
-    for (const id of ['github-releases', 'mobile-store-submission', 'miniapp', 'linting']) {
-      const entry = catalog.entries.find((item) => item.id === id)!;
-      const matches = await searchAi(entry.title, aiReturning(entry.vector));
+    const ids = ['github-releases', 'mobile-store-submission', 'miniapp', 'linting'];
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        const entry = catalog.entries.find((item) => item.id === id)!;
+        return { id, matches: await searchAi(entry.title, aiReturning(entry.vector)) };
+      }),
+    );
+    for (const { id, matches } of results) {
       expect(matches[0].id).toBe(id);
       expect(matches[0].score).toBeCloseTo(1, 5);
     }

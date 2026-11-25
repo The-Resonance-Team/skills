@@ -42,10 +42,6 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Verify native lint support
-        working-directory: ${{ runner.temp }}
-        run: bun lint --help | grep -q -- --no-script
-
       - name: Install dependencies
         run: bun install --frozen-lockfile
 

@@ -1,6 +1,5 @@
 import { catalog } from '../src/search';
-import { cases } from './cases';
-import type { UseCase } from './cases';
+import { cases, type UseCase } from './cases';
 
 export type Lookup = { ids: string[]; bytes: number; wallMs: number };
 

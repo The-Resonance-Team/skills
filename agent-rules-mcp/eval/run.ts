@@ -1,6 +1,5 @@
 import { searchAi } from '../src/search';
-import { assertRecall, evaluate } from './evaluate';
-import type { Lookup } from './evaluate';
+import { assertRecall, evaluate, type Lookup } from './evaluate';
 import { fixtureAi } from './fixture-ai';
 
 const url = process.env.EVAL_URL ?? 'http://127.0.0.1:18790';

@@ -1,13 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import type { Result } from '../bench/workload';
+import { workload, type Result } from '../bench/workload';
 
 describe('benchmark workload', () => {
   test('returns a deterministic result', async () => {
-    const source = await Bun.file(new URL('../bench/workload.ts', import.meta.url)).text();
-    const match = source.match(/export const workload = `([\s\S]*?)`;/);
-    expect(match).not.toBeNull();
-    const loaded = await import(`data:text/javascript,${encodeURIComponent(match![1])}`);
-    const run = loaded.default as () => Promise<Result>;
+    const source = workload.replace(/^export default /, '').replace(/;\s*$/, '');
+    const run = new Function(`return (${source});`)() as () => Promise<Result>;
     const first = await run();
     const second = await run();
     expect(first.blocked).toBe(715);
