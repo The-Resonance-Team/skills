@@ -1,0 +1,6 @@
+.dev.vars*
+.wrangler/
+.env*
+node_modules/
+generated/pending.json
+generated/external-vectors.json

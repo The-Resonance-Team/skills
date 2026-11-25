@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "opencode-rules-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "secrets": {
+    "required": ["MCP_TOKEN"],
+  },
+  "ai": {
+    "binding": "AI",
+  },
+}

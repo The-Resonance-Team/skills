@@ -1,0 +1,29 @@
+{
+  "name": "opencode-rules-mcp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "bun@1.4.6",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "bun scripts/build-catalog.ts",
+    "build:check": "bun scripts/build-catalog.ts --check",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test --check && bun test",
+    "eval": "bun eval/run.ts",
+    "lint": "bun lint --no-script --max-warnings=0 --allow-unsupported",
+    "format": "bun fmt",
+    "format:check": "bun fmt --check"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "@types/bun": "latest",
+    "typescript": "latest",
+    "wrangler": "^4.0.0"
+  }
+}
