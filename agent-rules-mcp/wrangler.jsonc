@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "opencode-rules-mcp",
+  "name": "agent-rules-mcp",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-25",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -22,7 +22,7 @@
     "run_worker_first": true,
   },
   "vars": {
-    "PUBLIC_URL": "https://opencode-rules-mcp.xirothedev.workers.dev",
+    "PUBLIC_URL": "https://agent-rules-mcp.xirothedev.workers.dev",
     "ACCESS_AUTHORIZATION_URL": "https://the-resonance-team.cloudflareaccess.com/cdn-cgi/access/sso/oidc/4d2621110ed15b427082d49f2bf75c4646f0bb5f0923ff85f628652228065f4c/authorization",
     "ACCESS_TOKEN_URL": "https://the-resonance-team.cloudflareaccess.com/cdn-cgi/access/sso/oidc/4d2621110ed15b427082d49f2bf75c4646f0bb5f0923ff85f628652228065f4c/token",
     "ACCESS_USERINFO_URL": "https://the-resonance-team.cloudflareaccess.com/cdn-cgi/access/sso/oidc/4d2621110ed15b427082d49f2bf75c4646f0bb5f0923ff85f628652228065f4c/userinfo",

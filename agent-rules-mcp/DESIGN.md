@@ -22,7 +22,7 @@ fetch step with semantic discovery and exact retrieval.
 | Retrieval text | Title + `CONTEXT.md` scope or trigger cell + first paragraph. Not the whole file. |
 | Vectors | Precomputed in the Worker bundle. Rebuild only entries whose retrieval text changed. |
 | Query embedding | Workers AI `@cf/google/embeddinggemma-2`. Cosine similarity in the Worker. No Vectorize. |
-| Placement | Separate Worker `opencode-rules-mcp`, on Workers Free. Not the Code Mode Worker. |
+| Placement | Separate Worker `agent-rules-mcp`, on Workers Free. Not the Code Mode Worker. |
 | Layout | Follow `cloudflare/mcp-server-cloudflare`; see `docs/adr/0001-mcp-server-layout-reference.md`. |
 | Auth | Bearer token in a Worker secret, distinct from the Code Mode MCP token. |
 | Failure | Continue with a visible warning when the MCP is down. Raw-URL fetch stays documented as an emergency switch. |
@@ -67,8 +67,8 @@ fetch step with semantic discovery and exact retrieval.
 
 ## Open items
 
-Resolved on 2026-11-25. A scoped Cloudflare account token `rules-mcp-cd` was
+Resolved on 2026-11-25. A scoped Cloudflare account token `agent-rules-mcp-cd` was
 created through Cloudflare MCP. The three GitHub Actions secrets are set. The
 build, secret upload, and deploy steps were verified locally, and the Worker
-was deployed through both Cloudflare MCP and Wrangler. `RULES_MCP_TOKEN`
+was deployed through both Cloudflare MCP and Wrangler. `AGENT_RULES_MCP_TOKEN`
 differs from the Code Mode MCP token.

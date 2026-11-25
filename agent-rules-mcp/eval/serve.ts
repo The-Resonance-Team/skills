@@ -34,7 +34,7 @@ const env = {
   AI: ai,
   ASSETS: emptyAssets,
   OAUTH_KV: emptyKv,
-  MCP_TOKEN: process.env.RULES_MCP_TOKEN ?? 'testing-rules-token',
+  MCP_TOKEN: process.env.AGENT_RULES_MCP_TOKEN ?? 'testing-agent-rules-token',
   PUBLIC_URL: 'http://127.0.0.1:18790',
   ACCESS_AUTHORIZATION_URL: '',
   ACCESS_TOKEN_URL: '',

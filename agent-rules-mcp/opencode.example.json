@@ -2,20 +2,20 @@
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "servers": {
-      "rules": {
+      "agent-rules-mcp": {
         "type": "remote",
         "url": "https://YOUR-WORKER.workers.dev/mcp",
         "oauth": {
           "scope": "rules:read"
         }
       },
-      "rules-ci": {
+      "agent-rules-mcp-ci": {
         "type": "remote",
         "url": "https://YOUR-WORKER.workers.dev/mcp",
         "oauth": false,
         "disabled": true,
         "headers": {
-          "Authorization": "Bearer {file:~/.config/opencode/rules-token.txt}"
+          "Authorization": "Bearer {file:~/.config/opencode/agent-rules-token.txt}"
         }
       }
     }

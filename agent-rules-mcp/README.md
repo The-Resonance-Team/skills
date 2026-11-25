@@ -54,14 +54,14 @@ bun run build                    # needs Cloudflare AI credentials
 bun run dev
 ```
 
-The builder embeds only new or changed entries. `RULES_EMBEDDINGS_FILE` can
+The builder embeds only new or changed entries. `AGENT_RULES_EMBEDDINGS_FILE` can
 supply vectors from another runner.
 
 ## OpenCode
 
 Copy `opencode.example.json` into your OpenCode config. The `rules` entry uses
 OAuth with `scope: rules:read`; call `opencode mcp auth rules` once on a new
-device. The `rules-ci` entry is disabled and uses `{file:...}` substitution: a
+device. The `agent-rules-mcp-ci` entry is disabled and uses `{file:...}` substitution: a
 persistent `opencode serve --service` process does not inherit variables
 exported in a later shell, so `{env:...}` would resolve to empty. Verify with
 `opencode mcp list`; it must print `rules connected`. Keep the profile as an
@@ -98,9 +98,9 @@ component props and purity for this file.
 
 ## CD
 
-`.github/workflows/deploy-rules-mcp.yml` builds the dashboard and catalog, then
+`.github/workflows/deploy-agent-rules-mcp.yml` builds the dashboard and catalog, then
 deploys on a push to `main` touching rule content or this project. Repo secrets:
-`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `RULES_MCP_TOKEN`,
-`ACCESS_CLIENT_SECRET`, and `RULES_GITHUB_TOKEN` (fine-grained PAT with
+`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `AGENT_RULES_MCP_TOKEN`,
+`ACCESS_CLIENT_SECRET`, and `AGENT_RULES_GITHUB_TOKEN` (fine-grained PAT with
 Contents:write and Pull requests:write on this repo). Access endpoints and
 client ID are vars in `wrangler.jsonc`.

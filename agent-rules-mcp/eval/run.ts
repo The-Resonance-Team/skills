@@ -3,7 +3,7 @@ import { catalog } from '../src/search';
 import { cases } from './cases';
 
 const url = process.env.EVAL_URL ?? 'http://127.0.0.1:18790';
-const token = process.env.RULES_MCP_TOKEN ?? 'testing-rules-token';
+const token = process.env.AGENT_RULES_MCP_TOKEN ?? 'testing-agent-rules-token';
 const headers = {
   authorization: `Bearer ${token}`,
   'content-type': 'application/json',

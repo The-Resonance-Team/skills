@@ -1,7 +1,7 @@
 # Use file substitution for the OpenCode MCP token
 
 OpenCode loads the MCP bearer token with
-`{file:~/.config/opencode/rules-token.txt}`, not `{env:RULES_MCP_TOKEN}`.
+`{file:~/.config/opencode/agent-rules-token.txt}`, not `{env:AGENT_RULES_MCP_TOKEN}`.
 
 On 2026-11-25 the server failed version negotiation with HTTP 401. A local
 proxy that forwarded the real OpenCode request showed `Authorization: Bearer`
@@ -13,7 +13,7 @@ token at config load and does not depend on the daemon's environment.
 Considered options: export the variable before starting the daemon; put the
 token directly in `opencode.jsonc`; use `{env:...}`; use `{file:...}`. We chose
 the file because it survives daemon restarts and keeps the secret out of the
-config file. The GitHub Actions secret `RULES_MCP_TOKEN` is separate and still
+config file. The GitHub Actions secret `AGENT_RULES_MCP_TOKEN` is separate and still
 holds the same value for CD.
 
 Verification seam: `opencode mcp list` must print `rules connected`. No unit

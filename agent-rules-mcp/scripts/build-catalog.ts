@@ -165,7 +165,7 @@ async function build(): Promise<{ catalog: Catalog; embeddings: EmbeddingStore }
   addDigests(drafts);
   addReferences(drafts);
   const embeddings = loadEmbeddings();
-  const external = process.env.RULES_EMBEDDINGS_FILE;
+  const external = process.env.AGENT_RULES_EMBEDDINGS_FILE;
   if (external !== undefined && external.length > 0) {
     const supplied = JSON.parse(readFileSync(external, 'utf8')) as Record<string, string>;
     for (const [digest, vector] of Object.entries(supplied)) embeddings.vectors[digest] = vector;

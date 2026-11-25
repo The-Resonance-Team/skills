@@ -1,4 +1,4 @@
-name: deploy-rules-mcp
+name: deploy-agent-rules-mcp
 
 on:
   push:
@@ -7,14 +7,14 @@ on:
       - CONTEXT.md
       - 'rules/**'
       - 'workflows/**'
-      - 'opencode-rules-mcp/**'
-      - .github/workflows/deploy-rules-mcp.yml
+      - 'agent-rules-mcp/**'
+      - .github/workflows/deploy-agent-rules-mcp.yml
 
 permissions:
   contents: read
 
 concurrency:
-  group: rules-mcp-deploy
+  group: agent-rules-mcp-deploy
   queue: max
   cancel-in-progress: false
 
@@ -27,53 +27,53 @@ jobs:
 
       - uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2.1.0
         with:
-          bun-version-file: opencode-rules-mcp/package.json
+          bun-version-file: agent-rules-mcp/package.json
 
       - name: Install dependencies
-        working-directory: opencode-rules-mcp
+        working-directory: agent-rules-mcp
         run: bun install --frozen-lockfile
 
       - name: Build approval dashboard
-        working-directory: opencode-rules-mcp/ui
+        working-directory: agent-rules-mcp/ui
         run: |
           bun install --frozen-lockfile
           bun run build
           bunx astryx doctor --built dist
 
       - name: Build catalog and embeddings
-        working-directory: opencode-rules-mcp
+        working-directory: agent-rules-mcp
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: bun run build
 
       - name: Verify generated files
-        working-directory: opencode-rules-mcp
+        working-directory: agent-rules-mcp
         run: bun run build:check
 
       - name: Format check
-        working-directory: opencode-rules-mcp
+        working-directory: agent-rules-mcp
         run: bun run format:check
 
       - name: Lint
-        working-directory: opencode-rules-mcp
+        working-directory: agent-rules-mcp
         run: bun run lint
 
       - name: Typecheck
-        working-directory: opencode-rules-mcp
+        working-directory: agent-rules-mcp
         run: bun run typecheck
 
       - name: Test
-        working-directory: opencode-rules-mcp
+        working-directory: agent-rules-mcp
         run: bun test
 
       - name: Deploy Worker
-        working-directory: opencode-rules-mcp
+        working-directory: agent-rules-mcp
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "${{ secrets.RULES_MCP_TOKEN }}" | bunx wrangler secret put MCP_TOKEN
+          echo "${{ secrets.AGENT_RULES_MCP_TOKEN }}" | bunx wrangler secret put MCP_TOKEN
           echo "${{ secrets.ACCESS_CLIENT_SECRET }}" | bunx wrangler secret put ACCESS_CLIENT_SECRET
-          echo "${{ secrets.RULES_GITHUB_TOKEN }}" | bunx wrangler secret put GITHUB_TOKEN
+          echo "${{ secrets.AGENT_RULES_GITHUB_TOKEN }}" | bunx wrangler secret put GITHUB_TOKEN
           bunx wrangler deploy
