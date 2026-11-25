@@ -1,6 +1,5 @@
 'use client';
 
-import { Badge } from '@astryxdesign/core/Badge';
 import { Button } from '@astryxdesign/core/Button';
 import { Card } from '@astryxdesign/core/Card';
 import { Center } from '@astryxdesign/core/Center';
@@ -36,7 +35,7 @@ export default function ConsentPage() {
       <Card maxWidth={480} padding={6} elevation="med">
         <VStack gap={5}>
           <VStack gap={2}>
-            <Heading level={2}>Authorize {params.name}</Heading>
+            <Heading level={1}>Authorize {params.name}</Heading>
             <Text>
               This app will receive an access token at <strong>{params.redirectHost}</strong>.
             </Text>
@@ -56,7 +55,9 @@ export default function ConsentPage() {
             <Text>Requested access</Text>
             <HStack gap={2}>
               {params.scopes.map((scope) => (
-                <Badge key={scope} label={scope} variant="info" />
+                <Text key={scope} type="code">
+                  {scope}
+                </Text>
               ))}
             </HStack>
           </VStack>

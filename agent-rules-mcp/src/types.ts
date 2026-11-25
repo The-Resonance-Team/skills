@@ -1,3 +1,5 @@
+import type { ApprovalStore } from './patches';
+
 export type EntryKind = 'rule' | 'workflow';
 
 export type CatalogEntry = {
@@ -40,6 +42,7 @@ export type Env = {
   AI: Ai;
   ASSETS: Fetcher;
   OAUTH_KV: KVNamespace;
+  PATCHES: DurableObjectNamespace<ApprovalStore>;
   MCP_TOKEN: string;
   PUBLIC_URL: string;
   ACCESS_AUTHORIZATION_URL: string;

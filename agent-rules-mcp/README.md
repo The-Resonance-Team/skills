@@ -59,13 +59,13 @@ supply vectors from another runner.
 
 ## OpenCode
 
-Copy `opencode.example.json` into your OpenCode config. The `rules` entry uses
-OAuth with `scope: rules:read`; call `opencode mcp auth rules` once on a new
-device. The `agent-rules-mcp-ci` entry is disabled and uses `{file:...}` substitution: a
-persistent `opencode serve --service` process does not inherit variables
-exported in a later shell, so `{env:...}` would resolve to empty. Verify with
-`opencode mcp list`; it must print `rules connected`. Keep the profile as an
-eager instruction; `CONTEXT.md` stays lazy in the MCP.
+Copy `opencode.example.json` into your OpenCode config. The `agent-rules-mcp`
+entry uses OAuth with `scope: rules:read rules:write`; run
+`opencode mcp auth agent-rules-mcp` once on a new device. There is no CI MCP
+entry: CI and eval use the read-only static token through the
+`AGENT_RULES_MCP_TOKEN` environment variable, not through OpenCode. See ADR
+0002. Verify with `opencode mcp list`; it must print `agent-rules-mcp connected`.
+Keep the profile as an eager instruction; `CONTEXT.md` stays lazy in the MCP.
 
 ## Limits
 

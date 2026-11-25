@@ -33,6 +33,9 @@ function makeEnv(token = 'a-secret-value'): Env {
     AI: ai,
     ASSETS: assets,
     OAUTH_KV: kv,
+    PATCHES: {
+      getByName: () => ({ dashboard: async () => null }),
+    } as unknown as Env['PATCHES'],
     MCP_TOKEN: token,
     PUBLIC_URL: 'https://example.test',
     ACCESS_AUTHORIZATION_URL: '',

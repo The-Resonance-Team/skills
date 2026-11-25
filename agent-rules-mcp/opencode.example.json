@@ -6,16 +6,7 @@
         "type": "remote",
         "url": "https://YOUR-WORKER.workers.dev/mcp",
         "oauth": {
-          "scope": "rules:read"
-        }
-      },
-      "agent-rules-mcp-ci": {
-        "type": "remote",
-        "url": "https://YOUR-WORKER.workers.dev/mcp",
-        "oauth": false,
-        "disabled": true,
-        "headers": {
-          "Authorization": "Bearer {file:~/.config/opencode/agent-rules-token.txt}"
+          "scope": "rules:read rules:write"
         }
       }
     }

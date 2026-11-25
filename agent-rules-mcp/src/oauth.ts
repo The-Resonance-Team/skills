@@ -8,7 +8,6 @@ import {
 
 import { handleDashboard } from './dashboard';
 import { handleMcp, type CallerAuth } from './mcp-server';
-import { dashboardRecord } from './patches';
 import { s256 } from './auth-tokens';
 import type { Env } from './types';
 
@@ -130,7 +129,7 @@ const defaultHandler = {
     }
     if (url.pathname === '/' || url.pathname === '/index.html') {
       const token = url.searchParams.get('token') ?? '';
-      if ((await dashboardRecord(env.OAUTH_KV, token)) === null) {
+      if ((await env.PATCHES.getByName('approvals').dashboard(token)) === null) {
         return new Response('Invalid or expired dashboard token', { status: 401 });
       }
     }

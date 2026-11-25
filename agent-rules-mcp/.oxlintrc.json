@@ -28,6 +28,12 @@
   },
   "overrides": [
     {
+      "files": ["src/patches.ts", "ui/src/lib/api.ts", "ui/src/components/patch-group.tsx"],
+      "rules": {
+        "import/no-duplicates": "off"
+      }
+    },
+    {
       "files": ["eval/**"],
       "rules": {
         "no-await-in-loop": "off",

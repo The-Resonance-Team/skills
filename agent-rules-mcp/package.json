@@ -10,8 +10,9 @@
     "build": "bun scripts/build-catalog.ts",
     "build:check": "bun scripts/build-catalog.ts --check",
     "typecheck": "tsc --noEmit",
-    "test": "bun test --check && bun test",
+    "test": "bun test --check && bun test && vitest run",
     "eval": "bun eval/run.ts",
+    "eval:check": "bun eval/run.ts --local",
     "lint": "bun lint --no-script --max-warnings=0 --allow-unsupported",
     "format": "bun fmt",
     "format:check": "bun fmt --check"
@@ -22,9 +23,11 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.9.2",
     "@cloudflare/workers-types": "latest",
     "@types/bun": "latest",
     "typescript": "latest",
+    "vitest": "^4.1.0",
     "wrangler": "^4.0.0"
   }
 }

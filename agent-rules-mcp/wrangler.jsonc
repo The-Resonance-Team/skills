@@ -16,6 +16,10 @@
       "id": "b3fd7e4d53d74aa7b64c90b9b1c1a533",
     },
   ],
+  "durable_objects": {
+    "bindings": [{ "name": "PATCHES", "class_name": "ApprovalStore" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApprovalStore"] }],
   "assets": {
     "directory": "ui/dist",
     "binding": "ASSETS",

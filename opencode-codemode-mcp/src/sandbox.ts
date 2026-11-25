@@ -1,4 +1,5 @@
 import { createWorker } from '@cloudflare/worker-bundler';
+import { sha256 } from './digest';
 import type { Env } from './env';
 
 const wrapper = `
@@ -39,10 +40,7 @@ export async function execute(code: string, env: Env, ctx: ExecutionContext): Pr
     globalOutbound: null,
     limits,
   });
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity));
-  const hash = Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, '0'),
-  ).join('');
+  const hash = await sha256(identity);
   const worker = env.LOADER.get(`sandbox:${hash}`, async () => ({
     compatibilityDate: '2026-11-25',
     mainModule: 'index.js',

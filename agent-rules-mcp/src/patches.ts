@@ -1,129 +1,136 @@
-import { newToken, sha256 } from './auth-tokens';
-import type { ApprovalRecord, DashboardToken, PatchDraft } from './contracts';
+import { DurableObject } from 'cloudflare:workers';
 
-const day = 86400;
+import { newToken } from './auth-tokens';
+import type {
+  ApprovalRecord,
+  DashboardToken,
+  Decision,
+  DecisionResult,
+  PatchDraft,
+} from './contracts';
+import { patchSchema } from './contracts';
 
-function patchKey(id: string): string {
-  return `patch:${id}`;
-}
+const dayMs = 86400000;
 
-function approvalKey(id: string): string {
-  return `approval:${id}`;
-}
-
-function dashKey(hash: string): string {
-  return `dash:${hash}`;
-}
-
-function remainingTtl(record: DashboardToken): number {
-  return Math.max(1, Math.ceil((record.expiresAt - Date.now()) / 1000));
-}
-
-export async function putPatch(kv: KVNamespace, draft: PatchDraft): Promise<void> {
-  await kv.put(patchKey(draft.id), JSON.stringify(draft));
-}
-
-export async function getPatch(kv: KVNamespace, id: string): Promise<PatchDraft | null> {
-  const raw = await kv.get(patchKey(id));
-  return raw === null ? null : (JSON.parse(raw) as PatchDraft);
-}
-
-export async function listPatches(kv: KVNamespace): Promise<PatchDraft[]> {
-  const list = await kv.list({ prefix: 'patch:' });
-  const loaded = await Promise.all(list.keys.map((key) => kv.get(key.name)));
-  return loaded
-    .filter((raw): raw is string => raw !== null)
-    .map((raw) => JSON.parse(raw) as PatchDraft)
-    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-}
-
-export async function getOrCreateDashboardToken(kv: KVNamespace): Promise<string> {
-  const current = await kv.get('dash:current');
-  if (current !== null) {
-    const raw = await kv.get(dashKey(current));
-    if (raw !== null) {
-      const record = JSON.parse(raw) as DashboardToken;
-      if (record.expiresAt > Date.now()) return current;
-    }
+// One coordinator owns this repository's dashboards and approval claims.
+export class ApprovalStore extends DurableObject {
+  private dashboardToken(token: string): DashboardToken | null {
+    const record = this.ctx.storage.kv.get<DashboardToken>(`dash:${token}`);
+    return record !== undefined && record.expiresAt > Date.now() ? record : null;
   }
-  const token = await sha256(newToken());
-  const record: DashboardToken = {
-    id: token,
-    expiresAt: Date.now() + day * 1000,
-    patchIds: [],
-  };
-  await kv.put(dashKey(token), JSON.stringify(record), { expirationTtl: day });
-  await kv.put('dash:current', token, { expirationTtl: day });
-  return token;
-}
 
-export async function dashboardRecord(
-  kv: KVNamespace,
-  token: string,
-): Promise<DashboardToken | null> {
-  const raw = await kv.get(dashKey(token));
-  if (raw === null) return null;
-  const record = JSON.parse(raw) as DashboardToken;
-  return record.expiresAt > Date.now() ? record : null;
-}
-
-export async function addPatchToDashboard(
-  kv: KVNamespace,
-  token: string,
-  patchId: string,
-): Promise<void> {
-  const record = await dashboardRecord(kv, token);
-  if (record === null) return;
-  if (!record.patchIds.includes(patchId)) record.patchIds.push(patchId);
-  await kv.put(dashKey(token), JSON.stringify(record), { expirationTtl: remainingTtl(record) });
-}
-
-export async function decidePatch(
-  kv: KVNamespace,
-  token: string,
-  patchId: string,
-  decision: 'approved' | 'denied',
-): Promise<{ ok: boolean; reason?: string }> {
-  const record = await dashboardRecord(kv, token);
-  if (record === null || !record.patchIds.includes(patchId))
-    return { ok: false, reason: 'Invalid dashboard token' };
-  const patch = await getPatch(kv, patchId);
-  if (patch === null) return { ok: false, reason: 'Unknown patch' };
-  if (patch.status !== 'pending') return { ok: false, reason: 'Patch already decided' };
-  const approvalId = newToken();
-  const approval: ApprovalRecord = {
-    id: approvalId,
-    patchId,
-    digest: patch.digest,
-    decision,
-    decidedAt: new Date().toISOString(),
-    used: false,
-  };
-  await kv.put(approvalKey(approvalId), JSON.stringify(approval), { expirationTtl: day });
-  patch.status = decision;
-  patch.decidedAt = approval.decidedAt;
-  patch.approvalId = approvalId;
-  await putPatch(kv, patch);
-  const remaining = await Promise.all(record.patchIds.map(async (id) => getPatch(kv, id)));
-  if (remaining.every((item) => item === null || item.status !== 'pending')) {
-    await kv.delete(dashKey(token));
-    await kv.delete('dash:current');
+  propose(input: PatchDraft): string {
+    const draft = patchSchema.parse(input);
+    if (draft.status !== 'pending') throw new Error('A proposal must be pending');
+    return this.ctx.storage.transactionSync(() => {
+      const kv = this.ctx.storage.kv;
+      if (kv.get(`patch:${draft.id}`) !== undefined) throw new Error('Patch already exists');
+      const current = kv.get<string>('dash:current');
+      const existing = current === undefined ? null : this.dashboardToken(current);
+      const token = existing?.id ?? newToken();
+      const record: DashboardToken = existing ?? {
+        id: token,
+        expiresAt: Date.now() + dayMs,
+        patchIds: [],
+      };
+      record.patchIds.push(draft.id);
+      kv.put(`patch:${draft.id}`, draft);
+      kv.put(`dash:${token}`, record);
+      kv.put('dash:current', token);
+      return token;
+    });
   }
-  return { ok: true };
-}
 
-export async function consumeApproval(
-  kv: KVNamespace,
-  approvalId: string,
-  patchId: string,
-  digest: string,
-): Promise<boolean> {
-  const raw = await kv.get(approvalKey(approvalId));
-  if (raw === null) return false;
-  const approval = JSON.parse(raw) as ApprovalRecord;
-  if (approval.patchId !== patchId || approval.digest !== digest) return false;
-  if (approval.decision !== 'approved' || approval.used) return false;
-  approval.used = true;
-  await kv.put(approvalKey(approvalId), JSON.stringify(approval), { expirationTtl: day });
-  return true;
+  dashboard(token: string): { patches: PatchDraft[]; closed: false } | null {
+    const record = this.dashboardToken(token);
+    if (record === null) return null;
+    const patches = record.patchIds.map((id) => {
+      const patch = this.ctx.storage.kv.get<PatchDraft>(`patch:${id}`);
+      if (patch === undefined) throw new Error('Dashboard patch is missing');
+      return patch;
+    });
+    return { patches, closed: false };
+  }
+
+  decide(
+    token: string,
+    patchId: string,
+    decision: Decision,
+  ): DecisionResult | { ok: false; reason: string } {
+    return this.ctx.storage.transactionSync(() => {
+      const kv = this.ctx.storage.kv;
+      const record = this.dashboardToken(token);
+      if (record === null || !record.patchIds.includes(patchId)) {
+        return { ok: false, reason: 'Invalid dashboard token' };
+      }
+      const patch = kv.get<PatchDraft>(`patch:${patchId}`);
+      if (patch === undefined || patch.status !== 'pending') {
+        return { ok: false, reason: 'Patch is missing or already decided' };
+      }
+      const approvalId = newToken();
+      const approval: ApprovalRecord = {
+        id: approvalId,
+        patchId,
+        digest: patch.digest,
+        decision,
+        decidedAt: new Date().toISOString(),
+        expiresAt: Date.now() + dayMs,
+        used: false,
+      };
+      patch.status = decision;
+      patch.decidedAt = approval.decidedAt;
+      patch.approvalId = approvalId;
+      kv.put(`approval:${approvalId}`, approval);
+      kv.put(`patch:${patchId}`, patch);
+      const closed = record.patchIds.every(
+        (id) => kv.get<PatchDraft>(`patch:${id}`)?.status !== 'pending',
+      );
+      if (closed) {
+        kv.delete(`dash:${token}`);
+        kv.delete('dash:current');
+      }
+      // Return the authoritative patch before revocation makes a reload impossible.
+      return { ok: true, patch, closed };
+    });
+  }
+
+  claim(approvalId: string, patchId: string): PatchDraft | null {
+    return this.ctx.storage.transactionSync(() => {
+      const kv = this.ctx.storage.kv;
+      const approval = kv.get<ApprovalRecord>(`approval:${approvalId}`);
+      const patch = kv.get<PatchDraft>(`patch:${patchId}`);
+      if (
+        approval === undefined ||
+        patch === undefined ||
+        approval.patchId !== patchId ||
+        approval.digest !== patch.digest ||
+        approval.decision !== 'approved' ||
+        approval.used ||
+        approval.expiresAt <= Date.now() ||
+        patch.status !== 'approved'
+      )
+        return null;
+      approval.used = true;
+      // Persist uncertainty before the external write so a crash cannot enable a retry.
+      patch.status = 'unknown';
+      kv.put(`approval:${approvalId}`, approval);
+      kv.put(`patch:${patchId}`, patch);
+      return patch;
+    });
+  }
+
+  finish(patchId: string, pullRequestUrl?: string): void {
+    this.ctx.storage.transactionSync(() => {
+      const kv = this.ctx.storage.kv;
+      const patch = kv.get<PatchDraft>(`patch:${patchId}`);
+      if (patch === undefined || patch.status !== 'unknown') {
+        throw new Error('Patch has no active approval claim');
+      }
+      if (pullRequestUrl !== undefined) {
+        patch.status = 'approved';
+        patch.pullRequestUrl = pullRequestUrl;
+      }
+      kv.put(`patch:${patchId}`, patch);
+    });
+  }
 }

@@ -5,13 +5,6 @@ import { z } from 'zod';
 import { newToken, sha256 } from './auth-tokens';
 import type { PatchDraft } from './contracts';
 import { createDraftPullRequest } from './github';
-import {
-  addPatchToDashboard,
-  consumeApproval,
-  getOrCreateDashboardToken,
-  getPatch,
-  putPatch,
-} from './patches';
 import { catalog, getContent, getMetadata, maxMatches, searchAi } from './search';
 import type { Env } from './types';
 
@@ -156,9 +149,7 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
           status: 'pending',
           createdAt: new Date().toISOString(),
         };
-        await putPatch(env.OAUTH_KV, draft);
-        const token = await getOrCreateDashboardToken(env.OAUTH_KV);
-        await addPatchToDashboard(env.OAUTH_KV, token, patchId);
+        const token = await env.PATCHES.getByName('approvals').propose(draft);
         const value = {
           id: patchId,
           digest: draft.digest,
@@ -188,11 +179,9 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
     async ({ patchId, approvalId }) => {
       try {
         requireWrite(auth);
-        const patch = await getPatch(env.OAUTH_KV, patchId);
-        if (patch === null) throw new Error(`Unknown patch: ${patchId}`);
-        if (patch.status !== 'approved')
-          throw new Error(`Patch is ${patch.status}; a human must approve it first`);
-        if (!(await consumeApproval(env.OAUTH_KV, approvalId, patchId, patch.digest))) {
+        const store = env.PATCHES.getByName('approvals');
+        const patch = await store.claim(approvalId, patchId);
+        if (patch === null) {
           throw new Error('Approval is invalid, used, or does not match the patch');
         }
         const branch = `rules-mcp/${patch.id}`;
@@ -211,14 +200,10 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
             },
             env.GITHUB_TOKEN,
           );
-          patch.status = 'approved';
-          patch.pullRequestUrl = result.htmlUrl;
-          await putPatch(env.OAUTH_KV, patch);
+          await store.finish(patchId, result.htmlUrl);
           const value = { patchId, state: 'open', pullRequestUrl: result.htmlUrl };
           return { structuredContent: value, ...text(value) };
         } catch (error) {
-          patch.status = 'unknown';
-          await putPatch(env.OAUTH_KV, patch);
           const value = {
             patchId,
             state: 'unknown',

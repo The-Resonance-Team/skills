@@ -3,6 +3,7 @@ import {
   wrapWorkflowBinding,
 } from '@cloudflare/dynamic-workflows';
 import { WorkerEntrypoint } from 'cloudflare:workers';
+import { sha256 } from './digest';
 import type { Env } from './env';
 
 type WorkflowRunner = import('@cloudflare/dynamic-workflows').WorkflowRunner;
@@ -20,7 +21,7 @@ export class FixtureWorkflow extends WorkflowEntrypoint {
 }
 `;
 async function runnerId(): Promise<string> {
-  const bytes = new TextEncoder().encode(
+  return sha256(
     JSON.stringify({
       runner,
       compatibilityDate: '2026-11-25',
@@ -28,8 +29,6 @@ async function runnerId(): Promise<string> {
       capability: 'deploy-v1',
     }),
   );
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 async function loadRunner(env: Env, ctx: ExecutionContext) {

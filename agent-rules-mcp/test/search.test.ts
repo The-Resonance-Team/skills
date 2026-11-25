@@ -49,4 +49,19 @@ describe('rule lookup', () => {
     const env = { run: async () => ({}) } as unknown as Ai;
     expect(await searchAi('anything', env)).toEqual([]);
   });
+
+  test('keeps exact semantic matches first for catalog topics outside the query fixtures', async () => {
+    for (const id of ['github-releases', 'mobile-store-submission', 'miniapp', 'linting']) {
+      const entry = catalog.entries.find((item) => item.id === id)!;
+      const matches = await searchAi(entry.title, aiReturning(entry.vector));
+      expect(matches[0].id).toBe(id);
+      expect(matches[0].score).toBeCloseTo(1, 5);
+    }
+  });
+
+  test('caps direct callers at five results and honors smaller limits', async () => {
+    const entry = catalog.entries[0];
+    expect(await searchAi(entry.title, aiReturning(entry.vector), 50)).toHaveLength(5);
+    expect(await searchAi(entry.title, aiReturning(entry.vector), 2)).toHaveLength(2);
+  });
 });

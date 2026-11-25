@@ -11,7 +11,8 @@ state.
 
 Bearer tokens remain valid for read-only calls from CI and subagents. They
 cannot call write tools. This keeps the non-interactive path that cannot
-complete a browser login.
+complete a browser login. OpenCode has no static-token MCP entry; the token is
+used for eval and CD only (see ADR 0002).
 
 ## Considered options
 
