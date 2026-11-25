@@ -27,9 +27,10 @@ export class Deployment extends DurableObject<Env> {
     });
   }
 
-  async cancelApproval(): Promise<void> {
+  async closeUnconsumed(): Promise<void> {
     await this.ctx.storage.transaction(async (storage) => {
-      if ((await storage.get('state')) === 'approved') await storage.put('state', 'pending');
+      const state = await storage.get('state');
+      if (state === 'pending' || state === 'approved') await storage.put('state', 'failed');
     });
   }
 

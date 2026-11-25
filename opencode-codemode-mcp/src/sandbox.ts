@@ -12,7 +12,7 @@ export default {
     try {
       const result = await run(sdk);
       const json = JSON.stringify({ result: result === undefined ? null : result });
-      if (new TextEncoder().encode(json).byteLength > 65536) throw new Error("Result too large");
+      if (new TextEncoder().encode(json).byteLength > 16384) throw new Error("Result too large");
       return new Response(json, { headers: { "content-type": "application/json" } });
     } catch (error) {
       return Response.json({ error: String(error).slice(0, 4096) }, { status: 400 });

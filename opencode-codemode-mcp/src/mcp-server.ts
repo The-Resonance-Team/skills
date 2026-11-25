@@ -45,7 +45,10 @@ export async function handleMcp(
         return {
           isError: true,
           content: [
-            { type: 'text', text: error instanceof Error ? error.message : 'Execution failed' },
+            {
+              type: 'text',
+              text: error instanceof Error ? error.message.slice(0, 4096) : 'Execution failed',
+            },
           ],
         };
       }

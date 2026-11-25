@@ -45,7 +45,8 @@ scoped to the single configured operator. Cloudflare can recycle isolates at any
 time; isolate memory is not durable. Reusing an ID can also reuse memory, so do not
 use this single-operator design for separate tenants. A generated script has no
 direct network access, but it can call the explicitly supplied workflow capability.
-MCP responses are limited to 64 KiB; scripts to 32 KiB; requests to 64 KiB.
+Sandbox results are limited to 16 KiB, scripts to 32 KiB, and requests to 64 KiB.
+MCP protocol wrapping adds to the response size.
 The HTTP reader's lint override permits sequential reads because the size limit
 must be enforced before the next stream chunk is buffered.
 
@@ -85,8 +86,10 @@ Each approval is tied to the workflow ID, target account, Worker name, fixture
 version, the fixture bytes, and the upload metadata. The Durable Object records the deployment as `unknown` **before** the
 external write. It will not issue that write again after a crash or uncertain
 response. An `unknown` result requires manual investigation; do not automatically
-retry. If an approval request fails before the workflow receives the event, the
-human can resend it while the deployment is still approved.
+retry. Approval event delivery can itself have an unknown outcome. Check the
+workflow status before resending approval. Duplicate approval events cannot
+reuse a consumed deployment approval. Terminal workflows close unconsumed
+approvals on the next status or approval request.
 
 Changing the dynamic workflow source changes its ID. This prototype does not keep
 older runner versions; do not update it while workflows are waiting. A production

@@ -2,9 +2,12 @@ import { introspectWorkflow, runInDurableObject } from 'cloudflare:test';
 import { env, exports } from 'cloudflare:workers';
 import { describe, expect, it, vi } from 'vitest';
 import type { Deployment } from '../src/deployment';
+import type { Env } from '../src/env';
+import { approve } from '../src/workflow';
 
 const capability = exports.Capabilities({}) as unknown as {
   start(): Promise<{ id: string; fixtureHash: string }>;
+  status(id: string): Promise<{ state: string }>;
 };
 
 describe('deployment capability', () => {
@@ -28,6 +31,34 @@ describe('deployment capability', () => {
     expect(await deployment.approve((await deployment.status()).fixtureHash)).toBe(false);
   });
 
+  it('keeps approval when event delivery is uncertain during concurrent requests', async () => {
+    const id = crypto.randomUUID();
+    const deployment = env.DEPLOYMENTS.getByName(id);
+    await deployment.prepare();
+    const fixtureHash = (await deployment.status()).fixtureHash;
+    let calls = 0;
+    const testEnv = {
+      DEPLOYMENTS: env.DEPLOYMENTS,
+      WORKFLOWS: {
+        get: async () => ({
+          status: async () => ({ status: 'running' }),
+          sendEvent: async () => {
+            calls += 1;
+            if (calls === 1) throw new Error('Simulated lost acknowledgement');
+          },
+        }),
+      },
+    } as unknown as Env;
+    const request = () =>
+      new Request('https://worker.test/approve', {
+        method: 'POST',
+        body: JSON.stringify({ id, fixtureHash }),
+      });
+    const responses = await Promise.all([approve(request(), testEnv), approve(request(), testEnv)]);
+    expect(responses.map((response) => response.status).sort()).toEqual([200, 503]);
+    expect((await deployment.status()).state).toBe('approved');
+  });
+
   it('sends only one write during concurrent deployment calls', async () => {
     const deployment = env.DEPLOYMENTS.get(env.DEPLOYMENTS.newUniqueId());
     await deployment.prepare();
@@ -48,6 +79,39 @@ describe('deployment capability', () => {
     expect(result.outcomes).toEqual([{ state: 'unknown' }, { state: 'unknown' }]);
     expect(result.writes).toBe(1);
     expect(await deployment.approve((await deployment.status()).fixtureHash)).toBe(false);
+  });
+
+  it('reports a successful upload and only claims that settings are available', async () => {
+    const id = crypto.randomUUID();
+    const deployment = env.DEPLOYMENTS.getByName(id);
+    await deployment.prepare();
+    expect(await deployment.approve((await deployment.status()).fixtureHash)).toBe(true);
+    const outcome = await runInDurableObject(deployment, async (instance: Deployment) => {
+      const fetchMock = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async () => Response.json({ success: true }));
+      try {
+        return await instance.deploy();
+      } finally {
+        fetchMock.mockRestore();
+      }
+    });
+    expect(outcome).toEqual({ state: 'complete' });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => Response.json({ success: true, result: {} }));
+    try {
+      const service = exports.DeployService({}) as unknown as {
+        verify(id: string): Promise<unknown>;
+      };
+      expect(await service.verify(id)).toEqual({
+        state: 'complete',
+        check: 'settings_available',
+        fixtureVerified: false,
+      });
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('requires the human credential and matching digest before the workflow deploys', async () => {
@@ -78,6 +142,7 @@ describe('deployment capability', () => {
     const pending = await capability.start();
     const instances = await workflows.get();
     await instances[0].waitForStatus('errored');
+    expect((await capability.status(pending.id)).state).toBe('failed');
     const response = await exports.default.fetch('https://worker.test/approve', {
       method: 'POST',
       headers: {
@@ -87,6 +152,6 @@ describe('deployment capability', () => {
       body: JSON.stringify({ id: pending.id, fixtureHash: pending.fixtureHash }),
     });
     expect(response.status).toBe(409);
-    expect((await env.DEPLOYMENTS.getByName(pending.id).status()).state).toBe('pending');
+    expect((await env.DEPLOYMENTS.getByName(pending.id).status()).state).toBe('failed');
   }, 20000);
 });

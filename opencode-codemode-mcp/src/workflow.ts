@@ -20,7 +20,14 @@ export class FixtureWorkflow extends WorkflowEntrypoint {
 }
 `;
 async function runnerId(): Promise<string> {
-  const bytes = new TextEncoder().encode(runner);
+  const bytes = new TextEncoder().encode(
+    JSON.stringify({
+      runner,
+      compatibilityDate: '2026-11-25',
+      globalOutbound: null,
+      capability: 'deploy-v1',
+    }),
+  );
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -96,10 +103,16 @@ export class Capabilities extends WorkerEntrypoint<Env> {
 
   async status(id: string) {
     if (!/^[a-f0-9-]{36}$/.test(id)) throw new Error('Invalid workflow ID');
-    const record = await this.env.DEPLOYMENTS.getByName(id).status();
+    const deployment = this.env.DEPLOYMENTS.getByName(id);
+    let record = await deployment.status();
     if (record.state === 'missing') throw new Error('Workflow not found');
     const instance = await this.env.WORKFLOWS.get(id);
-    return { id, ...record, workflow: await instance.status() };
+    const workflow = await instance.status();
+    if (['complete', 'errored', 'terminated'].includes(workflow.status)) {
+      await deployment.closeUnconsumed();
+      record = await deployment.status();
+    }
+    return { id, ...record, workflow };
   }
 }
 
@@ -127,6 +140,7 @@ export async function approve(request: Request, env: Env): Promise<Response> {
   const instance = await env.WORKFLOWS.get(body.id);
   const workflow = await instance.status();
   if (['complete', 'errored', 'terminated'].includes(workflow.status)) {
+    await deployment.closeUnconsumed();
     return new Response('Workflow is no longer active', { status: 409 });
   }
   if (!(await deployment.approve(body.fixtureHash))) {
@@ -135,8 +149,7 @@ export async function approve(request: Request, env: Env): Promise<Response> {
   try {
     await instance.sendEvent({ type: 'approved', payload: {} });
   } catch {
-    await deployment.cancelApproval();
-    return new Response('Approval not delivered; inspect status before retry', { status: 409 });
+    return new Response('Approval delivery unknown; inspect status before retry', { status: 503 });
   }
   return Response.json(await deployment.status());
 }
