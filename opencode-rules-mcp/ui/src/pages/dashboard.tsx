@@ -2,6 +2,7 @@
 
 'use client';
 
+import { formatInTimeZone } from 'date-fns-tz';
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -86,7 +87,8 @@ function formatTime(value?: string): string {
     return '—';
   }
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  if (Number.isNaN(date.getTime())) return value;
+  return formatInTimeZone(date, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd HH:mm:ss');
 }
 
 function shortDigest(digest: string): string {

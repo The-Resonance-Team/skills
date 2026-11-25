@@ -8,7 +8,8 @@ import {
 
 import { handleDashboard } from './dashboard';
 import { handleMcp, type CallerAuth } from './mcp-server';
-import { s256, sha256 } from './auth-tokens';
+import { dashboardRecord } from './patches';
+import { s256 } from './auth-tokens';
 import type { Env } from './types';
 
 type ProviderEnv = Env & { OAUTH_PROVIDER?: OAuthHelpers };
@@ -110,16 +111,28 @@ const defaultHandler = {
         return new Response(null, { status: 302, headers: finished.headers });
       }
       const accessToken = await exchangeCode(env, code, finished.data.verifier);
-      const props = accessToken === null ? {} : await userInfo(env, accessToken);
+      if (accessToken === null) {
+        return new Response('Upstream token exchange failed', { status: 502 });
+      }
+      const props = await userInfo(env, accessToken);
+      if (props.email === undefined) {
+        return new Response('Upstream identity lookup failed', { status: 502 });
+      }
       const completed = await oauth.completeAuthorization({
         request: finished.request,
-        userId: props.email ?? 'unknown',
+        userId: props.email,
         metadata: {},
         scope: finished.request.scope,
         props,
       });
       finished.headers.set('Location', completed.redirectTo);
       return new Response(null, { status: 302, headers: finished.headers });
+    }
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      const token = url.searchParams.get('token') ?? '';
+      if ((await dashboardRecord(env.OAUTH_KV, token)) === null) {
+        return new Response('Invalid or expired dashboard token', { status: 401 });
+      }
     }
     return env.ASSETS.fetch(request);
   },
@@ -136,22 +149,26 @@ const apiHandler = {
         ? ['rules:read']
         : ctx.auth.scope;
     const needed = ['rules:read'];
+    // Adapter boundary: the provider types require a full auth record; our handler needs only scope.
     if (!needed.every((scope) => granted.includes(scope))) {
       return insufficientScope({ ...ctx.auth, scope: granted } as never, needed);
     }
-    let call: RpcCall | null = null;
+    let calls: RpcCall[] = [];
     if (request.method === 'POST') {
       try {
-        call = (await request.clone().json()) as RpcCall;
+        const parsed = (await request.clone().json()) as RpcCall | RpcCall[];
+        calls = Array.isArray(parsed) ? parsed : [parsed];
       } catch {
-        call = null;
+        calls = [];
       }
     }
-    const toolName = call?.method === 'tools/call' ? call.params?.name : undefined;
-    if (toolName !== undefined && writeTools.has(toolName) && !granted.includes('rules:write')) {
+    const wantsWrite = calls.some(
+      (call) => call.method === 'tools/call' && writeTools.has(call.params?.name ?? ''),
+    );
+    if (wantsWrite && !granted.includes('rules:write')) {
       return insufficientScope({ ...ctx.auth, scope: granted } as never, ['rules:write']);
     }
-    const auth: CallerAuth = { scope: granted, identity: ctx.props.email };
+    const auth: CallerAuth = { scope: granted };
     return handleMcp(request, env, auth);
   },
 };
@@ -160,6 +177,7 @@ export function createProvider(env: Env): OAuthProvider<ProviderEnv> {
   const resource = env.PUBLIC_URL.replace(/\/$/, '');
   return new OAuthProvider<ProviderEnv>({
     apiRoute: '/mcp',
+    // Adapter boundary: the SDK handler type does not expose the provider's augmented context.
     apiHandler: apiHandler as never,
     defaultHandler,
     authorizeEndpoint: '/authorize',
@@ -182,5 +200,3 @@ export function createProvider(env: Env): OAuthProvider<ProviderEnv> {
     },
   });
 }
-
-export { sha256 };

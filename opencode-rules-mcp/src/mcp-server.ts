@@ -15,7 +15,7 @@ import {
 import { catalog, getContent, getMetadata, maxMatches, searchAi } from './search';
 import type { Env } from './types';
 
-export type CallerAuth = { scope: string[]; identity?: string };
+export type CallerAuth = { scope: string[] };
 
 function text(value: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(value) }] };

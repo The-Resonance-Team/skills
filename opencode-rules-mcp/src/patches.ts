@@ -15,6 +15,10 @@ function dashKey(hash: string): string {
   return `dash:${hash}`;
 }
 
+function remainingTtl(record: DashboardToken): number {
+  return Math.max(1, Math.ceil((record.expiresAt - Date.now()) / 1000));
+}
+
 export async function putPatch(kv: KVNamespace, draft: PatchDraft): Promise<void> {
   await kv.put(patchKey(draft.id), JSON.stringify(draft));
 }
@@ -71,7 +75,7 @@ export async function addPatchToDashboard(
   const record = await dashboardRecord(kv, token);
   if (record === null) return;
   if (!record.patchIds.includes(patchId)) record.patchIds.push(patchId);
-  await kv.put(dashKey(token), JSON.stringify(record), { expirationTtl: day });
+  await kv.put(dashKey(token), JSON.stringify(record), { expirationTtl: remainingTtl(record) });
 }
 
 export async function decidePatch(

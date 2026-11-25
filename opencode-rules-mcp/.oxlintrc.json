@@ -35,6 +35,17 @@
       }
     },
     {
+      "files": ["ui/src/pages/dashboard.tsx"],
+      "rules": {
+        "max-lines": "off",
+        "import/no-duplicates": "off",
+        "react/set-state-in-effect": "off",
+        "react-perf/jsx-no-new-array-as-prop": "off",
+        "react-perf/jsx-no-new-function-as-prop": "off",
+        "react-perf/jsx-no-jsx-as-prop": "off"
+      }
+    },
+    {
       "files": ["**/*.{test,spec}.{ts,tsx}"],
       "plugins": ["jest", "vitest"],
       "rules": {
@@ -58,7 +69,6 @@
     "build/**",
     "www/**",
     "test-results/**",
-    "ui/**",
     ".expo/**",
     "**/next-env.d.ts"
   ]

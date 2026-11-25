@@ -84,6 +84,11 @@ bun test
 bun run build:check
 (cd ui && bun run build && bunx astryx doctor --built dist)
 bunx wrangler deploy --dry-run
+
+The `.oxlintrc.json` override for `ui/src/pages/dashboard.tsx` is deliberately
+scoped: the Astryx page template is longer than the 300-line cap, and its
+render props create arrays and callbacks inline. Astryx's own `doctor` checks
+component props and purity for this file.
 ```
 
 ## Evaluation
