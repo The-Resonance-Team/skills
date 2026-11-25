@@ -67,6 +67,17 @@ Cloudflare Free optimisation handoff and their implementation status.
 - Run the final Standards and Spec code review after the implementation diff.
   The second review pass is complete and its findings were resolved.
 
+Implementation is committed as `eb24918`. All local gates pass: formatter, lint,
+typecheck, native tests, Worker tests, catalog and recall checks, workflow guard,
+Wrangler dry-run, UI build, Astryx doctor, and modern-web-guidance legacy scan.
+The `REVIEWER_EMAILS` secret is set on the deployed Worker name.
+
+Deployment is blocked by the available Cloudflare credential: Wrangler receives
+`No access to the specified service` for `agent-rules-mcp`. The active Worker is
+therefore unchanged and the live smoke test has not run. Complete deployment
+through CD with an authorized Workers Script Edit token, then verify the active
+version tag and message before running the human-approved smoke test.
+
 ## Established engineering facts
 
 - Pin both Worker packages to published stable `bun@1.4.5` and restore
