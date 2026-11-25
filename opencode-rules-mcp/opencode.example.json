@@ -7,7 +7,7 @@
         "url": "https://YOUR-WORKER.workers.dev/mcp",
         "oauth": false,
         "headers": {
-          "Authorization": "Bearer {env:RULES_MCP_TOKEN}"
+          "Authorization": "Bearer {file:~/.config/opencode/rules-token.txt}"
         }
       }
     }

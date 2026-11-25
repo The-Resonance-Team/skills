@@ -41,10 +41,14 @@ Cloudflare MCP.
 
 ## OpenCode
 
-Copy `opencode.example.json` into your OpenCode config and set
-`RULES_MCP_TOKEN` in the environment. Keep the Code Mode server separate.
-Remove the `CONTEXT.md` URL from `instructions[]`; keep the profile. The tool
-descriptions carry the "when to call" instruction.
+Copy `opencode.example.json` into your OpenCode config. Put the token in
+`~/.config/opencode/rules-token.txt` with mode 600 and no trailing newline.
+Use `{file:...}`, not `{env:...}`: the persistent `opencode serve --service`
+process does not inherit variables exported in a later shell, so `{env:...}`
+resolves to an empty string and the server returns 401. Verify with
+`opencode mcp list`; it must print `rules connected`. Keep the Code Mode server
+separate. Remove the `CONTEXT.md` URL from `instructions[]`; keep the profile.
+The tool descriptions carry the "when to call" instruction.
 
 ## Limits
 
