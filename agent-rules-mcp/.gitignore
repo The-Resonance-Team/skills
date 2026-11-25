@@ -4,3 +4,4 @@
 node_modules/
 generated/pending.json
 generated/external-vectors.json
+generated/.draft-embeddings.json

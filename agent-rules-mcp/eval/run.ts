@@ -38,7 +38,7 @@ async function remote(query: string): Promise<Lookup> {
 
 async function local(query: string): Promise<Lookup> {
   const started = performance.now();
-  const matches = await searchAi(query, fixtureAi);
+  const { matches } = await searchAi(query, fixtureAi);
   return {
     ids: matches.map((match) => match.id),
     bytes: new TextEncoder().encode(JSON.stringify({ matches })).byteLength,

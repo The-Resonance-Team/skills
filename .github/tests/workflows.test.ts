@@ -6,7 +6,12 @@ type Job = {
   uses?: string;
   if?: string;
   with?: Record<string, string | boolean>;
-  steps?: Array<{ name?: string; run?: string; uses?: string }>;
+  steps?: Array<{
+    name?: string;
+    run?: string;
+    uses?: string;
+    with?: Record<string, string | boolean>;
+  }>;
 };
 type Workflow = {
   on: Record<string, unknown>;
@@ -39,8 +44,15 @@ describe('MCP workflow regression guards', () => {
     const job = workflow.jobs.check;
     expect(job['timeout-minutes']).toBe(15);
     const steps = job.steps ?? [];
+    const setup = steps.find((step) => step.uses?.includes('setup-bun'));
+    expect(setup?.with?.['bun-version-file']).toBe('${{ inputs.package }}/package.json');
+    expect(setup?.with?.['bun-version']).toBeUndefined();
     const deploy = steps.findIndex((step) => step.name === 'Deploy Worker');
     expect(deploy).toBeGreaterThan(0);
+    expect(steps[deploy].run).toContain('--tag "$GITHUB_SHA"');
+    expect(steps[deploy].run).toContain(
+      '--message "source=$SOURCE_DIGEST artifact=$ARTIFACT_DIGEST"',
+    );
     for (const command of ['bun run build:check', 'bun run eval:check', 'bun run test']) {
       const gate = steps.findIndex((step) => step.run?.includes(command));
       expect(gate).toBeGreaterThanOrEqual(0);

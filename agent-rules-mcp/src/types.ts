@@ -53,4 +53,5 @@ export type Env = {
   GITHUB_TOKEN: string;
   GITHUB_OWNER: string;
   GITHUB_REPO: string;
+  REVIEWER_EMAILS?: string;
 };

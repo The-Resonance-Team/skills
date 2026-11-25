@@ -2,13 +2,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { z } from 'zod';
 
-import { newToken, sha256 } from './auth-tokens';
+import { sha256 } from './auth-tokens';
 import type { PatchDraft } from './contracts';
-import { createDraftPullRequest } from './github';
 import { catalog, getContent, getMetadata, maxMatches, searchAi } from './search';
 import type { Env } from './types';
 
-export type CallerAuth = { scope: string[] };
+export type CallerAuth = { scope: string[]; clientId?: string; subject?: string };
 
 function text(value: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(value) }] };
@@ -39,7 +38,7 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
     'search_ai',
     {
       description:
-        'Call this before any code change. Finds the team rules and workflows relevant to the task by meaning. Returns at most five IDs with scores; then call get_metadata or get.',
+        'Call this before any code change. Finds the team rules and workflows relevant to the task by meaning. Returns at most five IDs with scores and a semantic or lexical mode; then call get_metadata or get.',
       inputSchema: {
         query: z.string().min(1).max(500),
         limit: z.number().int().min(1).max(maxMatches).optional(),
@@ -48,13 +47,15 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
         matches: z.array(
           z.object({ id: z.string(), kind: z.string(), scope: z.string(), score: z.number() }),
         ),
+        mode: z.enum(['semantic', 'lexical']),
+        warning: z.string().optional(),
       },
       annotations: { readOnlyHint: true },
     },
     async ({ query, limit }) => {
       try {
-        const matches = await searchAi(query, env.AI, limit);
-        return { structuredContent: { matches }, ...text({ matches }) };
+        const result = await searchAi(query, env.AI, limit);
+        return { structuredContent: result, ...text(result) };
       } catch (error) {
         return failure(error);
       }
@@ -130,7 +131,6 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
         id: z.string(),
         digest: z.string(),
         dashboardUrl: z.string(),
-        dashboardToken: z.string(),
       },
     },
     async ({ id, summary, content }) => {
@@ -138,23 +138,25 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
         requireWrite(auth);
         const entry = catalog.entries.find((item) => item.id === id);
         if (entry === undefined) throw new Error(`Unknown rule ID: ${id}`);
-        const patchId = newToken().slice(0, 16);
+        const requestKey = [auth.clientId ?? '', auth.subject ?? '', id, summary, content].join(
+          '\u0000',
+        );
+        const patchId = (await sha256(requestKey)).slice(0, 16);
         const draft: PatchDraft = {
           id: patchId,
           path: entry.path,
           before: entry.content,
           after: content,
           summary,
-          digest: await sha256(`${entry.path}\n${content}`),
+          digest: await sha256(`${entry.path}\n${entry.content}\n${content}`),
           status: 'pending',
           createdAt: new Date().toISOString(),
         };
-        const token = await env.PATCHES.getByName('approvals').propose(draft);
+        await env.PATCHES.getByName('approvals').propose(draft);
         const value = {
           id: patchId,
           digest: draft.digest,
-          dashboardUrl: `${env.PUBLIC_URL}/approve/${patchId}?token=${token}`,
-          dashboardToken: token,
+          dashboardUrl: `${env.PUBLIC_URL}/approve/${patchId}`,
         };
         return { structuredContent: value, ...text(value) };
       } catch (error) {
@@ -179,38 +181,17 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
     async ({ patchId, approvalId }) => {
       try {
         requireWrite(auth);
-        const store = env.PATCHES.getByName('approvals');
-        const patch = await store.claim(approvalId, patchId);
+        const patch = await env.PATCHES.getByName('approvals').claim(approvalId, patchId);
         if (patch === null) {
           throw new Error('Approval is invalid, used, or does not match the patch');
         }
-        const branch = `rules-mcp/${patch.id}`;
-        try {
-          const result = await createDraftPullRequest(
-            {
-              owner: env.GITHUB_OWNER,
-              repo: env.GITHUB_REPO,
-              base: 'main',
-              branch,
-              path: patch.path,
-              content: patch.after,
-              message: `rules: ${patch.summary}`,
-              title: `rules: ${patch.summary}`,
-              body: `Proposed by the rules MCP. Approval: ${approvalId}.\n\nDigest: ${patch.digest}`,
-            },
-            env.GITHUB_TOKEN,
-          );
-          await store.finish(patchId, result.htmlUrl);
-          const value = { patchId, state: 'open', pullRequestUrl: result.htmlUrl };
-          return { structuredContent: value, ...text(value) };
-        } catch (error) {
-          const value = {
-            patchId,
-            state: 'unknown',
-            message: `Pull request outcome unknown; inspect GitHub before retry. ${error instanceof Error ? error.message : ''}`,
-          };
-          return { structuredContent: value, ...text(value) };
-        }
+        const value = {
+          patchId,
+          state: patch.status,
+          ...(patch.pullRequestUrl ? { pullRequestUrl: patch.pullRequestUrl } : {}),
+          ...(patch.message ? { message: patch.message } : {}),
+        };
+        return { structuredContent: value, ...text(value) };
       } catch (error) {
         return failure(error);
       }

@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2.1.0
         with:
-          bun-version: latest
+          bun-version-file: ${{ inputs.package }}/package.json
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -99,4 +99,6 @@ jobs:
           printf '%s' "$MCP_TOKEN" | bunx wrangler secret put MCP_TOKEN
           printf '%s' "$ACCESS_CLIENT_SECRET" | bunx wrangler secret put ACCESS_CLIENT_SECRET
           printf '%s' "$GITHUB_TOKEN" | bunx wrangler secret put GITHUB_TOKEN
-          bunx wrangler deploy
+          SOURCE_DIGEST=$(bun -e 'console.log(JSON.parse(await Bun.file("generated/catalog.json").text()).sourceDigest)')
+          ARTIFACT_DIGEST=$(shasum -a 256 generated/catalog.json | cut -d ' ' -f 1)
+          bunx wrangler deploy --tag "$GITHUB_SHA" --message "source=$SOURCE_DIGEST artifact=$ARTIFACT_DIGEST"

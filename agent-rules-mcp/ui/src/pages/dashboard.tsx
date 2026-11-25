@@ -7,30 +7,27 @@ import { HStack, Layout, LayoutContent, VStack } from '@astryxdesign/core/Layout
 import { Heading, Text } from '@astryxdesign/core/Text';
 
 import type { Decision, PatchDraft } from '../../../src/contracts';
+import { attentionStatuses, submissionStatuses } from '../../../src/contracts';
 import { PatchGroup } from '../components/patch-group';
+import { formatEpoch } from '../lib/time';
 import { usePatches } from '../lib/use-patches';
 
 const emptyPatches: PatchDraft[] = [];
 
 export default function DashboardPage() {
-  const token = new URLSearchParams(window.location.search).get('token')?.trim() || null;
-  const { query, mutation } = usePatches(token);
+  const { query, mutation, renewal } = usePatches();
   const patches = query.data?.patches ?? emptyPatches;
-  const closed = query.data?.closed === true;
   const loadError = query.error?.message;
   const actionError = mutation.error?.message;
-  const pending = patches
-    .filter((patch) => patch.status === 'pending')
-    .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
-  const decided = patches
-    .filter((patch) => patch.status === 'approved' || patch.status === 'denied')
-    .sort((left, right) => (right.decidedAt ?? '').localeCompare(left.decidedAt ?? ''));
-  const unknown = patches
-    .filter((patch) => patch.status === 'unknown')
-    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  const refresh = () => {
-    if (!closed && !mutation.isPending) void query.refetch();
-  };
+  const needsSignIn = typeof loadError === 'string' && loadError.includes('401');
+  const pending = patches.filter((patch) => patch.status === 'pending');
+  const submitting = patches.filter((patch) =>
+    (submissionStatuses as readonly string[]).includes(patch.status),
+  );
+  const attention = patches.filter((patch) =>
+    (attentionStatuses as readonly string[]).includes(patch.status),
+  );
+  const denied = patches.filter((patch) => patch.status === 'denied');
   const decide = (patch: PatchDraft, decision: Decision) => {
     if (!mutation.isPending) mutation.mutate({ patchId: patch.id, decision });
   };
@@ -50,53 +47,51 @@ export default function DashboardPage() {
               <VStack gap={1}>
                 <Heading level={1}>Rule patch approvals</Heading>
                 <Text type="supporting" color="secondary">
-                  Review proposed rule changes before the Worker applies them.
+                  Review proposed rule changes before the Worker submits them.
                 </Text>
               </VStack>
-              {token ? (
-                <HStack gap={2} vAlign="center" wrap="wrap">
-                  <Badge label={`${pending.length} pending`} variant="warning" />
-                  <Badge
-                    label={`${decided.filter((patch) => patch.status === 'approved').length} approved`}
-                    variant="success"
-                  />
-                  <Badge
-                    label={`${decided.filter((patch) => patch.status === 'denied').length} denied`}
-                    variant="error"
-                  />
-                  <Badge label={`${unknown.length} unknown`} />
+              <HStack gap={2} vAlign="center" wrap="wrap">
+                <Badge label={`${pending.length} pending`} variant="warning" />
+                <Badge label={`${submitting.length} submitted`} variant="success" />
+                <Badge label={`${attention.length} need attention`} />
+                <Button
+                  label="Renew access"
+                  variant="secondary"
+                  size="sm"
+                  isLoading={renewal.isPending}
+                  clickAction={() => renewal.mutate()}
+                />
+              </HStack>
+            </HStack>
+            {query.data?.accessExpiresAt !== undefined ? (
+              <Text type="supporting" color="secondary">
+                Review access expires {formatEpoch(query.data.accessExpiresAt)}. Proposal review
+                deadlines are shown with each patch.
+              </Text>
+            ) : null}
+            {needsSignIn ? (
+              <Banner
+                status="error"
+                title="Reviewer sign-in required"
+                description="Sign in with an authorized Cloudflare Access identity to see proposals."
+                endContent={
+                  <Button label="Sign in" variant="primary" size="sm" href="/review/login" />
+                }
+              />
+            ) : null}
+            {loadError && !needsSignIn ? (
+              <Banner
+                status="error"
+                title="Could not load reviews"
+                description={loadError}
+                endContent={
                   <Button
-                    label="Refresh"
+                    label="Retry"
                     variant="secondary"
                     size="sm"
                     isLoading={query.isFetching}
-                    isDisabled={closed || mutation.isPending}
-                    clickAction={refresh}
+                    clickAction={() => void query.refetch()}
                   />
-                </HStack>
-              ) : null}
-            </HStack>
-            {!token ? (
-              <Banner
-                status="error"
-                title="Missing dashboard token"
-                description="Open the link returned with the rule patch proposal."
-              />
-            ) : null}
-            {closed ? (
-              <Banner
-                status="success"
-                title="All decisions recorded"
-                description="This dashboard link is now closed. Keep the approval IDs shown below to apply approved patches."
-              />
-            ) : null}
-            {loadError ? (
-              <Banner
-                status="error"
-                title="Could not load patches"
-                description={loadError}
-                endContent={
-                  <Button label="Retry" variant="secondary" size="sm" clickAction={refresh} />
                 }
               />
             ) : null}
@@ -110,17 +105,17 @@ export default function DashboardPage() {
                 dismissLabel="Dismiss"
               />
             ) : null}
-            {token && !query.isFetching && !loadError && patches.length === 0 ? (
+            {!loadError && !query.isFetching && patches.length === 0 ? (
               <EmptyState
                 title="No rule patches"
-                description="There are no patches to review for this token."
+                description="There are no proposals on the repository review board."
                 headingLevel={2}
                 actions={
-                  <Button label="Refresh" variant="secondary" size="sm" clickAction={refresh} />
+                  <Button label="Refresh" size="sm" clickAction={() => void query.refetch()} />
                 }
               />
             ) : null}
-            {token && patches.length > 0 ? (
+            {patches.length > 0 ? (
               <VStack gap={6}>
                 <PatchGroup
                   title="Undecided"
@@ -133,20 +128,30 @@ export default function DashboardPage() {
                 />
                 <Divider />
                 <PatchGroup
-                  title="Recently decided"
-                  description="Approved and denied patches, newest first."
-                  emptyLabel="No decisions have been recorded yet."
-                  patches={decided}
-                  showActions={false}
+                  title="Submitted"
+                  description="Approved patches and their draft pull requests."
+                  emptyLabel="No submitted patches yet."
+                  patches={submitting}
+                  showActions
                   badgeVariant="success"
                   {...groupActions}
                 />
                 <Divider />
                 <PatchGroup
-                  title="Unknown"
-                  description="Patches whose outcome could not be confirmed."
-                  emptyLabel="No patches in an unknown state."
-                  patches={unknown}
+                  title="Needs attention"
+                  description="Uncertain, stale, failed or expired submissions."
+                  emptyLabel="No patches need attention."
+                  patches={attention}
+                  showActions={false}
+                  badgeVariant="neutral"
+                  {...groupActions}
+                />
+                <Divider />
+                <PatchGroup
+                  title="Denied"
+                  description="Patches a reviewer declined."
+                  emptyLabel="No denied patches."
+                  patches={denied}
                   showActions={false}
                   badgeVariant="neutral"
                   {...groupActions}

@@ -6,8 +6,28 @@ export const catalog = data as unknown as Catalog;
 export const maxMatches = 5;
 export const maxContentBytes = 51200;
 
+export type SearchResult = {
+  matches: Match[];
+  mode: 'semantic' | 'lexical';
+  warning?: string;
+};
+
 const byId = new Map(catalog.entries.map((entry) => [entry.id, entry]));
 const vectors = new Map<string, Float32Array>();
+const maxCachedVectors = 128;
+
+export function cachedVectorCount(): number {
+  return vectors.size;
+}
+
+function cacheVector(key: string, value: Float32Array): Float32Array {
+  if (!vectors.has(key) && vectors.size >= maxCachedVectors) {
+    const oldest = vectors.keys().next().value;
+    if (oldest !== undefined) vectors.delete(oldest);
+  }
+  vectors.set(key, value);
+  return value;
+}
 const stopWords = new Set(
   'a an the with and or in on to for from of at by is as that this add build create run set up into using'.split(
     ' ',
@@ -55,6 +75,18 @@ function lexicalScores(query: string): Map<string, number> {
   );
 }
 
+export function lexicalSearch(query: string, limit = maxMatches): Match[] {
+  const count = Math.max(0, Math.min(Math.floor(limit), maxMatches));
+  return [...lexicalScores(query).entries()]
+    .filter(([, score]) => score > 0)
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, count)
+    .map(([id, score]) => {
+      const entry = byId.get(id)!;
+      return { id, kind: entry.kind, scope: entry.scope, score };
+    });
+}
+
 function decode(base64: string): Float32Array {
   const cached = vectors.get(base64);
   if (cached !== undefined) return cached;
@@ -64,8 +96,7 @@ function decode(base64: string): Float32Array {
     bytes[index] = binary.charCodeAt(index);
   }
   const decoded = new Float32Array(bytes.buffer);
-  vectors.set(base64, decoded);
-  return decoded;
+  return cacheVector(base64, decoded);
 }
 
 function cosine(left: Float32Array, right: Float32Array): number {
@@ -136,15 +167,23 @@ function searchRank(query: string, vector: Float32Array, limit: number): Match[]
   return selected;
 }
 
-export async function searchAi(query: string, ai: Ai, limit = maxMatches): Promise<Match[]> {
-  const response = await ai.run(catalog.model, {
-    input: [`task: search result | query: ${query}`],
-    dimensions: catalog.dimensions,
-    encoding_format: 'base64',
-  });
-  const embedding = (response as { data?: Array<{ embedding?: string }> }).data?.[0]?.embedding;
-  if (embedding === undefined) return [];
-  return searchRank(query, decode(embedding), limit);
+export async function searchAi(query: string, ai: Ai, limit = maxMatches): Promise<SearchResult> {
+  try {
+    const response = await ai.run(catalog.model, {
+      input: [`task: search result | query: ${query}`],
+      dimensions: catalog.dimensions,
+      encoding_format: 'base64',
+    });
+    const embedding = (response as { data?: Array<{ embedding?: string }> }).data?.[0]?.embedding;
+    if (embedding === undefined) throw new Error('The embedding response was empty');
+    return { matches: searchRank(query, decode(embedding), limit), mode: 'semantic' };
+  } catch {
+    return {
+      matches: lexicalSearch(query, limit),
+      mode: 'lexical',
+      warning: 'Semantic search is unavailable; showing lexical results.',
+    };
+  }
 }
 
 export function related(id: string): string[] {

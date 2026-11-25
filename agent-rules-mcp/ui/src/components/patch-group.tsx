@@ -1,6 +1,5 @@
 import { Badge } from '@astryxdesign/core/Badge';
 import { Button } from '@astryxdesign/core/Button';
-import { CodeBlock } from '@astryxdesign/core/CodeBlock';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { Link } from '@astryxdesign/core/Link';
 import { Table, proportional } from '@astryxdesign/core/Table';
@@ -9,8 +8,8 @@ import { Heading, Text } from '@astryxdesign/core/Text';
 import { useCallback, useMemo } from 'react';
 
 import type { Decision, PatchDraft } from '../../../src/contracts';
-import { buildUnifiedDiff } from '../lib/diff';
-import { formatTime } from '../lib/time';
+import { formatEpoch, formatTime } from '../lib/time';
+import { FileDiff } from './file-diff';
 
 interface PatchGroupProps {
   title: string;
@@ -94,7 +93,22 @@ export function PatchGroup({
                   Decided {formatTime(patch.decidedAt)}
                 </Text>
               ) : null}
+              {patch.expiresAt !== undefined ? (
+                <Text type="supporting" color="secondary">
+                  Review by {formatEpoch(patch.expiresAt)}
+                </Text>
+              ) : null}
             </HStack>
+            {patch.history?.at(-1)?.reviewer?.email ? (
+              <Text type="supporting" color="secondary">
+                Decided by {patch.history.at(-1)?.reviewer?.email}
+              </Text>
+            ) : null}
+            {patch.message ? (
+              <Text type="supporting" color="secondary">
+                {patch.message}
+              </Text>
+            ) : null}
             {patch.approvalId ? (
               <Text type="code" wordBreak="break-all">
                 Approval {patch.approvalId}
@@ -116,31 +130,9 @@ export function PatchGroup({
       },
       {
         key: 'diff',
-        header: 'Unified diff',
+        header: 'File diff',
         width: proportional(6),
-        renderCell: (patch) => {
-          const diff = buildUnifiedDiff(patch.before, patch.after, patch.path);
-          return diff ? (
-            <CodeBlock
-              code={diff}
-              language="markdown"
-              isDiff
-              title={patch.path}
-              hasLanguageLabel={false}
-              hasCopyButton={false}
-              isWrapped
-              isCollapsible
-              collapsibleThreshold={10}
-              size="sm"
-              width="100%"
-              container="section"
-            />
-          ) : (
-            <Text type="supporting" color="secondary">
-              No textual changes
-            </Text>
-          );
-        },
+        renderCell: (patch) => <FileDiff patch={patch} />,
       },
       {
         key: 'actions',

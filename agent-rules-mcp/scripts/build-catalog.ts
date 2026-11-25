@@ -5,8 +5,13 @@ import path from 'node:path';
 import type { Catalog, CatalogEntry, EntryKind } from '../src/types';
 
 const project = path.resolve(import.meta.dir, '..');
-const root = path.resolve(project, '..');
-const generated = path.join(project, 'generated');
+// A trusted builder on `main` can target a draft worktree without executing PR scripts.
+const root = process.env.SKILLS_ROOT
+  ? path.resolve(process.env.SKILLS_ROOT)
+  : path.resolve(project, '..');
+const generated = process.env.SKILLS_ROOT
+  ? path.join(root, 'agent-rules-mcp', 'generated')
+  : path.join(project, 'generated');
 const model = '@cf/google/embeddinggemma-2';
 const dimensions = 256;
 const check = process.argv.includes('--check');

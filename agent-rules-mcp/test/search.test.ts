@@ -1,6 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 
-import { catalog, getContent, getMetadata, related, searchAi } from '../src/search';
+import {
+  cachedVectorCount,
+  catalog,
+  getContent,
+  getMetadata,
+  lexicalSearch,
+  related,
+  searchAi,
+} from '../src/search';
 
 function aiReturning(embedding: string): Ai {
   return {
@@ -40,14 +48,17 @@ describe('rule lookup', () => {
   test('ranks the matching vector first', async () => {
     const audit = catalog.entries.find((entry) => entry.id === 'audit');
     expect(audit).toBeDefined();
-    const matches = await searchAi('audit a codebase', aiReturning(audit!.vector), 5);
+    const { matches } = await searchAi('audit a codebase', aiReturning(audit!.vector), 5);
     expect(matches[0].id).toBe('audit');
     expect(matches[0].score).toBeCloseTo(1, 5);
   });
 
   test('handles a missing embedding without throwing', async () => {
     const env = { run: async () => ({}) } as unknown as Ai;
-    expect(await searchAi('anything', env)).toEqual([]);
+    const result = await searchAi('github actions workflow', env);
+    expect(result.mode).toBe('lexical');
+    expect(result.warning).toContain('Semantic search is unavailable');
+    expect(result.matches.length).toBeGreaterThan(0);
   });
 
   test('keeps exact semantic matches first for catalog topics outside the query fixtures', async () => {
@@ -55,7 +66,7 @@ describe('rule lookup', () => {
     const results = await Promise.all(
       ids.map(async (id) => {
         const entry = catalog.entries.find((item) => item.id === id)!;
-        return { id, matches: await searchAi(entry.title, aiReturning(entry.vector)) };
+        return { id, matches: (await searchAi(entry.title, aiReturning(entry.vector))).matches };
       }),
     );
     for (const { id, matches } of results) {
@@ -66,7 +77,23 @@ describe('rule lookup', () => {
 
   test('caps direct callers at five results and honors smaller limits', async () => {
     const entry = catalog.entries[0];
-    expect(await searchAi(entry.title, aiReturning(entry.vector), 50)).toHaveLength(5);
-    expect(await searchAi(entry.title, aiReturning(entry.vector), 2)).toHaveLength(2);
+    expect((await searchAi(entry.title, aiReturning(entry.vector), 50)).matches).toHaveLength(5);
+    expect((await searchAi(entry.title, aiReturning(entry.vector), 2)).matches).toHaveLength(2);
+  });
+
+  test('finds lexical matches without inference', () => {
+    const matches = lexicalSearch('github actions workflow');
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches.map((match) => match.id)).toContain('github-actions');
+  });
+
+  test('bounds the decoded vector cache across distinct queries', async () => {
+    await Promise.all(
+      Array.from({ length: 200 }, (_, index) => {
+        const embedding = Buffer.alloc(256 * 4, index % 251).toString('base64');
+        return searchAi('cache bound query', aiReturning(embedding));
+      }),
+    );
+    expect(cachedVectorCount()).toBeLessThanOrEqual(128);
   });
 });

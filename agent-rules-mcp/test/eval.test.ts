@@ -15,7 +15,7 @@ describe('required recall release gate', () => {
 
   test('finds every unchanged required ID using the committed query vectors', async () => {
     const report = await evaluate(async (query) => ({
-      ids: (await searchAi(query, fixtureAi)).map((match) => match.id),
+      ids: (await searchAi(query, fixtureAi)).matches.map((match) => match.id),
       bytes: 0,
       wallMs: 0,
     }));

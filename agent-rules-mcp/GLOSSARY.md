@@ -33,24 +33,46 @@ mention. Router rows do not create citation relations.
 
 ## Rules MCP server
 
-The Worker that exposes rule discovery and retrieval as MCP tools.
+The service through which agents discover and retrieve the team's rules and
+workflows.
 
 ## Rule patch proposal
 
-A proposed change to a rule or workflow that has not been approved.
+A proposed change to a rule or workflow, together with its review decision.
+Approval permits submission but does not publish the change.
 
 ## Patch approval
 
-A human decision that permits one specific rule patch to become a pull request.
+A recorded reviewer decision that permits one specific rule patch to be submitted
+once. It does not permit submission of a changed diff.
+
+## Reviewer
+
+A person authorized to decide rule patch proposals and renew review access.
+
+## Patch submission
+
+A rule patch proposal submitted as a draft pull request for human review.
+
+## Submission attempt
+
+An effort to turn one approved rule patch into its draft pull request. Its outcome
+can remain uncertain until the submission is confirmed.
+
+## Rule publication
+
+A rule change becoming available through the rule catalog.
 
 ## Approval dashboard
 
-The page where a human reviews undecided, approved and denied rule patches.
+The repository's review board for rule patch proposals and their decision
+history.
 
 ## Dashboard token
 
-A capability that grants access to one approval dashboard until it expires or
-until every patch there is decided.
+A short-lived capability for one approval dashboard that also requires reviewer
+authorization. Renewing access preserves the proposals and their decision
+history.
 
 ## Authorization server
 

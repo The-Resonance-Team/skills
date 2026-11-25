@@ -9,51 +9,12 @@ import {
 import { handleDashboard } from './dashboard';
 import { handleMcp, type CallerAuth } from './mcp-server';
 import { s256 } from './auth-tokens';
+import { authorizeUrl, exchangeCode, userInfo } from './access-oidc';
 import type { Env } from './types';
 
 type ProviderEnv = Env & { OAUTH_PROVIDER?: OAuthHelpers };
 
 type AuthProps = { email?: string };
-
-function authorizeUrl(env: Env, state: string, challenge: string): string {
-  const url = new URL(env.ACCESS_AUTHORIZATION_URL);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('client_id', env.ACCESS_CLIENT_ID);
-  url.searchParams.set('redirect_uri', `${env.PUBLIC_URL}/callback`);
-  url.searchParams.set('scope', 'openid email profile');
-  url.searchParams.set('state', state);
-  url.searchParams.set('code_challenge', challenge);
-  url.searchParams.set('code_challenge_method', 'S256');
-  return url.toString();
-}
-
-async function exchangeCode(env: Env, code: string, verifier: string): Promise<string | null> {
-  const body = new URLSearchParams({
-    grant_type: 'authorization_code',
-    code,
-    code_verifier: verifier,
-    client_id: env.ACCESS_CLIENT_ID,
-    client_secret: env.ACCESS_CLIENT_SECRET,
-    redirect_uri: `${env.PUBLIC_URL}/callback`,
-  });
-  const response = await fetch(env.ACCESS_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
-  if (!response.ok) return null;
-  const tokens = (await response.json()) as { access_token?: string };
-  return tokens.access_token ?? null;
-}
-
-async function userInfo(env: Env, accessToken: string): Promise<AuthProps> {
-  const response = await fetch(env.ACCESS_USERINFO_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!response.ok) return {};
-  const info = (await response.json()) as { email?: string };
-  return { email: info.email };
-}
 
 const defaultHandler = {
   async fetch(request: Request, env: ProviderEnv): Promise<Response> {
@@ -127,12 +88,6 @@ const defaultHandler = {
       finished.headers.set('Location', completed.redirectTo);
       return new Response(null, { status: 302, headers: finished.headers });
     }
-    if (url.pathname === '/' || url.pathname === '/index.html') {
-      const token = url.searchParams.get('token') ?? '';
-      if ((await env.PATCHES.getByName('approvals').dashboard(token)) === null) {
-        return new Response('Invalid or expired dashboard token', { status: 401 });
-      }
-    }
     return env.ASSETS.fetch(request);
   },
 };
@@ -142,7 +97,11 @@ const writeTools = new Set(['propose_rule_patch', 'apply_rule_patch']);
 type RpcCall = { method?: string; params?: { name?: string } };
 
 const apiHandler = {
-  async fetch(request: Request, env: Env, ctx: { auth: { scope: string[] }; props: AuthProps }) {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: { auth: { scope: string[]; clientId?: string; userId?: string }; props: AuthProps },
+  ) {
     const granted =
       ctx.auth.scope.length === 0 && ctx.props.email === 'static-token'
         ? ['rules:read']
@@ -167,7 +126,11 @@ const apiHandler = {
     if (wantsWrite && !granted.includes('rules:write')) {
       return insufficientScope({ ...ctx.auth, scope: granted } as never, ['rules:write']);
     }
-    const auth: CallerAuth = { scope: granted };
+    const auth: CallerAuth = {
+      scope: granted,
+      clientId: ctx.auth.clientId,
+      subject: ctx.auth.userId,
+    };
     return handleMcp(request, env, auth);
   },
 };

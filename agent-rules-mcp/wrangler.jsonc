@@ -20,6 +20,7 @@
     "bindings": [{ "name": "PATCHES", "class_name": "ApprovalStore" }],
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApprovalStore"] }],
+  "triggers": { "crons": ["0 * * * *"] },
   "assets": {
     "directory": "ui/dist",
     "binding": "ASSETS",
