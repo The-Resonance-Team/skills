@@ -17,6 +17,11 @@ Guide for AI agents contributing to this repo. This file is read locally (by age
 2. `CONTEXT.md` is the single source of truth for the module index — update its table in the same commit when you add or rename a rule file. Never duplicate the table elsewhere (README points to it).
 3. Keep commit messages in the repo's existing conventional style (`feat:`, `fix:`, `chore:`).
 
+## Reference notes
+
+1. [free-resources/INDEX.md](./free-resources/INDEX.md) is the only shallow entry for optional reference notes. Open a provider file only when the task needs it.
+2. Do not add reference notes to the standing rule index in `CONTEXT.md`, except for the single link to `free-resources/INDEX.md`.
+
 ## Vocabulary
 
 All canonical terms (`Router`, `Rule module`, `Consumer`, `Instruction`) are defined in [`CONTEXT.md#Terms`](./CONTEXT.md#terms) — do not duplicate them here.
