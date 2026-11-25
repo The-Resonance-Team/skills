@@ -63,6 +63,8 @@ R2 egress remains free for direct R2 access.
 | Images delivery | Not on Free plan | $1/100,000 images/month |
 | Browser Run | 10 minutes/day; 3 concurrent browsers | 10 hours/month + 10 concurrent browsers, then $0.09/hour + $2.00/browser |
 | Stream | No free minutes | $5/1,000 minutes stored; $1/1,000 minutes delivered |
+| Email Sending to verified destination addresses | Free on every plan | No charge; sends do not count toward quota or daily sending limits |
+| Email Sending to arbitrary recipients | Not on Free plan | 3,000/month included, then $0.35/1,000 |
 
 ### 1.4 Observability
 
@@ -129,3 +131,5 @@ For shared Durable Objects and Vectorize caveats, see [Free limits](./free-limit
 - Zero Trust pricing: <https://www.cloudflare.com/plans/sase-zero-trust>
 - API limits: <https://developers.cloudflare.com/fundamentals/api/reference/limits/>
 - DNS record limits: <https://developers.cloudflare.com/dns/manage-dns-records/>
+- Email Service pricing: <https://developers.cloudflare.com/email-service/platform/pricing/>
+- Email Sending on Workers Free: <https://developers.cloudflare.com/changelog/post/2026-11-24-email-sending-workers-free>
