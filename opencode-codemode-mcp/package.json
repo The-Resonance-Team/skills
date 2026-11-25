@@ -9,6 +9,7 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
     "test": "bun test --check && bun test && vitest run",
+    "bench": "bun bench/benchmark.ts",
     "lint": "bun lint --no-script --max-warnings=0 --allow-unsupported",
     "format": "bun fmt",
     "format:check": "bun fmt --check"

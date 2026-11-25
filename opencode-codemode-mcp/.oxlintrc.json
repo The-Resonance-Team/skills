@@ -28,8 +28,12 @@
   },
   "overrides": [
     {
-      "files": ["src/http.ts"],
+      "files": ["src/http.ts", "bench/benchmark.ts"],
       "rules": { "no-await-in-loop": "off" }
+    },
+    {
+      "files": ["bench/benchmark.ts"],
+      "rules": { "no-console": "off" }
     },
     {
       "files": ["**/*.{test,spec}.{ts,tsx}"],

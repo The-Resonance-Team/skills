@@ -9,5 +9,11 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["worker-configuration.d.ts", "src/**/*.ts", "test/**/*.ts", "test-worker/**/*.ts"]
+  "include": [
+    "worker-configuration.d.ts",
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "test-worker/**/*.ts",
+    "bench/**/*.ts"
+  ]
 }

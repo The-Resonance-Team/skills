@@ -127,3 +127,14 @@ TEST_WORKER_URL=http://127.0.0.1:18788 bun test
 
 The invalid account ID prevents this local test configuration from issuing a
 deployment. Do not point these tests at a real deployment.
+
+## Measurement
+
+Run `bun run bench` for the local baseline. Set `TEST_WORKER_URL` and
+`CODEMODE_MCP_TOKEN` to add warm and cold measurements through the full MCP and
+sandbox path. The report gives wall time, sandbox-reported CPU time, response
+bytes, and approximate tokens. It does not include Cloudflare cost. Use the
+dashboard or analytics API for cost figures. The sequential benchmark loop is
+excluded from the no-await-in-loop lint rule; the calls must run in order to
+measure warm and cold paths. Console output is excluded because this script is
+a command-line report.
