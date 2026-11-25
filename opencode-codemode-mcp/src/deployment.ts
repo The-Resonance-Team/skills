@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import type { Env } from './env';
-import { fixture, fixtureVersion } from './fixture';
+import { fixture, fixtureHash, fixtureMetadata, fixtureVersion, manifestHash } from './fixture';
 
 type State = 'pending' | 'approved' | 'complete' | 'failed' | 'unknown';
 
@@ -12,50 +12,74 @@ export class Deployment extends DurableObject<Env> {
       target: this.env.TARGET_WORKER_NAME,
       account: this.env.TARGET_ACCOUNT_ID,
       fixture: fixtureVersion,
+      fixtureHash: await fixtureHash(),
+      manifestHash: await manifestHash(),
     });
   }
 
-  async approve(): Promise<void> {
-    const state = await this.ctx.storage.get<State>('state');
-    if (state !== 'pending' && state !== 'approved')
-      throw new Error('Deployment cannot be approved');
-    await this.ctx.storage.put('state', 'approved');
+  async approve(expectedHash: string): Promise<boolean> {
+    return this.ctx.storage.transaction(async (storage) => {
+      const state = await storage.get<State>('state');
+      if (state !== 'pending' && state !== 'approved') return false;
+      if (!expectedHash || expectedHash !== (await storage.get('fixtureHash'))) return false;
+      await storage.put('state', 'approved');
+      return true;
+    });
   }
 
-  async status(): Promise<{ state: State | 'missing'; target: string; fixture: string }> {
+  async cancelApproval(): Promise<void> {
+    await this.ctx.storage.transaction(async (storage) => {
+      if ((await storage.get('state')) === 'approved') await storage.put('state', 'pending');
+    });
+  }
+
+  async status(): Promise<{
+    state: State | 'missing';
+    target: string;
+    account: string;
+    fixture: string;
+    fixtureHash: string;
+    manifestHash: string;
+  }> {
     return {
       state: (await this.ctx.storage.get<State>('state')) ?? 'missing',
       target: (await this.ctx.storage.get<string>('target')) ?? '',
+      account: (await this.ctx.storage.get<string>('account')) ?? '',
       fixture: (await this.ctx.storage.get<string>('fixture')) ?? '',
+      fixtureHash: (await this.ctx.storage.get<string>('fixtureHash')) ?? '',
+      manifestHash: (await this.ctx.storage.get<string>('manifestHash')) ?? '',
     };
   }
 
   async deploy(): Promise<{ state: State }> {
-    const state = await this.ctx.storage.get<State>('state');
-    if (state !== 'approved') {
-      if (state === 'complete' || state === 'failed' || state === 'unknown') return { state };
-      throw new Error('Deployment is not approved');
-    }
     const { TARGET_ACCOUNT_ID, TARGET_WORKER_NAME, CLOUDFLARE_API_TOKEN } = this.env;
-    if (
-      !/^[a-f0-9]{32}$/i.test(TARGET_ACCOUNT_ID) ||
-      !/^codemode-test-[a-z0-9-]+$/.test(TARGET_WORKER_NAME) ||
-      !CLOUDFLARE_API_TOKEN ||
-      (await this.ctx.storage.get('target')) !== TARGET_WORKER_NAME ||
-      (await this.ctx.storage.get('account')) !== TARGET_ACCOUNT_ID ||
-      (await this.ctx.storage.get('fixture')) !== fixtureVersion
-    ) {
-      throw new Error('Invalid test target configuration');
-    }
-    await this.ctx.storage.put('state', 'unknown');
+    const currentFixture = await fixtureHash();
+    const currentManifest = await manifestHash();
+    const claim = await this.ctx.storage.transaction(async (storage) => {
+      const state = await storage.get<State>('state');
+      if (state !== 'approved') {
+        if (state === 'complete' || state === 'failed' || state === 'unknown') return state;
+        throw new Error('Deployment is not approved');
+      }
+      if (
+        !/^[a-f0-9]{32}$/i.test(TARGET_ACCOUNT_ID) ||
+        !/^codemode-test-[a-z0-9-]+$/.test(TARGET_WORKER_NAME) ||
+        !CLOUDFLARE_API_TOKEN ||
+        (await storage.get('target')) !== TARGET_WORKER_NAME ||
+        (await storage.get('account')) !== TARGET_ACCOUNT_ID ||
+        (await storage.get('fixture')) !== fixtureVersion ||
+        (await storage.get('fixtureHash')) !== currentFixture ||
+        (await storage.get('manifestHash')) !== currentManifest
+      ) {
+        await storage.put('state', 'failed');
+        return 'failed';
+      }
+      await storage.put('state', 'unknown');
+      return 'claimed';
+    });
+    if (claim !== 'claimed') return { state: claim };
     const form = new FormData();
-    form.set(
-      'metadata',
-      JSON.stringify({
-        main_module: 'index.js',
-        compatibility_date: '2026-11-25',
-      }),
-    );
+    form.set('metadata', JSON.stringify(fixtureMetadata));
     form.set(
       'index.js',
       new Blob([fixture], { type: 'application/javascript+module' }),
@@ -70,8 +94,12 @@ export class Deployment extends DurableObject<Env> {
         body: form,
         redirect: 'error',
       });
-      if (response.ok) outcome = 'complete';
-      else if (response.status >= 400 && response.status < 500) outcome = 'failed';
+      if (response.ok) {
+        const body: unknown = await response.json();
+        if (body && typeof body === 'object' && 'success' in body && body.success === true) {
+          outcome = 'complete';
+        }
+      }
     } catch {
       outcome = 'unknown';
     }

@@ -49,6 +49,15 @@ describe.skipIf(!url)('local Worker integration', () => {
     expect(blocked.result.content[0].text).toContain('not permitted');
   });
 
+  test('limits error output from generated code', async () => {
+    const response = await rpc('tools/call', {
+      name: 'execute',
+      arguments: { code: 'export default async () => { throw "x".repeat(200000); }' },
+    });
+    expect(response.result.isError).toBe(true);
+    expect(response.result.content[0].text.length).toBeLessThan(10000);
+  });
+
   test('a deployment starts pending and cannot be approved by the MCP credential', async () => {
     const started = await rpc('tools/call', {
       name: 'execute',

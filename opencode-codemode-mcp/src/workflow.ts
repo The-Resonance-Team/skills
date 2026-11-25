@@ -2,9 +2,10 @@ import {
   createDynamicWorkflowEntrypoint,
   wrapWorkflowBinding,
 } from '@cloudflare/dynamic-workflows';
-import type { WorkflowRunner } from '@cloudflare/dynamic-workflows';
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import type { Env } from './env';
+
+type WorkflowRunner = import('@cloudflare/dynamic-workflows').WorkflowRunner;
 
 const runner = `
 import { WorkflowEntrypoint } from "cloudflare:workers";
@@ -56,15 +57,28 @@ export class DeployService extends WorkerEntrypoint<Env> {
     if (record.state !== 'complete') throw new Error('Deployment not complete');
     const account = this.env.TARGET_ACCOUNT_ID;
     const target = this.env.TARGET_WORKER_NAME;
-    if (!/^[a-f0-9]{32}$/i.test(account) || target !== record.target) {
+    if (
+      !/^[a-f0-9]{32}$/i.test(account) ||
+      account !== record.account ||
+      target !== record.target
+    ) {
       throw new Error('Deployment target changed');
     }
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/${target}/settings`,
+      `https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/${target}/script-settings`,
       { headers: { Authorization: `Bearer ${this.env.CLOUDFLARE_API_TOKEN}` }, redirect: 'error' },
     );
     if (!response.ok) throw new Error(`Status check failed: ${response.status}`);
-    return { state: 'complete', verified: true };
+    const payload: unknown = await response.json();
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      !('success' in payload) ||
+      payload.success !== true
+    ) {
+      throw new Error('Status check returned an invalid response');
+    }
+    return { state: 'complete', check: 'settings_available', fixtureVerified: false };
   }
 }
 
@@ -102,13 +116,27 @@ export async function approve(request: Request, env: Env): Promise<Response> {
     typeof body !== 'object' ||
     !('id' in body) ||
     typeof body.id !== 'string' ||
-    !/^[a-f0-9-]{36}$/.test(body.id)
+    !/^[a-f0-9-]{36}$/.test(body.id) ||
+    !('fixtureHash' in body) ||
+    typeof body.fixtureHash !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(body.fixtureHash)
   ) {
     return new Response('Invalid workflow ID', { status: 400 });
   }
   const deployment = env.DEPLOYMENTS.getByName(body.id);
-  await deployment.approve();
   const instance = await env.WORKFLOWS.get(body.id);
-  await instance.sendEvent({ type: 'approved', payload: {} });
+  const workflow = await instance.status();
+  if (['complete', 'errored', 'terminated'].includes(workflow.status)) {
+    return new Response('Workflow is no longer active', { status: 409 });
+  }
+  if (!(await deployment.approve(body.fixtureHash))) {
+    return new Response('Approval does not match the pending deployment', { status: 409 });
+  }
+  try {
+    await instance.sendEvent({ type: 'approved', payload: {} });
+  } catch {
+    await deployment.cancelApproval();
+    return new Response('Approval not delivered; inspect status before retry', { status: 409 });
+  }
   return Response.json(await deployment.status());
 }

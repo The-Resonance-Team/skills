@@ -14,7 +14,8 @@ Paid; requests, CPU, and unique Worker identities can incur charges.
 
 The only privileged capability is a fixed test deployment workflow. It uploads the
 bundled fixture to the configured `codemode-test-*` Worker, waits for a separate
-human approval, and checks the Worker's settings. It cannot read the local workspace,
+human approval, and checks whether the Worker's settings are available. That check
+does not verify the deployed fixture bytes or detect a later overwrite. It cannot read the local workspace,
 access arbitrary Cloudflare API endpoints, or choose a target. The sandbox is not
 a general MCP proxy.
 
@@ -45,6 +46,8 @@ time; isolate memory is not durable. Reusing an ID can also reuse memory, so do 
 use this single-operator design for separate tenants. A generated script has no
 direct network access, but it can call the explicitly supplied workflow capability.
 MCP responses are limited to 64 KiB; scripts to 32 KiB; requests to 64 KiB.
+The HTTP reader's lint override permits sequential reads because the size limit
+must be enforced before the next stream chunk is buffered.
 
 ## Local setup
 
@@ -69,15 +72,17 @@ account spending controls and additional WAF/Access controls before exposure.
 
 ## Human approval
 
-`workflow.start()` only creates a pending request. Read its ID, target, and
-fixture version before approval. The workflow waits up to one day. A human with
+`workflow.start()` only creates a pending request. Read its ID, account, target,
+fixture version, SHA-256 fixture digest, and manifest digest before approval.
+The manifest covers the fixture and upload metadata. The workflow waits up to one day. A human with
 the **separate** `APPROVAL_TOKEN` sends a POST to `/approve` with
-`{"id":"WORKFLOW_ID"}` and an `Authorization: Bearer ...` header. Keep this
+`{"id":"WORKFLOW_ID","fixtureHash":"FIXTURE_SHA256"}` and an
+`Authorization: Bearer ...` header. Keep this
 credential off the OpenCode machine and out of model context. A person must use
 their own trusted client to submit the request; an MCP credential cannot approve.
 
-Each approval is tied to the workflow ID, target account, Worker name, and fixture
-version. The Durable Object records the deployment as `unknown` **before** the
+Each approval is tied to the workflow ID, target account, Worker name, fixture
+version, the fixture bytes, and the upload metadata. The Durable Object records the deployment as `unknown` **before** the
 external write. It will not issue that write again after a crash or uncertain
 response. An `unknown` result requires manual investigation; do not automatically
 retry. If an approval request fails before the workflow receives the event, the
@@ -97,8 +102,10 @@ local tools.
 
 ## Verification
 
-`bun run typecheck`, `bun test`, and `bunx wrangler deploy --dry-run` check the
-project without deploying. Integration tests require a running local Worker:
+`bun run lint`, `bun run typecheck`, `bun run test`, and
+`bunx wrangler deploy --dry-run` check the project without deploying. The test
+command includes Cloudflare Workers tests with mocked outbound requests. The
+separate HTTP integration tests require a running local Worker:
 
 ```sh
 bunx wrangler dev --local --port 18788 \

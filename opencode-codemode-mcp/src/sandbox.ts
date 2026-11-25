@@ -15,7 +15,7 @@ export default {
       if (new TextEncoder().encode(json).byteLength > 65536) throw new Error("Result too large");
       return new Response(json, { headers: { "content-type": "application/json" } });
     } catch (error) {
-      return Response.json({ error: String(error) }, { status: 400 });
+      return Response.json({ error: String(error).slice(0, 4096) }, { status: 400 });
     }
   }
 };`;
