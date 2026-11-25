@@ -5,7 +5,9 @@
     "": {
       "name": "opencode-rules-mcp",
       "dependencies": {
+        "@cloudflare/workers-oauth-provider": "^1.3.0",
         "@modelcontextprotocol/sdk": "^1.32.2",
+        "jose": "^6.2.18",
         "zod": "^4.3.6",
       },
       "devDependencies": {
@@ -30,6 +32,8 @@
     "@cloudflare/workerd-linux-arm64": ["@cloudflare/workerd-linux-arm64@1.20261123.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-LLsuu+ZIcppjDNU4A9QGIbotqkiSXP2QF3HD9kCaateQUxB5GOJ6GRx+qKIu/1A+UBDKR3JutXpT9kKWe5PzEA=="],
 
     "@cloudflare/workerd-windows-64": ["@cloudflare/workerd-windows-64@1.20261123.1", "", { "os": "win32", "cpu": "x64" }, "sha512-/zl++/e/0JLMttdz4lUsCo58NaLKQZKancI2YPciaLH9iLHq6UOP2BQZt+dejGRrV9UxdpPYPHUYU9Km5PcALA=="],
+
+    "@cloudflare/workers-oauth-provider": ["@cloudflare/workers-oauth-provider@1.3.0", "", {}, "sha512-W0ENMmQ7LujqOKmvbMdYMI9bF+yC1KonfABZJbsK45fW/bjuGEwu3Uu52le9wIUFctm7d8x4emxzpLChQL9IXg=="],
 
     "@cloudflare/workers-types": ["@cloudflare/workers-types@5.20261125.1", "", {}, "sha512-FBFIY/srJZZtZjxyH56AerZ0ZDbhr6Ifa5O707q0f7YzHmzqd+2zD3vG6d8cAcSDL/heJvsP7eEAsYRLFd7jpw=="],
 

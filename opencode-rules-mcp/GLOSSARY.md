@@ -34,3 +34,32 @@ mention. Router rows do not create citation relations.
 ## Rules MCP server
 
 The Worker that exposes rule discovery and retrieval as MCP tools.
+
+## Rule patch proposal
+
+A proposed change to a rule or workflow that has not been approved.
+
+## Patch approval
+
+A human decision that permits one specific rule patch to become a pull request.
+
+## Approval dashboard
+
+The page where a human reviews undecided, approved and denied rule patches.
+
+## Dashboard token
+
+A capability that grants access to one approval dashboard until it expires or
+until every patch there is decided.
+
+## Authorization server
+
+The component that signs a user in and issues access tokens.
+
+## Resource server
+
+The component that accepts access tokens and serves the protected tools.
+
+## OAuth scope
+
+A named permission attached to an access token.

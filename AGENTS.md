@@ -13,7 +13,9 @@ Guide for AI agents contributing to this repo. This file is read locally (by age
 
 ## Editing workflow
 
-1. Edit `rules/*.md` directly, commit directly to `main` (trunk-based, no PR workflow for this repo).
+1. Edit `rules/*.md` directly. For a human edit from a local clone, ask whether to push
+   directly to `main` or open a PR. A patch proposed by the rules MCP always opens a
+   draft PR; it never pushes to `main`.
 2. `CONTEXT.md` is the single source of truth for the module index — update its table in the same commit when you add or rename a rule file. Never duplicate the table elsewhere (README points to it).
 3. Keep commit messages in the repo's existing conventional style (`feat:`, `fix:`, `chore:`).
 

@@ -38,5 +38,16 @@ export type Match = {
 
 export type Env = {
   AI: Ai;
+  ASSETS: Fetcher;
+  OAUTH_KV: KVNamespace;
   MCP_TOKEN: string;
+  PUBLIC_URL: string;
+  ACCESS_AUTHORIZATION_URL: string;
+  ACCESS_TOKEN_URL: string;
+  ACCESS_USERINFO_URL: string;
+  ACCESS_CLIENT_ID: string;
+  ACCESS_CLIENT_SECRET: string;
+  GITHUB_TOKEN: string;
+  GITHUB_OWNER: string;
+  GITHUB_REPO: string;
 };

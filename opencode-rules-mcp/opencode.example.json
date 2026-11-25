@@ -5,7 +5,15 @@
       "rules": {
         "type": "remote",
         "url": "https://YOUR-WORKER.workers.dev/mcp",
+        "oauth": {
+          "scope": "rules:read"
+        }
+      },
+      "rules-ci": {
+        "type": "remote",
+        "url": "https://YOUR-WORKER.workers.dev/mcp",
         "oauth": false,
+        "disabled": true,
         "headers": {
           "Authorization": "Bearer {file:~/.config/opencode/rules-token.txt}"
         }

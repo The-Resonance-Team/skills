@@ -41,12 +41,29 @@ fetch step with semantic discovery and exact retrieval.
 4. **Evals** — ten real tasks, run through subagents, comparing semantic search
    with raw-URL fetch on rule selection, tokens and wall time.
 
+## Auth and rule writes
+
+| Area | Decision |
+| --- | --- |
+| Identity | Cloudflare Access signs the human in. The Worker issues its own scoped tokens. |
+| Registration | CIMD first, DCR fallback. No client secret on a new device. |
+| Scopes | `rules:read` for all current tools; `rules:write` for propose and apply. Bearer tokens never write. |
+| Proposal | `propose_rule_patch` stores a draft in KV and returns a dashboard URL plus token. |
+| Dashboard | Astryx UI served as static assets from the same Worker. Token-only access. Lists pending, approved and denied patches. |
+| Decision | Allow or Deny creates a one-use record bound to patch digest. Dashboard token expires in one day or when all patches are decided. |
+| Apply | `apply_rule_patch` consumes the approval record and opens a draft PR from `rules-mcp/<id>` to `main`. |
+| Failure | A GitHub failure is recorded as `unknown`. No blind retry and no auto-merge. |
+| Browser | An OpenCode plugin in this project opens the dashboard URL after a proposal. |
+| Repo rule | Manual edits ask direct push or PR. Worker patches always open a PR. |
+| Credentials | Fine-grained GitHub PAT and Access OIDC app; created through the browser with human help. |
+
 ## Non-goals
 
 - No Vectorize index, Dynamic Workers, workflow, or Durable Object.
 - No rule rewriting or automatic edits to rule files.
-- No fourth MCP tool and no eager injection of rule files.
+- No fourth read tool, no eager injection of rule files.
 - No shared token with the Code Mode MCP server.
+- No direct `main` write, auto-merge, or silent rule edit from the Worker.
 
 ## Open items
 

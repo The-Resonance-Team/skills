@@ -17,6 +17,7 @@
     "scripts/**/*.ts",
     "test/**/*.ts",
     "eval/**/*.ts",
+    "plugin/**/*.ts",
     "generated/**/*.json"
   ]
 }

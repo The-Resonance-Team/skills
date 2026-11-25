@@ -2,11 +2,29 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { z } from 'zod';
 
-import { getContent, getMetadata, maxMatches, searchAi } from './search';
+import { newToken, sha256 } from './auth-tokens';
+import type { PatchDraft } from './contracts';
+import { createDraftPullRequest } from './github';
+import {
+  addPatchToDashboard,
+  consumeApproval,
+  getOrCreateDashboardToken,
+  getPatch,
+  putPatch,
+} from './patches';
+import { catalog, getContent, getMetadata, maxMatches, searchAi } from './search';
 import type { Env } from './types';
+
+export type CallerAuth = { scope: string[]; identity?: string };
 
 function text(value: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(value) }] };
+}
+
+function requireWrite(auth: CallerAuth): void {
+  if (!auth.scope.includes('rules:write')) {
+    throw new Error('This tool requires OAuth scope rules:write');
+  }
 }
 
 function failure(error: unknown) {
@@ -21,7 +39,7 @@ function failure(error: unknown) {
   };
 }
 
-export async function handleMcp(request: Request, env: Env): Promise<Response> {
+export async function handleMcp(request: Request, env: Env, auth: CallerAuth): Promise<Response> {
   const server = new McpServer({ name: 'team-rules', version: '0.1.0' });
 
   server.registerTool(
@@ -99,6 +117,115 @@ export async function handleMcp(request: Request, env: Env): Promise<Response> {
       try {
         const result = getContent(id);
         return { structuredContent: result, ...text(result) };
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'propose_rule_patch',
+    {
+      description:
+        'Call this to propose a change to a rule or workflow. Requires rules:write. Stores a draft and opens the approval dashboard; no pull request is created until a human approves.',
+      inputSchema: {
+        id: z.string().max(64),
+        summary: z.string().min(1).max(500),
+        content: z.string().min(1).max(200000),
+      },
+      outputSchema: {
+        id: z.string(),
+        digest: z.string(),
+        dashboardUrl: z.string(),
+        dashboardToken: z.string(),
+      },
+    },
+    async ({ id, summary, content }) => {
+      try {
+        requireWrite(auth);
+        const entry = catalog.entries.find((item) => item.id === id);
+        if (entry === undefined) throw new Error(`Unknown rule ID: ${id}`);
+        const patchId = newToken().slice(0, 16);
+        const draft: PatchDraft = {
+          id: patchId,
+          path: entry.path,
+          before: entry.content,
+          after: content,
+          summary,
+          digest: await sha256(`${entry.path}\n${content}`),
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        };
+        await putPatch(env.OAUTH_KV, draft);
+        const token = await getOrCreateDashboardToken(env.OAUTH_KV);
+        await addPatchToDashboard(env.OAUTH_KV, token, patchId);
+        const value = {
+          id: patchId,
+          digest: draft.digest,
+          dashboardUrl: `${env.PUBLIC_URL}/approve/${patchId}?token=${token}`,
+          dashboardToken: token,
+        };
+        return { structuredContent: value, ...text(value) };
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'apply_rule_patch',
+    {
+      description:
+        'Call this only after a human approved a patch in the dashboard. Requires rules:write and a one-use approval ID. Opens a draft pull request; never pushes to main.',
+      inputSchema: { patchId: z.string().max(64), approvalId: z.string().max(64) },
+      outputSchema: {
+        patchId: z.string(),
+        state: z.string(),
+        pullRequestUrl: z.string().optional(),
+        message: z.string().optional(),
+      },
+    },
+    async ({ patchId, approvalId }) => {
+      try {
+        requireWrite(auth);
+        const patch = await getPatch(env.OAUTH_KV, patchId);
+        if (patch === null) throw new Error(`Unknown patch: ${patchId}`);
+        if (patch.status !== 'approved')
+          throw new Error(`Patch is ${patch.status}; a human must approve it first`);
+        if (!(await consumeApproval(env.OAUTH_KV, approvalId, patchId, patch.digest))) {
+          throw new Error('Approval is invalid, used, or does not match the patch');
+        }
+        const branch = `rules-mcp/${patch.id}`;
+        try {
+          const result = await createDraftPullRequest(
+            {
+              owner: env.GITHUB_OWNER,
+              repo: env.GITHUB_REPO,
+              base: 'main',
+              branch,
+              path: patch.path,
+              content: patch.after,
+              message: `rules: ${patch.summary}`,
+              title: `rules: ${patch.summary}`,
+              body: `Proposed by the rules MCP. Approval: ${approvalId}.\n\nDigest: ${patch.digest}`,
+            },
+            env.GITHUB_TOKEN,
+          );
+          patch.status = 'approved';
+          patch.pullRequestUrl = result.htmlUrl;
+          await putPatch(env.OAUTH_KV, patch);
+          const value = { patchId, state: 'open', pullRequestUrl: result.htmlUrl };
+          return { structuredContent: value, ...text(value) };
+        } catch (error) {
+          patch.status = 'unknown';
+          await putPatch(env.OAUTH_KV, patch);
+          const value = {
+            patchId,
+            state: 'unknown',
+            message: `Pull request outcome unknown; inspect GitHub before retry. ${error instanceof Error ? error.message : ''}`,
+          };
+          return { structuredContent: value, ...text(value) };
+        }
       } catch (error) {
         return failure(error);
       }

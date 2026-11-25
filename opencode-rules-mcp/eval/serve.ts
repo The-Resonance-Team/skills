@@ -21,7 +21,31 @@ const ai = {
   }),
 } as unknown as Ai;
 
-const env: Env = { AI: ai, MCP_TOKEN: process.env.RULES_MCP_TOKEN ?? 'testing-rules-token' };
+const emptyKv = {
+  get: async () => null,
+  put: async () => undefined,
+  delete: async () => undefined,
+  list: async () => ({ keys: [] }),
+} as unknown as KVNamespace;
+const emptyAssets = {
+  fetch: async () => new Response('Not found', { status: 404 }),
+} as unknown as Fetcher;
+const env = {
+  AI: ai,
+  ASSETS: emptyAssets,
+  OAUTH_KV: emptyKv,
+  MCP_TOKEN: process.env.RULES_MCP_TOKEN ?? 'testing-rules-token',
+  PUBLIC_URL: 'http://127.0.0.1:18790',
+  ACCESS_AUTHORIZATION_URL: '',
+  ACCESS_TOKEN_URL: '',
+  ACCESS_USERINFO_URL: '',
+  ACCESS_CLIENT_ID: '',
+  ACCESS_CLIENT_SECRET: '',
+  GITHUB_TOKEN: '',
+  GITHUB_OWNER: '',
+  GITHUB_REPO: '',
+} as Env;
+const ctx = {} as ExecutionContext;
 const port = Number(process.env.EVAL_PORT ?? 18790);
 
 Bun.serve({
@@ -29,7 +53,7 @@ Bun.serve({
   async fetch(request) {
     const path = new URL(request.url).pathname;
     if (path === '/ready') return Response.json({ cases: cases.length });
-    return route(request, env);
+    return route(request, env, ctx);
   },
 });
 

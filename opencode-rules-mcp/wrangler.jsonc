@@ -3,11 +3,30 @@
   "name": "opencode-rules-mcp",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-25",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "secrets": {
-    "required": ["MCP_TOKEN"],
+    "required": ["MCP_TOKEN", "ACCESS_CLIENT_SECRET", "GITHUB_TOKEN"],
   },
   "ai": {
     "binding": "AI",
+  },
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "b3fd7e4d53d74aa7b64c90b9b1c1a533",
+    },
+  ],
+  "assets": {
+    "directory": "ui/dist",
+    "binding": "ASSETS",
+  },
+  "vars": {
+    "PUBLIC_URL": "https://opencode-rules-mcp.xirothedev.workers.dev",
+    "ACCESS_AUTHORIZATION_URL": "https://the-resonance-team.cloudflareaccess.com/cdn-cgi/access/sso/oidc/4d2621110ed15b427082d49f2bf75c4646f0bb5f0923ff85f628652228065f4c/authorization",
+    "ACCESS_TOKEN_URL": "https://the-resonance-team.cloudflareaccess.com/cdn-cgi/access/sso/oidc/4d2621110ed15b427082d49f2bf75c4646f0bb5f0923ff85f628652228065f4c/token",
+    "ACCESS_USERINFO_URL": "https://the-resonance-team.cloudflareaccess.com/cdn-cgi/access/sso/oidc/4d2621110ed15b427082d49f2bf75c4646f0bb5f0923ff85f628652228065f4c/userinfo",
+    "ACCESS_CLIENT_ID": "4d2621110ed15b427082d49f2bf75c4646f0bb5f0923ff85f628652228065f4c",
+    "GITHUB_OWNER": "The-Resonance-Team",
+    "GITHUB_REPO": "skills",
   },
 }

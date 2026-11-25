@@ -58,6 +58,7 @@
     "build/**",
     "www/**",
     "test-results/**",
+    "ui/**",
     ".expo/**",
     "**/next-env.d.ts"
   ]
