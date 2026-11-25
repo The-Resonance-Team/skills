@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2.1.0
         with:
-          bun-version-file: ${{ inputs.package }}/package.json
+          bun-version: latest
 
       - name: Verify native lint support
         working-directory: ${{ runner.temp }}
