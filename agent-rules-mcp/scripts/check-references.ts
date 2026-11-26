@@ -18,6 +18,23 @@ export function checkRuleReferences(sources: Source[]): void {
           throw new Error(`${source.path}: unknown rule number ${match[1]} #${number[1]}`);
         }
       }
+      for (const range of match[3].matchAll(/#?(\d+)\s*[–-]\s*#?(\d+)(?![a-z\d])/gi)) {
+        const start = Number(range[1]);
+        const end = Number(range[2]);
+        const present = target.rules.filter((rule) => {
+          if (!/^\d+$/.test(rule.number)) return false;
+          const number = Number(rule.number);
+          return number >= start && number <= end;
+        }).length;
+        if (
+          !Number.isSafeInteger(start) ||
+          !Number.isSafeInteger(end) ||
+          start > end ||
+          present !== end - start + 1
+        ) {
+          throw new Error(`${source.path}: unknown rule number range ${match[1]} ${range[0]}`);
+        }
+      }
     }
   }
 }

@@ -151,6 +151,26 @@ describe('catalog builder CLI', () => {
     expect(stderr.toLowerCase()).toContain('missing embedding');
   });
 
+  test('rejects a numbered range when an interior rule is missing', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source(
+        '<!-- rule: first -->\n1. **First** — See `rules/example.md` #1–#3.\n<!-- rule: third -->\n3. **Third** — Text.',
+      ),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain('unknown rule number range rules/example.md #1–#3');
+  });
+
+  test('accepts a numbered range when every rule exists', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source(
+        '<!-- rule: first -->\n1. **First** — See `rules/example.md` #1–#3.\n<!-- rule: second -->\n2. **Second** — Text.\n<!-- rule: third -->\n3. **Third** — Text.',
+      ),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr.toLowerCase()).toContain('missing embedding');
+  });
+
   test('rejects metadata that cannot fit in a complete MCP page', async () => {
     const { exitCode, stderr } = await checkSource(
       source('<!-- rule: example -->\n1. **Example** — Text.', 'example', 'a'.repeat(10000)),
