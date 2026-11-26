@@ -30,5 +30,8 @@ MCP and its metadata index. Existing raw URLs for individual `rules/*.md` and
 - [`free-resources/INDEX.md`](./free-resources/INDEX.md) — optional reference notes.
 - [`AGENTS.md`](./AGENTS.md) — contributor rules and catalog authoring contract.
 
+After a test audit, an optional retrospective can capture newly identified
+rules or checks.
+
 Skill, profile, and configuration metadata is tracked in
 [#20](https://github.com/The-Resonance-Team/skills/issues/20).

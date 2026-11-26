@@ -74,6 +74,8 @@ type RpcResponse = {
         id: string;
         steps: Array<{ title: string; content: string }>;
       };
+      total?: number;
+      nextOffset?: number | null;
     };
     isError?: boolean;
     content?: Array<{ text: string }>;
@@ -152,6 +154,7 @@ describe('HTTP surface', () => {
     expect(entry?.rules?.[0].id).toMatch(/^rule:general:[a-z0-9-]+$/);
     expect(entry?.rules?.[0].title).toBeTruthy();
     expect(entry?.rules?.[0]).not.toHaveProperty('content');
+    expect(entry?.rules?.some((rule) => rule.id === 'rule:general:project-context')).toBe(true);
   });
 
   test('filters and pages the metadata index by category and priority', async () => {
@@ -165,6 +168,24 @@ describe('HTTP surface', () => {
     expect(entries.every((entry) => entry.priority === 'mandatory')).toBe(true);
   });
 
+  test('signals when the metadata index has more pages', async () => {
+    const response = await rpc('tools/call', { name: 'get_metadata', arguments: {} });
+    const result = response.result?.structuredContent;
+    expect(result?.metadata?.length).toBeLessThan(result?.total ?? 0);
+    expect(result?.nextOffset).toBe(result?.metadata?.length);
+  });
+
+  test('caps large index requests and keeps the next page visible', async () => {
+    const response = await rpc('tools/call', {
+      name: 'get_metadata',
+      arguments: { priority: 'mandatory', limit: 100 },
+    });
+    const result = response.result?.structuredContent;
+    expect(Buffer.byteLength(JSON.stringify(result))).toBeLessThanOrEqual(18000);
+    expect(result?.nextOffset).toBe(result?.metadata?.length);
+    expect(result?.nextOffset).not.toBeNull();
+  });
+
   test('returns only the requested rule and its scope', async () => {
     const response = await rpc('tools/call', {
       name: 'get_rule',
@@ -176,6 +197,16 @@ describe('HTTP surface', () => {
     expect(rule?.priority).toBe('mandatory');
     expect(rule?.content).toContain('docker compose up -d postgres');
     expect(rule?.content).not.toContain('Vietnamese diacritics');
+  });
+
+  test('does not attach the next section heading to a rule', async () => {
+    const response = await rpc('tools/call', {
+      name: 'get_rule',
+      arguments: { id: 'rule:general:module-context' },
+    });
+    expect(response.result?.structuredContent?.rule?.content).not.toContain(
+      '## Environment & language',
+    );
   });
 
   test('makes the mandatory library baseline table discoverable as individual rules', async () => {
@@ -204,6 +235,15 @@ describe('HTTP surface', () => {
       titles.indexOf('2. Stack up with seeded data'),
     );
     expect(workflow?.steps.some((step) => step.content.includes('every app answers'))).toBe(true);
+  });
+
+  test('refuses a full-file response that exceeds the safe client limit', async () => {
+    const response = await rpc('tools/call', {
+      name: 'get',
+      arguments: { id: 'frontend' },
+    });
+    expect(response.result?.isError).toBe(true);
+    expect(response.result?.content?.[0].text).toContain('too large');
   });
 
   test('returns at most five semantic matches', async () => {

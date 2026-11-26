@@ -4,15 +4,8 @@ import { z } from 'zod';
 
 import { sha256 } from './auth-tokens';
 import type { PatchDraft } from './contracts';
-import {
-  catalog,
-  getContent,
-  getMetadata,
-  getRule,
-  getWorkflow,
-  maxMatches,
-  searchAi,
-} from './search';
+import { getMetadataPage } from './metadata-page';
+import { catalog, getContent, getRule, getWorkflow, maxMatches, searchAi } from './search';
 import type { Env } from './types';
 
 export type CallerAuth = { scope: string[]; clientId?: string; subject?: string };
@@ -74,7 +67,7 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
     'get_metadata',
     {
       description:
-        'List catalog metadata and rule or workflow indexes without loading content. Inspect all mandatory entries for applicability before coding.',
+        'List catalog metadata and indexes. Follow nextOffset until null; inspect all mandatory entries for applicability before coding.',
       inputSchema: {
         id: z.string().max(64).optional(),
         kind: z.enum(['rule', 'workflow']).optional(),
@@ -98,14 +91,15 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
             references: z.array(z.string()),
           }),
         ),
+        total: z.number().int().min(0),
+        nextOffset: z.number().int().min(0).nullable(),
       },
       annotations: { readOnlyHint: true },
     },
     ({ id, kind, priority, offset, limit }) => {
       try {
-        const found = getMetadata(id, { kind, priority, offset, limit });
-        const metadata = Array.isArray(found) ? found : [found];
-        return { structuredContent: { metadata }, ...text({ metadata }) };
+        const page = getMetadataPage({ id, kind, priority, offset, limit });
+        return { structuredContent: page, ...text(page) };
       } catch (error) {
         return failure(error);
       }
@@ -174,7 +168,7 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
     'get',
     {
       description:
-        'Call this to load the full markdown of one rule or workflow. Use an ID from search_ai or get_metadata. Long files are truncated with a flag.',
+        'Load a complete source file by module ID. Oversized responses fail; use individual rules or ordered workflows instead.',
       inputSchema: { id: z.string().max(64) },
       outputSchema: {
         id: z.string(),

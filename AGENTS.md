@@ -9,7 +9,7 @@ Guide for AI agents contributing to this repo. This file is read locally (by age
 3. **Mandatory rules only** — These files encode standards an agent must follow, not advice. If something is optional, leave it out (YAGNI).
 4. **Concrete, not abstract** — Each rule states the pattern and the anti-pattern, with a code example where the rule is about code. Rules proven by real incidents (like the `data?.data as Type` unwrap bug) get worked examples.
 5. **Catalog metadata** — Require `id`, `name`, `kind`, `description`, `scope`, and `priority`. Stable IDs must not change when a rule is reordered. Record removed or replaced IDs in `agent-rules-mcp/id-migrations.json`. Each rule is limited to 1,000 `o200k_base` tokens; each workflow to 10,000.
-6. **Keep it short** — A rule file that passes ~100 lines should be split: either trim, or create a new module (`rules/<domain>.md`) for a distinct surface.
+6. **Keep it short** — A rule file with ~100 lines of rule content should be split: either trim, or create a new module (`rules/<domain>.md`) for a distinct surface. Do not count metadata, ID anchors, or blank lines.
 
 ## Editing workflow
 

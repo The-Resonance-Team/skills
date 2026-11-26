@@ -29,7 +29,7 @@ A catalog entry ranked as similar to a query.
 ## Citation relation
 
 A directed link from one catalog entry to another, derived from a file-path
-mention. Router rows do not create citation relations.
+mention in source content.
 
 ## Rules MCP server
 

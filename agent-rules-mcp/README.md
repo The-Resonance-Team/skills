@@ -9,13 +9,14 @@ does not inject rule files at session start.
 - `search_ai(query, limit?)` — returns at most five IDs with similarity scores.
 - `get_metadata(id?, kind?, priority?, offset?, limit?)` — lists the catalog and
   each rule or workflow index without loading the body. Page through all mandatory
-  entries and assess their scopes before coding. Load module context and each
-  applicable rule.
+  entries by following `nextOffset` until it is `null`; assess their scopes before
+  coding. Load module context and each applicable rule.
 - `get_rule(id)` — returns one numbered rule by stable slug ID, with scope,
   priority, and references.
 - `get_workflow(id)` — returns the complete workflow as ordered instructions, or
   an error if it exceeds the safe response size.
-- `get(id)` — returns one full rule or workflow, capped at 51,200 bytes.
+- `get(id)` — returns one full source file if it fits safely; otherwise fails
+  without returning partial content.
 - `propose_rule_patch(id, summary, content)` — requires `rules:write`. Stores a
   draft and returns a review URL. Repeated identical requests return the same
   proposal. No PR yet.
@@ -151,18 +152,19 @@ component props and purity for this file.
 
 ## Regenerating a draft branch
 
-A Worker-created rule PR is a draft. Before marking it ready, a maintainer
-regenerates its committed artifacts with credentials held only in a trusted
-shell:
+A Worker-created rule PR is a draft. Before marking it ready, use a separate,
+trusted checkout of `main` with its dependencies installed. Keep credentials
+in the trusted shell:
 
 ```sh
-git show main:agent-rules-mcp/scripts/regenerate-draft.ts > /tmp/regenerate-draft.ts
 DRAFT_DIR=/path/to/draft/worktree \
 CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... \
-bun /tmp/regenerate-draft.ts
+bun /path/to/trusted/skills/agent-rules-mcp/scripts/regenerate-draft.ts
 ```
 
-The trusted script uses the builder from `main` and reads draft files as data.
+The trusted checkout supplies the builder, tokenizer, and dependencies from
+`main`. Verify that checkout is trusted and clean before running it. The builder
+reads draft files as data.
 It obtains genuine embeddings only for missing retrieval inputs and never runs
 PR scripts with credentials. Commit `generated/catalog.json` and
 `generated/embeddings.json` on the draft branch, then mark it ready. CI runs

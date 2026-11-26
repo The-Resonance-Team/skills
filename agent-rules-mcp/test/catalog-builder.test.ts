@@ -106,4 +106,44 @@ priority: mandatory
     expect(stderr).toContain('rule:example:oversized');
     expect(stderr).toContain('maximum is 1000');
   });
+
+  test('does not interpret a numbered example in a code fence as a catalog rule', async () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'rules-catalog-'));
+    roots.push(root);
+    mkdirSync(path.join(root, 'rules'));
+    mkdirSync(path.join(root, 'workflows'));
+    mkdirSync(path.join(root, 'agent-rules-mcp/generated'), { recursive: true });
+    writeFileSync(
+      path.join(root, 'rules/example.md'),
+      [
+        '---',
+        'id: example',
+        'name: Example',
+        'kind: rule',
+        'description: Example rule',
+        'scope: All projects',
+        'priority: mandatory',
+        '---',
+        '# Example',
+        '<!-- rule: example -->',
+        '1. **Example** — Follow this pattern:',
+        '```md',
+        '1. **A sample list item** — Not a team rule.',
+        '```',
+        '',
+      ].join('\n'),
+    );
+    const result = Bun.spawn(['bun', 'scripts/build-catalog.ts', '--check'], {
+      cwd: path.join(import.meta.dir, '..'),
+      env: { ...process.env, SKILLS_ROOT: root, CLOUDFLARE_API_TOKEN: '' },
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+    const [exitCode, stderr] = await Promise.all([
+      result.exited,
+      new Response(result.stderr).text(),
+    ]);
+    expect(exitCode).not.toBe(0);
+    expect(stderr.toLowerCase()).toContain('missing embedding');
+  });
 });

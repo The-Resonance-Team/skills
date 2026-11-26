@@ -117,6 +117,3 @@ Categories: `test` (low-value test), `slop` (narrating comment / commented-out c
 
 <!-- rule: implement -->
 30. **Implement** — Apply fixes per the rules: replace slop tests covering live behavior with behavioral tests in the same pass; delete only duplicates and constant pins. Remove narrating comments and commented-out code. Remove or reason suppression directives; move legitimate carve-outs to scoped config overrides. Re-run format, lint, typecheck, and tests after applying. Update the audit file's status column.
-
-<!-- rule: retro-optional -->
-31. **Retro (optional)** — Run `retro` to capture new rules or checks the audit exposed.

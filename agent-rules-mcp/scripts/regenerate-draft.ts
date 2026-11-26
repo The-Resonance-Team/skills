@@ -3,10 +3,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 /**
- * Trusted maintainer command. Copy this file from main into a trusted directory:
- *   git show main:agent-rules-mcp/scripts/regenerate-draft.ts > /tmp/regenerate-draft.ts
- * Then run it with DRAFT_DIR pointing at the draft worktree. PR scripts are never
- * executed; only this trusted script and the trusted builder read PR files as data.
+ * Run this script from a trusted main checkout with dependencies installed, with
+ * DRAFT_DIR pointing at the draft worktree. PR scripts are never executed; the
+ * trusted builder and its dependencies read draft files only as data.
  */
 const draft = process.env.DRAFT_DIR;
 if (draft === undefined || draft.length === 0) {

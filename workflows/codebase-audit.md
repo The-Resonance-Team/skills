@@ -9,11 +9,9 @@ priority: "mandatory"
 
 # Codebase Audit Workflow
 
-Audit every source file against `rules/audit.md` using one subagent per slice, then fix from an approved report. Fetch the checklist first:
-
-```
-https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/audit.md
-```
+Audit every source file against `rules/audit.md` using one subagent per slice,
+then fix from an approved report. Use the rules MCP to load the checklist from
+the rule index first.
 
 ## Process
 
@@ -26,7 +24,7 @@ List source directories and packages (`ls`, `package.json` workspaces). Partitio
 Run one subagent per slice, in parallel. Each dispatch prompt carries five things:
 
 1. The slice's paths.
-2. The checklist (paste the fetched `rules/audit.md`, or its URL).
+2. The checklist (paste the applicable `rules/audit.md` rules or their MCP IDs).
 3. The report format below.
 4. The slice's type (frontend, Prisma, API, i18n, or general) so the subagent applies the matching slice-type checklist entries.
 5. The comment rubric in `rules/audit.md` #4, with a `file:line` verdict for every comment in the slice.

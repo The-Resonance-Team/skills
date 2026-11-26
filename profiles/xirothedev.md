@@ -6,7 +6,7 @@ Portable standing instructions for all devices. Loaded via native `instructions[
 
 Before coding, use `agent-rules-mcp` to page through the mandatory rule and workflow metadata and identify every entry whose scope applies. Inspect the rule indexes, load each applicable module's context and rules by stable ID, and load applicable workflows as ordered steps. Search the catalog for additional relevant guidance. Follow mandatory guidance over recommended guidance and higher-level instructions over team guidance.
 
-When equally ranked applicable rules conflict, stop the affected work, show the conflict, and ask the user to choose. Propose the agreed rule patch for human approval; the published catalog changes only after merge and deployment. An unattended agent must stop rather than guess.
+When equally ranked applicable rules conflict, stop the affected work, show the conflict, and ask the user to choose. Once the user resolves the current task, continue and propose the agreed rule patch for human approval; the published catalog changes only after merge and deployment. An unattended agent must stop rather than guess.
 
 If the MCP is unavailable, report the outage and pause affected coding work. Use an individual raw rule URL only when the user explicitly directs it.
 

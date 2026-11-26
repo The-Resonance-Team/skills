@@ -11,11 +11,8 @@ priority: "mandatory"
 
 A codebase that fires thousands of lint findings enforces nothing — the signal is gone. Burn the backlog to zero, then keep it there with a ceiling. This procedure was run end-to-end on a four-app monorepo (5.2k findings → 0, 78 rules un-parked, one surface at a time).
 
-Fetch `rules/linting.md` first and set the repo up per its scope and config rules:
-
-```
-https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/linting.md
-```
+Use the rules MCP to inspect the `rules/linting.md` index. Load its applicable
+rules and set the repo up per its scope and config rules.
 
 ## Doctrine: park → ratchet → un-park
 

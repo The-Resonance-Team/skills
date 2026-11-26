@@ -1,10 +1,11 @@
 import data from '../generated/catalog.json';
 
+import { requireSafeResponse } from './response-limit';
+
 import type { Catalog, CatalogEntry, EntryKind, Match, Metadata, Priority } from './types';
 
 export const catalog = data as unknown as Catalog;
 export const maxMatches = 5;
-export const maxContentBytes = 51200;
 
 export type SearchResult = {
   matches: Match[];
@@ -230,7 +231,9 @@ export function getRule(id: string) {
   for (const entry of catalog.entries) {
     const rule = entry.rules.find((item) => item.id === id);
     if (rule !== undefined) {
-      return { ...rule, path: entry.path, scope: entry.scope, priority: entry.priority };
+      const result = { ...rule, path: entry.path, scope: entry.scope, priority: entry.priority };
+      requireSafeResponse({ rule: result });
+      return result;
     }
   }
   throw new Error(`Unknown rule ID: ${id}`);
@@ -249,11 +252,7 @@ export function getWorkflow(id: string) {
     references: entry.references,
     steps: entry.steps,
   };
-  if (new TextEncoder().encode(JSON.stringify({ workflow })).byteLength > 18000) {
-    throw new Error(
-      'Workflow is too large to return safely; stop until complete retrieval is supported.',
-    );
-  }
+  requireSafeResponse({ workflow });
   return workflow;
 }
 
@@ -265,14 +264,7 @@ export function getContent(id: string): {
 } {
   const entry = byId.get(id);
   if (entry === undefined) throw new Error(`Unknown rule ID: ${id}`);
-  const bytes = new TextEncoder().encode(entry.content);
-  if (bytes.byteLength <= maxContentBytes) {
-    return { id: entry.id, path: entry.path, content: entry.content, truncated: false };
-  }
-  return {
-    id: entry.id,
-    path: entry.path,
-    content: new TextDecoder().decode(bytes.slice(0, maxContentBytes)),
-    truncated: true,
-  };
+  const result = { id: entry.id, path: entry.path, content: entry.content, truncated: false };
+  requireSafeResponse(result);
+  return result;
 }
