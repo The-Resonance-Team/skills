@@ -7,10 +7,11 @@ does not inject rule files at session start.
 ## Tools
 
 - `search_ai(query, limit?)` — returns at most five IDs with similarity scores.
-- `get_metadata(id?, kind?, priority?, offset?, limit?)` — lists the catalog and
-  each rule or workflow index without loading the body. Page through all mandatory
-  entries by following `nextOffset` until it is `null`; assess their scopes before
-  coding. Load module context and each applicable rule.
+- `get_metadata(id?, kind?, priority?, offset?, limit?, itemOffset?, itemLimit?)`
+  — lists catalog summaries without loading bodies. Follow `nextOffset` until it
+  is `null`. For each applicable entry, request its ID and follow `nextItemOffset`
+  until it is `null` to inspect its complete rule or workflow index. Load module
+  context and each applicable rule.
 - `get_rule(id)` — returns one numbered rule by stable slug ID, with scope,
   priority, and references.
 - `get_workflow(id)` — returns the complete workflow as ordered instructions, or
@@ -118,6 +119,8 @@ using OpenAI's `o200k_base` encoding.
 `bun run build:check` uses only committed embedding vectors and fails if they are
 missing; it does not call Workers AI. A maintainer generates missing vectors in a
 trusted environment and commits the catalog and cache before PR validation.
+The builder also rejects a rule or index item that cannot fit in a complete MCP
+response. Response checks include both the text and structured forms.
 
 ## Limits
 

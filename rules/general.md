@@ -24,7 +24,7 @@ Applies to every project in the organization.
 <!-- rule: contextmd-glossarymd-and-des -->
 3. **`CONTEXT.md`, `GLOSSARY.md` & `DESIGN.md` separation of concerns** — Read the repo's `GLOSSARY.md` first and use its exact domain terms; call out any term conflict immediately. Define a term by its domain essence, not by its storage or deployment mechanism; keep the mechanism in an ADR. Precedent: Graveshift 2026-11 — `Project` was defined by an env-supplied scope value until the owner clarified it is a console-created entity with one numeric id shared with Sentry. Keep every `GLOSSARY.md` strictly a pure glossary of domain concepts (never dump CSS tokens, responsive rules, component folder conventions, or copy tables into `GLOSSARY.md`). Put all UI/UX design specifications, tokens, icon rules, component naming, responsive rules, and user-facing copy tables in root `DESIGN.md` and point `AGENTS.md` to `DESIGN.md` (`rules/frontend.md` #21).
 <!-- rule: project-context -->
-3a. **Project context** — Read the project's `CONTEXT.md` files when present and use their domain language.
+3a. **Project context** — Read the project's `CONTEXT.md` files when present and use their domain language. Do not substitute the team catalog for project context.
 <!-- rule: vietnamese-diacritics -->
 4. **Vietnamese diacritics** — Always use accurate thanh điệu (diacritics) in Vietnamese copy and comments. Verify before committing.
 

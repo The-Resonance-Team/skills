@@ -67,13 +67,15 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
     'get_metadata',
     {
       description:
-        'List catalog metadata and indexes. Follow nextOffset until null; inspect all mandatory entries for applicability before coding.',
+        'List catalog metadata. Follow nextOffset until null, then inspect each applicable entry by ID and follow nextItemOffset until null.',
       inputSchema: {
         id: z.string().max(64).optional(),
         kind: z.enum(['rule', 'workflow']).optional(),
         priority: z.enum(['mandatory', 'recommended']).optional(),
         offset: z.number().int().min(0).optional(),
         limit: z.number().int().min(1).max(100).optional(),
+        itemOffset: z.number().int().min(0).optional(),
+        itemLimit: z.number().int().min(1).max(100).optional(),
       },
       outputSchema: {
         metadata: z.array(
@@ -87,6 +89,8 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
             priority: z.enum(['mandatory', 'recommended']),
             rules: z.array(z.object({ id: z.string(), number: z.string(), title: z.string() })),
             steps: z.array(z.object({ title: z.string() })),
+            itemCount: z.number().int().min(0),
+            nextItemOffset: z.number().int().min(0).nullable(),
             related: z.array(z.string()),
             references: z.array(z.string()),
           }),
@@ -96,9 +100,9 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
       },
       annotations: { readOnlyHint: true },
     },
-    ({ id, kind, priority, offset, limit }) => {
+    ({ id, kind, priority, offset, limit, itemOffset, itemLimit }) => {
       try {
-        const page = getMetadataPage({ id, kind, priority, offset, limit });
+        const page = getMetadataPage({ id, kind, priority, offset, limit, itemOffset, itemLimit });
         return { structuredContent: page, ...text(page) };
       } catch (error) {
         return failure(error);

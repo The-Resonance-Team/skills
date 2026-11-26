@@ -67,6 +67,8 @@ type RpcResponse = {
         path: string;
         priority?: string;
         rules?: Array<{ id: string; title: string }>;
+        itemCount?: number;
+        nextItemOffset?: number | null;
       }>;
       content?: string;
       rule?: { id: string; content: string; scope: string; priority: string };
@@ -134,23 +136,15 @@ describe('HTTP surface', () => {
     expect(response.result?.tools?.[0].description).toContain('before any code change');
   });
 
-  test('returns metadata without a rule body', async () => {
-    const response = await rpc('tools/call', {
-      name: 'get_metadata',
-      arguments: { id: 'general' },
-    });
-    expect(response.result?.structuredContent?.metadata?.[0].path).toBe('rules/general.md');
-    const metadata = response.result?.structuredContent?.metadata?.[0] ?? {};
-    expect(Object.keys(metadata)).not.toContain('content');
-  });
-
   test('lists mandatory rules by stable slug without loading rule bodies', async () => {
     const response = await rpc('tools/call', {
       name: 'get_metadata',
       arguments: { id: 'general' },
     });
     const entry = response.result?.structuredContent?.metadata?.[0];
+    expect(entry?.path).toBe('rules/general.md');
     expect(entry?.priority).toBe('mandatory');
+    expect(entry).not.toHaveProperty('content');
     expect(entry?.rules?.[0].id).toMatch(/^rule:general:[a-z0-9-]+$/);
     expect(entry?.rules?.[0].title).toBeTruthy();
     expect(entry?.rules?.[0]).not.toHaveProperty('content');
@@ -168,22 +162,38 @@ describe('HTTP surface', () => {
     expect(entries.every((entry) => entry.priority === 'mandatory')).toBe(true);
   });
 
-  test('signals when the metadata index has more pages', async () => {
-    const response = await rpc('tools/call', { name: 'get_metadata', arguments: {} });
-    const result = response.result?.structuredContent;
-    expect(result?.metadata?.length).toBeLessThan(result?.total ?? 0);
-    expect(result?.nextOffset).toBe(result?.metadata?.length);
-  });
-
   test('caps large index requests and keeps the next page visible', async () => {
+    const first = await rpc('tools/call', { name: 'get_metadata', arguments: {} });
+    expect(first.result?.structuredContent?.nextOffset).toBe(
+      first.result?.structuredContent?.metadata?.length,
+    );
     const response = await rpc('tools/call', {
       name: 'get_metadata',
       arguments: { priority: 'mandatory', limit: 100 },
     });
     const result = response.result?.structuredContent;
-    expect(Buffer.byteLength(JSON.stringify(result))).toBeLessThanOrEqual(18000);
+    expect(Buffer.byteLength(JSON.stringify(response))).toBeLessThanOrEqual(20000);
     expect(result?.nextOffset).toBe(result?.metadata?.length);
     expect(result?.nextOffset).not.toBeNull();
+  });
+
+  test('pages the rules inside one module without losing the rest of its index', async () => {
+    const response = await rpc('tools/call', {
+      name: 'get_metadata',
+      arguments: { id: 'frontend', itemOffset: 0, itemLimit: 2 },
+    });
+    const entry = response.result?.structuredContent?.metadata?.[0];
+    expect(entry?.rules).toHaveLength(2);
+    expect(entry?.itemCount).toBeGreaterThan(2);
+    expect(entry?.nextItemOffset).toBe(2);
+    const next = await rpc('tools/call', {
+      name: 'get_metadata',
+      arguments: { id: 'frontend', itemOffset: entry?.nextItemOffset, itemLimit: 2 },
+    });
+    const nextEntry = next.result?.structuredContent?.metadata?.[0];
+    expect(nextEntry?.rules).toHaveLength(2);
+    expect(nextEntry?.nextItemOffset).toBe(4);
+    expect(nextEntry?.rules?.[0].id).not.toBe(entry?.rules?.[0].id);
   });
 
   test('returns only the requested rule and its scope', async () => {
@@ -237,13 +247,15 @@ describe('HTTP surface', () => {
     expect(workflow?.steps.some((step) => step.content.includes('every app answers'))).toBe(true);
   });
 
-  test('refuses a full-file response that exceeds the safe client limit', async () => {
-    const response = await rpc('tools/call', {
-      name: 'get',
-      arguments: { id: 'frontend' },
-    });
-    expect(response.result?.isError).toBe(true);
-    expect(response.result?.content?.[0].text).toContain('too large');
+  test('bounds the combined text and structured full-file response', async () => {
+    const responses = await Promise.all(
+      ['frontend', 'nestjs'].map((id) => rpc('tools/call', { name: 'get', arguments: { id } })),
+    );
+    for (const response of responses) {
+      expect(response.result?.isError).toBe(true);
+      expect(response.result?.content?.[0].text).toContain('too large');
+      expect(Buffer.byteLength(JSON.stringify(response))).toBeLessThanOrEqual(20000);
+    }
   });
 
   test('returns at most five semantic matches', async () => {

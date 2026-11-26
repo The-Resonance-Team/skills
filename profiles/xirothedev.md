@@ -4,7 +4,7 @@ Portable standing instructions for all devices. Loaded via native `instructions[
 
 ## Engineering Rules & Workflows (The-Resonance-Team/skills)
 
-Before coding, use `agent-rules-mcp` to page through the mandatory rule and workflow metadata and identify every entry whose scope applies. Inspect the rule indexes, load each applicable module's context and rules by stable ID, and load applicable workflows as ordered steps. Search the catalog for additional relevant guidance. Follow mandatory guidance over recommended guidance and higher-level instructions over team guidance.
+Before coding, use `agent-rules-mcp` to page through the mandatory rule and workflow metadata until `nextOffset` is null. For each applicable entry, inspect its index by ID and follow `nextItemOffset` until null. Load each applicable module's context and rules by stable ID, and load applicable workflows as ordered steps. Search the catalog for additional relevant guidance. Follow mandatory guidance over recommended guidance and higher-level instructions over team guidance.
 
 When equally ranked applicable rules conflict, stop the affected work, show the conflict, and ask the user to choose. Once the user resolves the current task, continue and propose the agreed rule patch for human approval; the published catalog changes only after merge and deployment. An unattended agent must stop rather than guess.
 

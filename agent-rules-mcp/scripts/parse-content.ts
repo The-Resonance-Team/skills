@@ -33,10 +33,14 @@ export function parseRules(file: string, moduleId: string, body: string): RuleIt
     throw new Error(`${file}: each numbered rule needs a rule ID anchor`);
   }
   const seen = new Set<string>();
+  const numbers = new Set<string>();
   return matches.map((match, index) => {
     const id = `rule:${moduleId}:${match[1]}`;
+    if (id.length > 128) throw new Error(`${file}: rule ID exceeds 128 characters: ${id}`);
     if (seen.has(id)) throw new Error(`${file}: duplicate rule ID ${id}`);
     seen.add(id);
+    if (numbers.has(match[2])) throw new Error(`${file}: duplicate rule number ${match[2]}`);
+    numbers.add(match[2]);
     const start = match.index + match[0].indexOf('\n') + 1;
     const next = matches[index + 1];
     const section = body.slice(start, next?.index).trimEnd();

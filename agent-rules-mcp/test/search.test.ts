@@ -34,8 +34,8 @@ describe('rule lookup', () => {
   });
 
   test('returns the full rule body', () => {
-    const result = getContent('general');
-    expect(result.content).toContain('# General Rules');
+    const result = getContent('github-releases');
+    expect(result.content).toContain('# Release Workflow Rules');
     expect(result.truncated).toBe(false);
   });
 

@@ -3,6 +3,8 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 
+import { checkMetadataSize } from './check-metadata-size';
+import { checkRuleReferences } from './check-references';
 import { parseRules, parseWorkflow } from './parse-content';
 
 import type { Catalog, CatalogEntry, EntryKind } from '../src/types';
@@ -29,7 +31,10 @@ function read(relative: string): string {
 }
 
 const metadataSchema = z.object({
-  id: z.string().regex(/^[a-z0-9-]+$/),
+  id: z
+    .string()
+    .max(64)
+    .regex(/^[a-z0-9-]+$/),
   name: z.string().min(1),
   kind: z.enum(['rule', 'workflow']),
   description: z.string().min(1),
@@ -212,6 +217,8 @@ async function build(): Promise<{ catalog: Catalog; embeddings: EmbeddingStore }
   const drafts = parseSources();
   addDigests(drafts);
   addReferences(drafts);
+  checkRuleReferences(drafts);
+  checkMetadataSize(drafts);
   const embeddings = loadEmbeddings();
   const external = process.env.AGENT_RULES_EMBEDDINGS_FILE;
   if (external !== undefined && external.length > 0) {
