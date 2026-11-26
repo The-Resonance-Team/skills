@@ -171,6 +171,36 @@ describe('catalog builder CLI', () => {
     expect(stderr.toLowerCase()).toContain('missing embedding');
   });
 
+  test('checks interior rules when a range ends with a letter', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source(
+        '<!-- rule: first -->\n1. **First** — See `rules/example.md` #1–#3a.\n<!-- rule: third -->\n3a. **Third** — Text.',
+      ),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain('unknown rule number range rules/example.md #1–#3a');
+  });
+
+  test('checks interior rules when a range starts with a letter', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source(
+        '<!-- rule: first -->\n1a. **First** — See `rules/example.md` #1a–#3.\n<!-- rule: third -->\n3. **Third** — Text.',
+      ),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain('unknown rule number range rules/example.md #1a–#3');
+  });
+
+  test('accepts a complete range that starts with a letter', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source(
+        '<!-- rule: first -->\n1a. **First** — See `rules/example.md` #1a–#3.\n<!-- rule: second -->\n2. **Second** — Text.\n<!-- rule: third -->\n3. **Third** — Text.',
+      ),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr.toLowerCase()).toContain('missing embedding');
+  });
+
   test('rejects metadata that cannot fit in a complete MCP page', async () => {
     const { exitCode, stderr } = await checkSource(
       source('<!-- rule: example -->\n1. **Example** — Text.', 'example', 'a'.repeat(10000)),

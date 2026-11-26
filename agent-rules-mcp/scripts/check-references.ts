@@ -18,19 +18,21 @@ export function checkRuleReferences(sources: Source[]): void {
           throw new Error(`${source.path}: unknown rule number ${match[1]} #${number[1]}`);
         }
       }
-      for (const range of match[3].matchAll(/#?(\d+)\s*[–-]\s*#?(\d+)(?![a-z\d])/gi)) {
+      for (const range of match[3].matchAll(/#?(\d+)([a-z]?)\s*[–-]\s*#?(\d+)([a-z]?)/gi)) {
         const start = Number(range[1]);
-        const end = Number(range[2]);
+        const end = Number(range[3]);
+        const firstInteger = start + (range[2] ? 1 : 0);
         const present = target.rules.filter((rule) => {
           if (!/^\d+$/.test(rule.number)) return false;
           const number = Number(rule.number);
-          return number >= start && number <= end;
+          return number >= firstInteger && number <= end;
         }).length;
         if (
           !Number.isSafeInteger(start) ||
           !Number.isSafeInteger(end) ||
           start > end ||
-          present !== end - start + 1
+          (start === end && range[2].toLowerCase() > range[4].toLowerCase()) ||
+          present !== Math.max(0, end - firstInteger + 1)
         ) {
           throw new Error(`${source.path}: unknown rule number range ${match[1]} ${range[0]}`);
         }
