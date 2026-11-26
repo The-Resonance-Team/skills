@@ -34,3 +34,17 @@ Use [`GLOSSARY.md`](./GLOSSARY.md) for team-rule terms and [`agent-rules-mcp/GLO
 2. **Hard-delete dead rules** — a module is dead when it has no named consumer, no inbound rule or workflow reference, and no live scope. Delete the file, fix every inbound reference, rebuild the catalog, and update every known consumer in the same commit. Name the deleted module in a `fix:` commit message. Wrong content fails loudly at consumers: delete it in the same fix.
 3. **Merge duplicates into one owner** — when two rules state the same requirement, keep one copy in the module that owns the surface and delete the other. Update cross-references in the same commit. Never leave a stub at the old path.
 4. **Configs move with their rule** — a baseline in `configs/` changes in the same commit as the rule text that documents it, proven by an incident or validator output, not by intent.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in this repo's GitHub Issues, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the five canonical triage labels as-is: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
