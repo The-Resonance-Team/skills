@@ -1,17 +1,17 @@
-# Team rule language
+# Rule language
 
-The language for the team's coding guidance and its consumers.
+The language for personal and team coding guidance and its consumers.
 
 ## Language
 
 **Consumer**:
-A person or agent that uses the team's rules and workflows.
+A person or agent that uses rules and workflows.
 
 **Rule module**:
-A group of team rules that applies to a shared audience or subject.
+A group of rules that applies to a shared audience or subject.
 
 **Rule**:
-A specific team standard that applies within a defined scope.
+A specific personal or team standard that applies within a defined scope.
 
 **Workflow**:
 A procedure that guides a consumer through a task.
