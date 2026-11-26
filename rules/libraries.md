@@ -1,4 +1,15 @@
+---
+id: "libraries"
+name: "Library Baseline — one library per concern, chosen by framework"
+kind: "rule"
+description: "Applies to every TypeScript/JavaScript project. One library per concern, fixed by framework. A substitute library is a violation, not a preference. Reach for this table first, then verify the chosen library's current API via Rule 7 before writing calls."
+scope: "All TS/JS projects"
+priority: "mandatory"
+---
 # Library Baseline — one library per concern, chosen by framework
+
+<!-- rule: library-baseline-core -->
+0a. **Library baseline: core concerns** — Use the applicable baseline in this table.
 
 Applies to every TypeScript/JavaScript project. One library per concern, fixed by framework. A substitute library is a violation, not a preference. Reach for this table first, then verify the chosen library's current API via Rule 7 before writing calls.
 
@@ -19,6 +30,12 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 | UI primitives          | `shadcn/ui` — multi-variant components via `cva` + `cn` (`rules/frontend.md` #8)                    | —                                                                                                    |
 | Class merging          | `cn` (`shadcn-ui/cn`) — direct import, no `lib/utils.ts` wrapper                                    | —                                                                                                    |
 | i18n                   | `next-intl` on Next.js; `useI18n()` + JSON catalogs on Vite/React & miniapp (`rules/i18n.md`)       | —                                                                                                    |
+
+<!-- rule: library-baseline-other -->
+0b. **Library baseline: additional concerns** — Use the applicable baseline in this table.
+
+| Concern                | Web/React (portal, web, mobile-rn)                                                                  | NestJS (`apps/api`)                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Charts                 | `recharts` for static/dashboard draws; `uPlot` for ≥30 Hz streaming feeds                           | —                                                                                                    |
 | Animation              | CSS `@keyframes` by default; `motion` (`motion/react`) for stagger, interruptible, or scroll-linked | —                                                                                                    |
 | Tests                  | `vitest` (or `bun test --check` in Bun-native repos, `rules/general.md` #18)                        | `vitest` (or `bun test --check` in Bun-native repos)                                                 |
@@ -37,22 +54,38 @@ Applies to every TypeScript/JavaScript project. One library per concern, fixed b
 
 ## Rules
 
+<!-- rule: one-http-client-per-framewor -->
 1. **One HTTP client per framework (`axios` on web, `@nestjs/http-client` on NestJS)** — No `fetch`-wrapper hand-rolls, `got`, `ky`, `undici`, `@nestjs/axios`, or raw `axios` in NestJS. Sole exception: browser SSE/NDJSON streaming endpoints use `fetch` sharing `baseURL` and `authHeader()` (`rules/frontend.md` #11).
+<!-- rule: zod-react-hook-form-zodresol -->
 2. **`zod` + `react-hook-form` (`zodResolver`) on web clients** — No `yup`, `joi`, `io-ts`, `formik`, or manual per-field `useState`. The zod schema is the single source of truth (`z.infer`).
+<!-- rule: tanstackreact-query-owns-ser -->
 3. **`@tanstack/react-query` owns server state** — No SWR, RTK Query, `useEffect` + `fetch`, or `react-infinite-scroll-*` packages (use `useInfiniteQuery` + `IntersectionObserver`).
+<!-- rule: class-validator-class-transf -->
 4. **`class-validator` + `class-transformer` own NestJS request boundaries** — DTO classes validate `@Body()`/`@Query()`/`@Param()`. `zod` runs in the API **only** for boot-time `ConfigModule.forRoot({ validationSchema })` (`rules/nestjs.md` #18).
+<!-- rule: date-fns-date-fnstz-own-time -->
 5. **`date-fns` + `@date-fns/tz` own time handling** — No `dayjs`, `luxon`, or `moment` (`rules/general.md` #9).
+<!-- rule: native-csrf-check-by-default -->
 6. **Native CSRF check by default; `csrf-csrf` only via ADR** — Cookie-authenticated NestJS apps use built-in `app.enableCsrfProtection({ trustedOrigins })`; cookie-less APIs behind a Next 16 BFF enforce the `Origin` allowlist in `src/proxy.ts` (`rules/nestjs.md` #20). Never install deprecated `csurf`.
+<!-- rule: research-with-context7-then -->
 7. **Research with Context7, then `webfetch`, before calling a library API** — Before adding or modifying any library call: (a) use the library assigned by the table above; (b) query Context7 (`resolve-library-id` → `query-docs`) for the exact API and installed version; (c) fall back to official docs via `webfetch` if Context7 lacks coverage. Never write library calls from memory.
+<!-- rule: shared-icon-vocabulary-in-pa -->
 8. **Shared icon vocabulary in `packages/ui`: `lucide-react` for functional UI, `react-icons/pi` (Duotone) for decorative surfaces** —
    - Declare `lucide-react` and `react-icons` in `packages/ui` only; apps never import icon packages directly or hand-roll inline `<svg>` / Unicode glyphs (`✓`, `→`, `▣`, emojis). Miniapp re-exports all icons through `@/components/ui` (barrel over `icons.tsx` / `icons-lucide.tsx`).
    - Export `<Icon icon={ICON.<concept>} size="md" />` (`xs: 12`, `sm: 14`, `md: 16`, `lg: 20`, `xl: 24`, fixed `strokeWidth = 2`, `currentColor`) for all functional UI. Keys in `ICON` name domain concepts (`ICON.classes`, `ICON.tuition`, `ICON.sla`), never shapes or screens.
    - `lucide-react` (2,159 icons) has wider coverage than `react-icons/pi` (1,512 icons); never add `react-icons` for "missing coverage." Restrict `react-icons/pi` (Phosphor Duotone) to `<RichIcon icon={RICH_ICON.<concept>} />` on decorative surfaces (landing heroes, feature cards, empty states), where every `RICH_ICON` key is a subset of `ICON` (Precedent: Gia Su Anh Minh 2026-10, ADR-0008).
+<!-- rule: slugify-with-lower-true-stri -->
 9. **`slugify` with `{ lower: true, strict: true, locale: "vi" }`** — Without `locale: "vi"`, `Đà Nẵng` transliterates to `dja-nang`; `String.normalize("NFD")` also misses `đ`/`Đ`. Never hand-roll slug regexes.
+<!-- rule: cn-shadcn-uicn-is-the-only-c -->
 10. **`cn` (`shadcn-ui/cn`) is the only class-merge library** — Import `import { cn } from 'cn'` directly (`createCn` from `'cn/config'`). No `clsx`, `tailwind-merge`, or `lib/utils.ts` wrapper; set `components.json` `"aliases": { "utils": "cn" }`. Keep `fast-uri >= 3.1.6` in workspace overrides.
+<!-- rule: nestjsthrottler-is-in-proces -->
 11. **`@nestjs/throttler` is in-process by default; `WsAdapter` before `socket.io`** — Record single-instance throttler assumptions in an ADR before dropping Redis rate-limiting (multi-instance multiplies limits, ADR-0020). Run WebSocket gateways on `@nestjs/platform-ws` (`WsAdapter`); use `socket.io` only when a greenfield surface requires rooms/reconnect framing.
+<!-- rule: uplot-streams-30-fps-rechart -->
 12. **`uPlot` streams (≥30 FPS), `recharts` draws (static/dashboard)** — Feed both from a bounded ring buffer of the last $N$ samples so streaming data never leaks memory (Precedent: CareAI 2026-10).
+<!-- rule: nestjsmail-owns-api-email-ne -->
 13. **`@nestjs/mail` owns API email; `@nestjs/storage` owns API file/object storage** — No `nodemailer`, raw provider HTTP calls, or direct `@aws-sdk/client-s3` in feature modules (`rules/nestjs.md` #22–#23, `rules/upload.md`). Repos still on the legacy `@aws-sdk/client-s3` `StorageService` keep it until migrated in a dedicated PR.
+<!-- rule: bunpassword-only-on-bun-only -->
 14. **`Bun.password` only on Bun-only runtimes, with forced rotation** — `Bun.password.hash(value, { algorithm: "argon2id" })` replaces the `argon2` package only where every runtime is Bun: it throws under Node, and it rejects hashes the `argon2` package wrote (`PASSWORD_INVALID_ENCODING`), so rotate all stored hashes in the same change and run production on Bun (Precedent: Gia Su Anh Minh 2026-10 — NestJS API and Next.js standalone verified serving on `oven/bun:1.4.4`, full image builds green). Keep `argon2` everywhere else.
+<!-- rule: bun-first-check-latest-bun-b -->
 15. **`Bun-first`: check latest Bun built-ins before adding a library** — Where every runtime is Bun (`oven/bun:*`, `bun dist/main.js`): check `bun.com/docs/runtime/*` for the current release first. Use the built-in when it covers the concern (`Bun.Image` for resize/convert, `Bun.file`/`Bun.write`, `Bun.s3`, `Bun.redis`, `Bun.SQL`, `Bun.password`). Add a library only when the built-in lacks coverage, and record the check in the PR. Never add `sharp`, `argon2`, `ioredis`, `pg`, or `aws-sdk` for a covered built-in on Bun-only runtimes.
+<!-- rule: nestjsai-owns-nestjs-model-a -->
 16. **`@nestjs/ai` owns NestJS model access; `@ai-sdk/react` owns chat UI** — Register models in `AiModule` and call `AiService`; feature services never construct `@ai-sdk/*` providers or call the raw SDK (`rules/nestjs-ai.md`). On web clients, `@ai-sdk/react` `useChat` consumes the UI-message stream from the API route. Docs: https://docs.nestjs.com/ai/overview.

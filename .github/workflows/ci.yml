@@ -36,7 +36,6 @@ jobs:
               - 'agent-rules-mcp/**'
               - 'rules/**'
               - 'workflows/**'
-              - 'CONTEXT.md'
               - '.github/workflows/**'
               - '.github/tests/**'
             codemode:

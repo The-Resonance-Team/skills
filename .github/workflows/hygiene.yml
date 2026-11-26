@@ -3,9 +3,9 @@ name: hygiene
 on:
   push:
     branches: [main]
-    paths: [configs/**, rules/**, CONTEXT.md, .github/workflows/hygiene.yml]
+    paths: [configs/**, rules/**, .github/workflows/hygiene.yml]
   pull_request:
-    paths: [configs/**, rules/**, CONTEXT.md]
+    paths: [configs/**, rules/**]
   schedule:
     - cron: "0 7 * * 1"
 

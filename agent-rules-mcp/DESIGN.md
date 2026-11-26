@@ -3,35 +3,33 @@
 ## Goal
 
 Reduce the rule tokens the model carries at session start and make rule
-selection relevant to the task. Today `instructions[]` loads the profile and
-`CONTEXT.md` at session start. The 23 rule modules and 6 workflows are fetched
-by raw URL only when the agent asks for them. A Worker MCP server replaces that
-fetch step with semantic discovery and exact retrieval.
+selection relevant to the task. The profile is loaded at session start. A Worker
+MCP server provides metadata discovery and exact rule and workflow retrieval.
 
 ## Decisions
 
 | Area | Decision |
 | --- | --- |
 | Objective | Fewer tokens at session start and better rule relevance. Guardrail: total tokens per session. |
-| Bootstrap | Drop `CONTEXT.md` from `instructions[]`. Keep the profile. Put the "when to call" sentence in both tool descriptions. |
-| Tools | `search_ai(query)`, `get_metadata(id?)`, and `get(id)`. No `rules_` prefix. |
-| Tool output | `search_ai` returns at most five IDs with scores. `get_metadata` returns descriptors with IDs, scope, path and relations. `get` returns one full module, capped and truncated with a notice. |
-| IDs | Stable logical IDs. File path is a returned field, not the ID. |
-| Catalog | Generated at build time from `CONTEXT.md` tables and module files. Never hand-maintained. |
-| Relations | `related` from semantic search. `references` from a build-time citation graph; router rows are excluded. |
-| Retrieval text | Title + `CONTEXT.md` scope or trigger cell + first paragraph. Not the whole file. |
+| Bootstrap | Keep the profile. Enumerate applicable mandatory metadata before coding. |
+| Tools | Search, metadata, individual rule, workflow, and compatible full-file retrieval. |
+| Tool output | Search returns at most five IDs. Metadata can be paged and filtered. Rule retrieval returns one rule; workflow retrieval returns ordered instructions or fails closed on size. |
+| IDs | Stable module IDs and per-rule `rule:<module>:<slug>` IDs. Numbers are display order, not IDs. |
+| Catalog | Generated at build time from metadata and content in rule and workflow source files. |
+| Relations | `related` from semantic search. `references` from a build-time citation graph. |
+| Retrieval text | Title, source metadata scope, and source details. Not the whole file. |
 | Vectors | Precomputed in the Worker bundle. Rebuild only entries whose retrieval text changed. |
 | Query embedding | Workers AI `@cf/google/embeddinggemma-2`. Cosine similarity over bundled vectors. An extra search service requires measured benefit. |
 | Placement | Separate Worker `agent-rules-mcp`, on Workers Free. Not the Code Mode Worker. |
 | Layout | Follow `cloudflare/mcp-server-cloudflare`; see `docs/adr/0001-mcp-server-layout-reference.md`. |
 | Auth | Scoped OAuth tokens. The static bearer token is read-only and distinct from the Code Mode MCP token. |
-| Failure | Continue with a visible warning when the MCP is down. Raw-URL fetch stays documented as an emergency switch. |
+| Failure | Pause affected coding work when the MCP is down. Use a known raw URL only at the user's direction. |
 | CD | GitHub Actions on push to `main` builds the pinned snapshot and runs `wrangler deploy`. No runtime GitHub fetch. |
 | Quality | Ten real use cases with expected IDs. Recall@5 against a lexical baseline. Three subagents run the benchmark. A required rule missing from the top five blocks release. |
 
 ## Components
 
-1. **Builder** — reads `CONTEXT.md` and the module files, pins the snapshot to a
+1. **Builder** — reads rule and workflow metadata and content, pins the snapshot to a
    content digest, emits a catalog with stable IDs, retrieval text, digests and
    citation edges, and reuses vectors for unchanged digests.
 2. **Worker** — serves `/mcp`, checks scoped authentication, registers discovery,
@@ -66,7 +64,7 @@ fetch step with semantic discovery and exact retrieval.
 - No ongoing PR-status sync or live catalog refresh. GitHub owns PR review and
   merge; a successful rebuild and deployment publishes the catalog.
 - No rule rewriting or automatic edits to rule files.
-- No fourth read tool, no eager injection of rule files.
+- No eager injection of rule files.
 - No shared token with the Code Mode MCP server.
 - No direct `main` write, auto-merge, or silent rule edit from the Worker.
 

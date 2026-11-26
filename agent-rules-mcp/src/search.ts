@@ -1,6 +1,6 @@
 import data from '../generated/catalog.json';
 
-import type { Catalog, CatalogEntry, Match, Metadata } from './types';
+import type { Catalog, CatalogEntry, EntryKind, Match, Metadata, Priority } from './types';
 
 export const catalog = data as unknown as Catalog;
 export const maxMatches = 5;
@@ -199,17 +199,62 @@ function metadata(entry: CatalogEntry): Metadata {
     id: entry.id,
     kind: entry.kind,
     path: entry.path,
+    name: entry.name,
+    description: entry.description,
     scope: entry.scope,
+    priority: entry.priority,
+    rules: entry.rules.map(({ id, number, title }) => ({ id, number, title })),
+    steps: entry.steps.map(({ title }) => ({ title })),
     related: related(entry.id),
     references: entry.references,
   };
 }
 
-export function getMetadata(id?: string): Metadata | Metadata[] {
-  if (id === undefined) return catalog.entries.map(metadata);
+export function getMetadata(
+  id?: string,
+  options: { kind?: EntryKind; priority?: Priority; offset?: number; limit?: number } = {},
+): Metadata | Metadata[] {
+  if (id === undefined) {
+    return catalog.entries
+      .filter((entry) => options.kind === undefined || entry.kind === options.kind)
+      .filter((entry) => options.priority === undefined || entry.priority === options.priority)
+      .slice(options.offset ?? 0, (options.offset ?? 0) + (options.limit ?? catalog.entries.length))
+      .map(metadata);
+  }
   const entry = byId.get(id);
   if (entry === undefined) throw new Error(`Unknown rule ID: ${id}`);
   return metadata(entry);
+}
+
+export function getRule(id: string) {
+  for (const entry of catalog.entries) {
+    const rule = entry.rules.find((item) => item.id === id);
+    if (rule !== undefined) {
+      return { ...rule, path: entry.path, scope: entry.scope, priority: entry.priority };
+    }
+  }
+  throw new Error(`Unknown rule ID: ${id}`);
+}
+
+export function getWorkflow(id: string) {
+  const entry = byId.get(id);
+  if (entry === undefined || entry.kind !== 'workflow')
+    throw new Error(`Unknown workflow ID: ${id}`);
+  const workflow = {
+    id: entry.id,
+    name: entry.name,
+    path: entry.path,
+    scope: entry.scope,
+    priority: entry.priority,
+    references: entry.references,
+    steps: entry.steps,
+  };
+  if (new TextEncoder().encode(JSON.stringify({ workflow })).byteLength > 18000) {
+    throw new Error(
+      'Workflow is too large to return safely; stop until complete retrieval is supported.',
+    );
+  }
+  return workflow;
 }
 
 export function getContent(id: string): {

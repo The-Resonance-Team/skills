@@ -1,6 +1,10 @@
 ---
-name: qa
-description: Full UI/UX QA pass over a web product's frontends — bring up the stack with seeded data, screenshot every route at 3 device widths, vision-audit the PNGs with parallel review agents, fix presentational findings, and report a triaged list. Use when asked to QA the UI, run a screenshot sweep, audit responsive/UX issues across apps, or re-verify UI fixes with screenshots.
+id: "wf-qa"
+name: "QA Sweep Workflow"
+kind: "workflow"
+description: "Full UI/UX QA pass over a web product's frontends — bring up the stack with seeded data, screenshot every route at 3 device widths, vision-audit the PNGs with parallel review agents, fix presentational findings, and report a triaged list. Use when asked to QA the UI, run a screenshot sweep, audit responsive/UX issues across apps, or re-verify UI fixes with screenshots."
+scope: "Full UI/UX QA pass: seeded stack, 3-device screenshot sweep, parallel vision audit, presentational fixes, triaged report."
+priority: "mandatory"
 ---
 
 # QA Sweep Workflow

@@ -10,7 +10,7 @@ import path from 'node:path';
  */
 const draft = process.env.DRAFT_DIR;
 if (draft === undefined || draft.length === 0) {
-  throw new Error('Set DRAFT_DIR to the draft worktree root (the folder containing CONTEXT.md).');
+  throw new Error('Set DRAFT_DIR to the draft worktree root.');
 }
 const draftRoot = path.resolve(draft);
 const trustedBuilder = path.join(import.meta.dir, 'build-catalog.ts');

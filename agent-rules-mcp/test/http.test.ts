@@ -61,8 +61,19 @@ type RpcResponse = {
     tools?: Array<{ name: string; description: string }>;
     structuredContent?: {
       matches?: Array<{ id: string; score: number }>;
-      metadata?: Array<{ id: string; path: string }>;
+      metadata?: Array<{
+        id: string;
+        kind?: string;
+        path: string;
+        priority?: string;
+        rules?: Array<{ id: string; title: string }>;
+      }>;
       content?: string;
+      rule?: { id: string; content: string; scope: string; priority: string };
+      workflow?: {
+        id: string;
+        steps: Array<{ title: string; content: string }>;
+      };
     };
     isError?: boolean;
     content?: Array<{ text: string }>;
@@ -107,11 +118,13 @@ describe('HTTP surface', () => {
     expect(response.status).toBe(401);
   });
 
-  test('advertises exactly the five rules tools', async () => {
+  test('advertises the discovery, retrieval, and patch tools', async () => {
     const response = await rpc('tools/list', {});
     expect(response.result?.tools?.map((tool) => tool.name)).toEqual([
       'search_ai',
       'get_metadata',
+      'get_rule',
+      'get_workflow',
       'get',
       'propose_rule_patch',
       'apply_rule_patch',
@@ -127,6 +140,70 @@ describe('HTTP surface', () => {
     expect(response.result?.structuredContent?.metadata?.[0].path).toBe('rules/general.md');
     const metadata = response.result?.structuredContent?.metadata?.[0] ?? {};
     expect(Object.keys(metadata)).not.toContain('content');
+  });
+
+  test('lists mandatory rules by stable slug without loading rule bodies', async () => {
+    const response = await rpc('tools/call', {
+      name: 'get_metadata',
+      arguments: { id: 'general' },
+    });
+    const entry = response.result?.structuredContent?.metadata?.[0];
+    expect(entry?.priority).toBe('mandatory');
+    expect(entry?.rules?.[0].id).toMatch(/^rule:general:[a-z0-9-]+$/);
+    expect(entry?.rules?.[0].title).toBeTruthy();
+    expect(entry?.rules?.[0]).not.toHaveProperty('content');
+  });
+
+  test('filters and pages the metadata index by category and priority', async () => {
+    const response = await rpc('tools/call', {
+      name: 'get_metadata',
+      arguments: { kind: 'workflow', priority: 'mandatory', offset: 0, limit: 2 },
+    });
+    const entries = response.result?.structuredContent?.metadata ?? [];
+    expect(entries).toHaveLength(2);
+    expect(entries.every((entry) => entry.kind === 'workflow')).toBe(true);
+    expect(entries.every((entry) => entry.priority === 'mandatory')).toBe(true);
+  });
+
+  test('returns only the requested rule and its scope', async () => {
+    const response = await rpc('tools/call', {
+      name: 'get_rule',
+      arguments: { id: 'rule:general:postgres-always-docker-never' },
+    });
+    const rule = response.result?.structuredContent?.rule;
+    expect(rule?.id).toBe('rule:general:postgres-always-docker-never');
+    expect(rule?.scope).toBe('All projects');
+    expect(rule?.priority).toBe('mandatory');
+    expect(rule?.content).toContain('docker compose up -d postgres');
+    expect(rule?.content).not.toContain('Vietnamese diacritics');
+  });
+
+  test('makes the mandatory library baseline table discoverable as individual rules', async () => {
+    const index = await rpc('tools/call', {
+      name: 'get_metadata',
+      arguments: { id: 'libraries' },
+    });
+    const entries = index.result?.structuredContent?.metadata?.[0].rules ?? [];
+    expect(entries.map((rule) => rule.id)).toContain('rule:libraries:library-baseline-core');
+    const response = await rpc('tools/call', {
+      name: 'get_rule',
+      arguments: { id: 'rule:libraries:library-baseline-core' },
+    });
+    expect(response.result?.structuredContent?.rule?.content).toContain('`slugify`');
+  });
+
+  test('returns a workflow as ordered complete instructions', async () => {
+    const response = await rpc('tools/call', {
+      name: 'get_workflow',
+      arguments: { id: 'wf-qa' },
+    });
+    const workflow = response.result?.structuredContent?.workflow;
+    expect(workflow?.id).toBe('wf-qa');
+    const titles = workflow?.steps.map((step) => step.title) ?? [];
+    expect(titles.indexOf('1. Recon → target list')).toBeLessThan(
+      titles.indexOf('2. Stack up with seeded data'),
+    );
+    expect(workflow?.steps.some((step) => step.content.includes('every app answers'))).toBe(true);
   });
 
   test('returns at most five semantic matches', async () => {

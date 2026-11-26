@@ -4,13 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - CONTEXT.md
-      - 'rules/**'
-      - 'workflows/**'
-      - 'agent-rules-mcp/**'
+      - "rules/**"
+      - "workflows/**"
+      - "agent-rules-mcp/**"
       - .github/workflows/_mcp-checks.yml
       - .github/workflows/deploy-agent-rules-mcp.yml
-      - '.github/tests/**'
+      - ".github/tests/**"
 
 permissions:
   contents: read

@@ -1,13 +1,32 @@
 import type { ApprovalStore } from './patches';
 
 export type EntryKind = 'rule' | 'workflow';
+export type Priority = 'mandatory' | 'recommended';
+
+export type RuleItem = {
+  id: string;
+  number: string;
+  title: string;
+  content: string;
+  references: string[];
+};
+
+export type WorkflowStep = {
+  title: string;
+  content: string;
+};
 
 export type CatalogEntry = {
   id: string;
   kind: EntryKind;
   path: string;
   title: string;
+  name: string;
+  description: string;
   scope: string;
+  priority: Priority;
+  rules: RuleItem[];
+  steps: WorkflowStep[];
   retrievalText: string;
   digest: string;
   references: string[];
@@ -27,6 +46,11 @@ export type Metadata = {
   kind: EntryKind;
   path: string;
   scope: string;
+  name: string;
+  description: string;
+  priority: Priority;
+  rules: Array<Omit<RuleItem, 'content' | 'references'>>;
+  steps: Array<{ title: string }>;
   related: string[];
   references: string[];
 };

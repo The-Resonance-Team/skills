@@ -1,11 +1,10 @@
 ---
-name: lint-burndown
-description: >-
-  Take a repo from thousands of lint findings to a zero-findings ceiling
-  without a big-bang diff or silenced rules: park the backlog, ratchet each
-  package's --max-warnings, burn it down in subagent waves, un-park rules
-  only at repo-wide zero. Use when asked to adopt the lint baseline,
-  clear a lint backlog, lower --max-warnings, or make a codebase lint-clean.
+id: "wf-lint-burndown"
+name: "Lint Burn-down Workflow"
+kind: "workflow"
+description: "Take a repo from thousands of lint findings to a zero-findings ceiling without a big-bang diff or silenced rules: park the backlog, ratchet each package's --max-warnings, burn it down in subagent waves, un-park rules only at repo-wide zero. Use when asked to adopt the lint baseline, clear a lint backlog, lower --max-warnings, or make a codebase lint-clean."
+scope: "Adopt strict lint preset, clear a lint backlog to zero, ratchet `--max-warnings` down in subagent waves."
+priority: "mandatory"
 ---
 
 # Lint Burn-down Workflow

@@ -38,6 +38,8 @@ jobs:
         working-directory: ${{ inputs.package }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2.1.0
         with:
           bun-version-file: ${{ inputs.package }}/package.json
@@ -77,6 +79,24 @@ jobs:
         run: |
           bun run build:check
           bun run eval:check
+
+      - name: Check stable catalog IDs
+        if: inputs.package == 'agent-rules-mcp'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            echo "Missing catalog base commit" >&2
+            exit 1
+          fi
+          if git cat-file -e "$BASE_SHA:agent-rules-mcp/generated/catalog.json" 2>/dev/null; then
+            BASE_FILE="$RUNNER_TEMP/rules-base.json"
+            git show "$BASE_SHA:agent-rules-mcp/generated/catalog.json" > "$BASE_FILE"
+          else
+            BASE_FILE="$RUNNER_TEMP/rules-base.md"
+            git show "$BASE_SHA:CONTEXT.md" > "$BASE_FILE"
+          fi
+          bun scripts/check-ids.ts "$BASE_FILE" generated/catalog.json id-migrations.json
 
       - name: Guard workflow configuration
         working-directory: .

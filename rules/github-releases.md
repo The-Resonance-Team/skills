@@ -1,9 +1,21 @@
+---
+id: "github-releases"
+name: "Release Workflow Rules — shipping, cherry-picks & branch sync"
+kind: "rule"
+description: "Applies to any repo cutting library/application releases or maintaining release branches on GitHub Actions. Pin all action refs to full commit SHAs (`rules/github-supply-chain.md` #2)."
+scope: "Repos cutting releases or maintaining release branches"
+priority: "mandatory"
+---
 # Release Workflow Rules — shipping, cherry-picks & branch sync
+
+<!-- rule: module-context -->
+0. **Module context** — Apply this context when the module applies.
 
 Applies to any repo cutting library/application releases or maintaining release branches on GitHub Actions. Pin all action refs to full commit SHAs (`rules/github-supply-chain.md` #2).
 
 ## Release automation
 
+<!-- rule: changesets-for-multi-package -->
 1. **Changesets for multi-package library releases** — Trigger `changesets/action` on `push` to `main` (`fetch-depth: 0`) to open version PRs and publish packages when merged:
 
    ```yaml
@@ -15,10 +27,12 @@ Applies to any repo cutting library/application releases or maintaining release 
        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
    ```
 
+<!-- rule: manual-workflowdispatch-for -->
 2. **Manual `workflow_dispatch` for application releases** — Trigger application releases explicitly via `workflow_dispatch` with a required `version` input (`v1.2.3`) rather than on every push to `main`.
 
 ## Cherry-pick & release branch sync
 
+<!-- rule: automated-cherry-pick-prs-wo -->
 3. **Automated cherry-pick PRs (`workflow_dispatch`)** — Backport commits to a release branch via a dispatch workflow taking `release-branch` and `commit-sha`, running `git cherry-pick`, and opening a PR with `peter-evans/create-pull-request`:
 
    ```yaml
@@ -37,4 +51,5 @@ Applies to any repo cutting library/application releases or maintaining release 
        title: "chore(release): cherry-pick ${{ inputs.commit-sha }} to ${{ inputs.release-branch }}"
    ```
 
+<!-- rule: scheduledmanual-sync-from-ma -->
 4. **Scheduled/manual sync from `main` to active release branches** — Where long-lived release branches must track `main`, sync them via a weekly cron (`0 0 * * 1`) + `workflow_dispatch` job (`fetch-depth: 0`, `git checkout release/vX.Y && git merge origin/main --no-edit && git push`).

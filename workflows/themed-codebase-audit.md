@@ -1,6 +1,10 @@
 ---
-name: themed-codebase-audit
-description: Audit a codebase along three themes — dead code, duplicated business logic, over-complex logic — via parallel scans, then grill the user to a shared understanding and execute in one branch per wave. Use when asked to find dead code, find duplication, simplify complex logic, or run "an audit like that one". For full rule-compliance sweeps sliced by package, use codebase-audit instead.
+id: "wf-themed-codebase-audit"
+name: "Themed Codebase Audit"
+kind: "workflow"
+description: "Audit a codebase along three themes — dead code, duplicated business logic, over-complex logic — via parallel scans, then grill the user to a shared understanding and execute in one branch per wave. Use when asked to find dead code, find duplication, simplify complex logic, or run \"an audit like that one\". For full rule-compliance sweeps sliced by package, use codebase-audit instead."
+scope: "Three-theme audit (dead code, duplicated business logic, complex logic) with a grill gate and wave branches."
+priority: "mandatory"
 ---
 
 # Themed Codebase Audit

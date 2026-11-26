@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { z } from 'zod';
+
+import { parseRules, parseWorkflow } from './parse-content';
 
 import type { Catalog, CatalogEntry, EntryKind } from '../src/types';
 
@@ -25,34 +28,62 @@ function read(relative: string): string {
   return readFileSync(path.join(root, relative), 'utf8');
 }
 
-function stableId(kind: EntryKind, name: string): string {
-  return kind === 'workflow' ? `wf-${name}` : name;
-}
+const metadataSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string().min(1),
+  kind: z.enum(['rule', 'workflow']),
+  description: z.string().min(1),
+  scope: z.string().min(1),
+  priority: z.enum(['mandatory', 'recommended']),
+});
 
-function parseRouter(): Draft[] {
-  const router = read('CONTEXT.md');
+function parseSources(): Draft[] {
   const drafts: Draft[] = [];
-  const patterns: Array<{ kind: EntryKind; re: RegExp }> = [
-    { kind: 'rule', re: /^\|\s*`rules\/([^`]+)\.md`\s*\|\s*([^|]+)\|/gm },
-    { kind: 'workflow', re: /^\|\s*`workflows\/([^`]+)\.md`\s*\|\s*([^|]+)\|/gm },
+  const directories: Array<{ kind: EntryKind; directory: string }> = [
+    { kind: 'rule', directory: 'rules' },
+    { kind: 'workflow', directory: 'workflows' },
   ];
-  for (const { kind, re } of patterns) {
-    for (const match of router.matchAll(re)) {
-      const name = match[1];
-      const filePath = `${kind === 'rule' ? 'rules' : 'workflows'}/${name}.md`;
+  for (const { kind, directory } of directories) {
+    const files = readdirSync(path.join(root, directory)).filter((file) => file.endsWith('.md'));
+    for (const name of files.sort()) {
+      const filePath = `${directory}/${name}`;
       const content = read(filePath);
-      const title = content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? name;
-      const paragraph = firstParagraph(kind, content);
-      const headings = ruleHeadings(kind, content);
+      const frontmatter = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+      if (frontmatter === null) throw new Error(`${filePath}: missing catalog metadata`);
+      let yaml: unknown;
+      try {
+        yaml = Bun.YAML.parse(frontmatter[1]);
+      } catch (error) {
+        throw new Error(`${filePath}: invalid catalog metadata YAML`, { cause: error });
+      }
+      const parsed = metadataSchema.safeParse(yaml);
+      if (!parsed.success) {
+        const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'metadata');
+        throw new Error(`${filePath}: invalid catalog metadata: ${fields.join(', ')}`);
+      }
+      if (parsed.data.kind !== kind) throw new Error(`${filePath}: incorrect catalog kind`);
+      const metadata = parsed.data;
+      const body = content.slice(frontmatter[0].length);
+      const retrievalBody = body.replace(/^<!-- rule: [a-z0-9-]+ -->\r?\n/gm, '');
+      const title = body.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? metadata.name;
+      const paragraph =
+        kind === 'workflow'
+          ? metadata.description
+          : firstParagraph(kind, retrievalBody.trimStart());
+      const headings = ruleHeadings(kind, retrievalBody);
       const detail = `${paragraph} ${headings}`.slice(0, 1400);
-      const scope = match[2].trim();
-      const id = stableId(kind, name);
+      const scope = metadata.scope;
       drafts.push({
-        id,
+        id: metadata.id,
         kind,
         path: filePath,
         title,
+        name: metadata.name,
+        description: metadata.description,
         scope,
+        priority: metadata.priority,
+        rules: kind === 'rule' ? parseRules(filePath, metadata.id, body) : [],
+        steps: kind === 'workflow' ? parseWorkflow(filePath, body) : [],
         retrievalText: `${title}. Scope: ${scope}. ${detail}`,
         embeddingInput: `title: ${title} | text: ${scope} ${detail}`,
         digest: '',
@@ -60,6 +91,10 @@ function parseRouter(): Draft[] {
         content,
       });
     }
+  }
+  if (drafts.length === 0) throw new Error('No rule or workflow source files found');
+  if (new Set(drafts.map((draft) => draft.id)).size !== drafts.length) {
+    throw new Error('Duplicate catalog IDs');
   }
   return drafts;
 }
@@ -111,6 +146,14 @@ function addReferences(drafts: Draft[]): void {
       if (target !== draft.id) seen.add(target);
     }
     draft.references = [...seen].sort();
+    for (const rule of draft.rules) {
+      const references = new Set<string>();
+      for (const match of rule.content.matchAll(/(rules|workflows)\/([a-z0-9-]+)\.md/g)) {
+        const target = byPath.get(`${match[1]}/${match[2]}.md`);
+        if (target !== undefined && target !== draft.id) references.add(target);
+      }
+      rule.references = [...references].sort();
+    }
   }
 }
 
@@ -166,7 +209,7 @@ async function embed(inputs: string[]): Promise<string[]> {
 }
 
 async function build(): Promise<{ catalog: Catalog; embeddings: EmbeddingStore }> {
-  const drafts = parseRouter();
+  const drafts = parseSources();
   addDigests(drafts);
   addReferences(drafts);
   const embeddings = loadEmbeddings();
@@ -194,6 +237,7 @@ async function build(): Promise<{ catalog: Catalog; embeddings: EmbeddingStore }
     process.exit(0);
   }
   if (missing.length > 0) {
+    if (check) throw new Error(`Missing embeddings for ${missing.length} catalog entries.`);
     const vectors = await embed(missing);
     for (const [index, input] of missing.entries()) {
       const digest = createHash('sha256').update(input).digest('hex');
@@ -204,7 +248,7 @@ async function build(): Promise<{ catalog: Catalog; embeddings: EmbeddingStore }
     ...draft,
     vector: embeddings.vectors[draft.digest],
   }));
-  const sources = ['CONTEXT.md', ...drafts.map((draft) => draft.path).sort()];
+  const sources = drafts.map((draft) => draft.path).sort();
   const sourceDigest = createHash('sha256')
     .update(sources.map((source) => `${source}\0${read(source)}`).join('\n'))
     .digest('hex');

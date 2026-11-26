@@ -1,100 +1,34 @@
-# skills — remote engineering rules & workflows for The Resonance Team
+# Team engineering rules and workflows
 
-Public, cross-project engineering rules, workflows, and tool baselines for AI coding agents. This repository is **100% remote rules** updated continuously on `main` and consumed live via the [`CONTEXT.md`](./CONTEXT.md) router—never installed as static local skills (`npx skills add`), which go stale between commits.
+This repository contains the team's coding rules, workflows, and tool baselines.
+The [rules MCP](./agent-rules-mcp/README.md) discovers and serves applicable
+guidance. Source Markdown files own the catalog metadata.
 
-## Setup by Agent
+## Setup
 
-### 1. Universal `AGENTS.md` Pointer (OpenCode v2, Codex, Antigravity, Hermes, Cursor)
+Follow the [rules MCP setup](./agent-rules-mcp/README.md#local-setup) and the
+[OpenCode instructions](./agent-rules-mcp/README.md#opencode). Keep the agent
+profile as a standing instruction. Before coding, inspect the mandatory catalog
+metadata for the task and load each applicable rule and workflow.
 
-Add this canonical router block to `<repo>/AGENTS.md` (per project) or to your agent's global standing instruction file:
+Pi setup and client-safe retrieval for long workflows are tracked in
+[#21](https://github.com/The-Resonance-Team/skills/issues/21). Pi is not yet a
+migrated consumer; it must pause affected coding work until the rules MCP is
+configured.
 
-```markdown
-## Engineering Rules & Workflows (The Resonance Team)
+## Migration from the old router
 
-Always read the router at `https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md` (or `@skills/CONTEXT.md` when mounted via OpenCode `references`).
-Fetch and follow every `rules/*.md` module and `workflows/*.md` procedure from its tables whose scope matches this repository and current task.
-```
+`CONTEXT.md` has been removed. Consumers that loaded it must switch to the rules
+MCP and its metadata index. Existing raw URLs for individual `rules/*.md` and
+`workflows/*.md` files remain available; use them only when explicitly directed.
 
-| `AGENTS.md`-Native Agent | Global Standing File | Project File & Runtime Notes |
-| :--- | :--- | :--- |
-| **OpenCode v2** | `~/.config/opencode/AGENTS.md` | `<repo>/AGENTS.md` (pair with `references.skills` in `opencode.jsonc` below). |
-| **OpenAI Codex** | `~/.codex/AGENTS.md` | `<repo>/AGENTS.md` (32 KiB default `project_doc_max_bytes` in `~/.codex/config.toml`). For network-disabled sandboxes, clone this repo to `~/.agents/resonance-skills` and reference `~/.agents/resonance-skills/CONTEXT.md`. |
-| **Google Antigravity (AGY)** | `~/.gemini/GEMINI.md` | `<repo>/AGENTS.md`, `<repo>/GEMINI.md`, or `.agents/rules/resonance.md` (24 KB per-file cap; 20k-token rules budget). |
-| **Nous Hermes Agent** | `~/.hermes/SOUL.md` (slot #1 prompt) | `<repo>/AGENTS.md` (walks down from Git root to CWD; personal overrides go in `AGENTS.override.md`). |
-| **Cursor** | Cursor Settings → Rules | `<repo>/AGENTS.md` (or `.cursor/rules/resonance.mdc` with `alwaysApply: true` frontmatter). |
-| **Pi** | `~/.pi/agent/AGENTS.md` | Pi does not fetch `instructions[]`. Install [`configs/pi/team-rules.ts`](./configs/pi/team-rules.ts) (see [Pi](#4-pi)). |
+## Repository
 
----
+- [`rules/`](./rules/) — self-contained rule modules.
+- [`workflows/`](./workflows/) — task procedures.
+- [`configs/`](./configs/) — formatter, linter, and other tool baselines.
+- [`free-resources/INDEX.md`](./free-resources/INDEX.md) — optional reference notes.
+- [`AGENTS.md`](./AGENTS.md) — contributor rules and catalog authoring contract.
 
-### 2. OpenCode v2 (`opencode.jsonc` + `AGENTS.md`)
-
-> **OpenCode v2 native instructions:** v2 resolves `"instructions"` in `opencode.jsonc` into active model context (fetched at config load, 5s timeout, keeps last good copy). Use raw URLs for up-to-date rules. Pair with `"references"` for on-demand repo access: `references` advertises `@skills` pointer only, `instructions[]` injects content.
-
-1. Configure `~/.config/opencode/opencode.jsonc` (global) or `opencode.jsonc` (per project):
-
-```jsonc
-// ~/.config/opencode/opencode.jsonc
-{
-  "$schema": "https://opencode.ai/config.json",
-  "references": {
-    "skills": {
-      "repository": "The-Resonance-Team/skills",
-      "branch": "main",
-      "description": "Team engineering router (CONTEXT.md), rule modules (rules/*.md), workflows (workflows/*.md), and tool baseline configs (configs/*)"
-    }
-  },
-  // Native v2 instructions (active): raw-first for up-to-date rules. references = on-demand mount, instructions[] = auto-loaded baseline.
-  "instructions": [
-    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/profiles/xirothedev.md",
-    "https://raw.githubusercontent.com/The-Resonance-Team/skills/main/CONTEXT.md"
-  ]
-}
-```
-
-2. Add the [Universal `AGENTS.md` Pointer](#1-universal-agentsmd-pointer-opencode-v2-codex-antigravity-hermes-cursor) to `~/.config/opencode/AGENTS.md` (global) or `<repo>/AGENTS.md`.
-
----
-
-### 3. Dedicated Entry Points (Agents That Do Not Resolve `AGENTS.md` as Main)
-
-For agents that read a tool-specific instruction file instead of `AGENTS.md`, place the [Universal `AGENTS.md` Pointer](#1-universal-agentsmd-pointer-opencode-v2-codex-antigravity-hermes-cursor) in their native file or bridge them to `<repo>/AGENTS.md`:
-
-| Agent | Global Entry Point | Project Entry Point / Bridge to `AGENTS.md` |
-| :--- | :--- | :--- |
-| **Claude Code** | `~/.claude/CLAUDE.md` | Add the router block to `CLAUDE.md` or `.claude/rules/resonance.md`, or bridge to `<repo>/AGENTS.md` with `@AGENTS.md` in `CLAUDE.md` (`ln -s AGENTS.md CLAUDE.md` also works). |
-| **Windsurf** | `~/.codeium/windsurf/memories/global_rules.md` | Add the router block to `.windsurf/rules/resonance.md`. |
-| **GitHub Copilot** | — | Add the router block to `.github/copilot-instructions.md` (or `.github/instructions/resonance.instructions.md` with `applyTo: "**"` frontmatter). |
-
----
-
-### 4. Pi (`~/.pi/agent`)
-
-Pi loads `AGENTS.md`, but it has no native `instructions[]` fetch. [`configs/pi/team-rules.ts`](./configs/pi/team-rules.ts) is that fetch: at session start it loads the same two standing files as OpenCode (`profiles/xirothedev.md`, `CONTEXT.md`) from raw URLs (5s timeout, last-good cache, then `~/workspace/skills`). Per-scope `rules/*.md` and `workflows/*.md` stay on demand. Do not copy `CONTEXT.md` into `AGENTS.md`.
-
-```sh
-mkdir -p ~/.pi/agent/extensions
-ln -sfn ~/workspace/skills/configs/pi/team-rules.ts ~/.pi/agent/extensions/team-rules.ts
-ln -sfn ~/workspace/skills/configs/pi/AGENTS.md ~/.pi/agent/AGENTS.md
-```
-
-Restart Pi or run `/reload`. `~/AGENTS.md` still says not to re-fetch those two files; that line applies only when `<team_rules>` is already in the prompt. `configs/pi/AGENTS.md` is the override when the section is missing.
-
-### Mixing instructions, references, and workflows
-
-- **Instructions** (`AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / Pi `<team_rules>` + `CONTEXT.md` + active `rules/*.md` URLs): small, standing rules and conventions relevant on every request.
-- **Workflows** (`workflows/*.md`): step-by-step procedures (`codebase-audit`, `themed-codebase-audit`, `lint-burndown`, `qa`, `claude-design-prompting`, `claude-design-to-nextjs`) fetched on demand when their trigger condition fires.
-- **References** (`references` in `opencode.jsonc`): cached Git repositories or external trees attached via `@alias` only when needed (zero standing context cost beyond the description line).
-
-## Module index & tool configs
-
-The single source of truth for all rule modules, workflows, and ubiquitous language lives in [`CONTEXT.md`](./CONTEXT.md). Do not duplicate the module table here.
-
-Machine-readable baseline configs ship in [`configs/`](./configs/) (`.oxfmtrc.json`, `.oxlintrc.json`, `dependabot.yml`) and are copied into consumer repos per [`rules/linting.md`](./rules/linting.md) and [`rules/dependabot.md`](./rules/dependabot.md). The Pi loader is [`configs/pi/team-rules.ts`](./configs/pi/team-rules.ts). CI automation packs live in [`skills/pr-analysis/`](./skills/pr-analysis/SKILL.md).
-
-## Known gaps
-
-- **Dart/Flutter** — no rule module yet. Create `rules/dart.md` when a repo carries Dart application code, not before.
-
-## Contributing
-
-See [`AGENTS.md`](./AGENTS.md) for the rule-file format contract and lifecycle rules. Commits go directly to `main` (trunk-based).
+Skill, profile, and configuration metadata is tracked in
+[#20](https://github.com/The-Resonance-Team/skills/issues/20).

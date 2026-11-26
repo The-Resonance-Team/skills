@@ -4,7 +4,15 @@ import { z } from 'zod';
 
 import { sha256 } from './auth-tokens';
 import type { PatchDraft } from './contracts';
-import { catalog, getContent, getMetadata, maxMatches, searchAi } from './search';
+import {
+  catalog,
+  getContent,
+  getMetadata,
+  getRule,
+  getWorkflow,
+  maxMatches,
+  searchAi,
+} from './search';
 import type { Env } from './types';
 
 export type CallerAuth = { scope: string[]; clientId?: string; subject?: string };
@@ -66,15 +74,26 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
     'get_metadata',
     {
       description:
-        'Call this after search_ai to inspect rule IDs, scope, source path and related rules without loading rule text. Omit id to list all 29 entries.',
-      inputSchema: { id: z.string().max(64).optional() },
+        'List catalog metadata and rule or workflow indexes without loading content. Inspect all mandatory entries for applicability before coding.',
+      inputSchema: {
+        id: z.string().max(64).optional(),
+        kind: z.enum(['rule', 'workflow']).optional(),
+        priority: z.enum(['mandatory', 'recommended']).optional(),
+        offset: z.number().int().min(0).optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+      },
       outputSchema: {
         metadata: z.array(
           z.object({
             id: z.string(),
             kind: z.string(),
             path: z.string(),
+            name: z.string(),
+            description: z.string(),
             scope: z.string(),
+            priority: z.enum(['mandatory', 'recommended']),
+            rules: z.array(z.object({ id: z.string(), number: z.string(), title: z.string() })),
+            steps: z.array(z.object({ title: z.string() })),
             related: z.array(z.string()),
             references: z.array(z.string()),
           }),
@@ -82,11 +101,69 @@ export async function handleMcp(request: Request, env: Env, auth: CallerAuth): P
       },
       annotations: { readOnlyHint: true },
     },
-    ({ id }) => {
+    ({ id, kind, priority, offset, limit }) => {
       try {
-        const found = getMetadata(id);
+        const found = getMetadata(id, { kind, priority, offset, limit });
         const metadata = Array.isArray(found) ? found : [found];
         return { structuredContent: { metadata }, ...text({ metadata }) };
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'get_rule',
+    {
+      description: 'Retrieve one complete numbered rule by its stable slug ID.',
+      inputSchema: { id: z.string().min(1).max(128) },
+      outputSchema: {
+        rule: z.object({
+          id: z.string(),
+          number: z.string(),
+          title: z.string(),
+          content: z.string(),
+          path: z.string(),
+          scope: z.string(),
+          priority: z.enum(['mandatory', 'recommended']),
+          references: z.array(z.string()),
+        }),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    ({ id }) => {
+      try {
+        const rule = getRule(id);
+        return { structuredContent: { rule }, ...text({ rule }) };
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'get_workflow',
+    {
+      description:
+        'Retrieve a complete workflow as ordered instructions. Never run a partial workflow.',
+      inputSchema: { id: z.string().min(1).max(64) },
+      outputSchema: {
+        workflow: z.object({
+          id: z.string(),
+          name: z.string(),
+          path: z.string(),
+          scope: z.string(),
+          priority: z.enum(['mandatory', 'recommended']),
+          references: z.array(z.string()),
+          steps: z.array(z.object({ title: z.string(), content: z.string() })),
+        }),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    ({ id }) => {
+      try {
+        const workflow = getWorkflow(id);
+        return { structuredContent: { workflow }, ...text({ workflow }) };
       } catch (error) {
         return failure(error);
       }

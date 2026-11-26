@@ -1,6 +1,10 @@
 ---
-name: codebase-audit
-description: Audit the whole codebase in parallel subagent slices against the team-rule checklist — rule compliance, AI slop, dead code, suppressed linters, type safety, test slop, production risk. Use when asked to audit the codebase, check team-rule compliance repo-wide, find and remove AI slop and dead code across the repo, or scan for leaked secrets and risky dependencies.
+id: "wf-codebase-audit"
+name: "Codebase Audit Workflow"
+kind: "workflow"
+description: "Audit the whole codebase in parallel subagent slices against the team-rule checklist — rule compliance, AI slop, dead code, suppressed linters, type safety, test slop, production risk. Use when asked to audit the codebase, check team-rule compliance repo-wide, find and remove AI slop and dead code across the repo, or scan for leaked secrets and risky dependencies."
+scope: "Full-codebase audit in package/directory slices against `rules/audit.md` (team-rule compliance, slop, dead code, risk, secrets)."
+priority: "mandatory"
 ---
 
 # Codebase Audit Workflow

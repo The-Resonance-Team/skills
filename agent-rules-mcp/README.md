@@ -7,8 +7,14 @@ does not inject rule files at session start.
 ## Tools
 
 - `search_ai(query, limit?)` — returns at most five IDs with similarity scores.
-- `get_metadata(id?)` — returns IDs, scope, source path, semantic neighbours and
-  citation links. No rule body.
+- `get_metadata(id?, kind?, priority?, offset?, limit?)` — lists the catalog and
+  each rule or workflow index without loading the body. Page through all mandatory
+  entries and assess their scopes before coding. Load module context and each
+  applicable rule.
+- `get_rule(id)` — returns one numbered rule by stable slug ID, with scope,
+  priority, and references.
+- `get_workflow(id)` — returns the complete workflow as ordered instructions, or
+  an error if it exceeds the safe response size.
 - `get(id)` — returns one full rule or workflow, capped at 51,200 bytes.
 - `propose_rule_patch(id, summary, content)` — requires `rules:write`. Stores a
   draft and returns a review URL. Repeated identical requests return the same
@@ -17,8 +23,18 @@ does not inject rule files at session start.
   human approval, queues a durable submission, and returns its state. The Worker
   opens one draft PR from `rules-mcp/<id>` to `main`; it never pushes to `main`.
 
-Rule IDs are stable logical names. Workflow IDs start with `wf-`. The file path
-is metadata, not the ID.
+Module IDs remain stable logical names. Workflow IDs start with `wf-`. Individual
+rule IDs use `rule:<module-id>:<slug>`; their display numbers may change. The file
+path is metadata, not the ID.
+
+Do not change an existing ID for a reorder or title edit. To retire or replace
+an ID, add its old value to `id-migrations.json` with the replacement ID or
+`null` for retirement. CI compares the catalog with the base commit.
+
+Mandatory guidance takes precedence over recommended guidance. When equally
+ranked applicable rules conflict, stop affected work and ask the user to resolve
+the conflict; propose a patch through the human approval flow. Unattended agents
+must not guess. If this MCP is unavailable, pause affected coding work.
 
 ## Auth
 
@@ -59,7 +75,7 @@ never creates a new submit-ready approval from a legacy decision.
 ## Layout
 
 - `src/` — Worker entry, OAuth, HTTP routes, MCP tools, ranking, patch state.
-- `scripts/build-catalog.ts` — builds `generated/catalog.json`.
+- `scripts/build-catalog.ts` — validates source metadata and builds `generated/catalog.json`.
 - `generated/` — committed catalog, embedding store and build inputs.
 - `ui/` — Astryx approval dashboard.
 - `plugin/` — OpenCode plugin that opens the dashboard.
@@ -87,7 +103,20 @@ entry uses OAuth with `scope: rules:read rules:write`; run
 entry: CI and eval use the read-only static token through the
 `AGENT_RULES_MCP_TOKEN` environment variable, not through OpenCode. See ADR
 0002. Verify with `opencode mcp list`; it must print `agent-rules-mcp connected`.
-Keep the profile as an eager instruction; `CONTEXT.md` stays lazy in the MCP.
+Keep the profile as an eager instruction. The MCP provides the catalog and rules.
+
+## Source metadata
+
+Every Markdown file in `rules/` and `workflows/` carries YAML frontmatter with
+`id`, `name`, `kind`, `description`, `scope`, and `priority`. Each numbered rule
+has a stable `<!-- rule: slug -->` anchor. Do not derive IDs from display numbers
+or change them on reorder. Metadata, scopes, references, and IDs are validated by
+the builder. Rules are limited to 1,000 tokens and workflows to 10,000 tokens
+using OpenAI's `o200k_base` encoding.
+
+`bun run build:check` uses only committed embedding vectors and fails if they are
+missing; it does not call Workers AI. A maintainer generates missing vectors in a
+trusted environment and commits the catalog and cache before PR validation.
 
 ## Limits
 
