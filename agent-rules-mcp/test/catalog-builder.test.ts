@@ -117,6 +117,40 @@ describe('catalog builder CLI', () => {
     expect(stderr).toContain('duplicate rule number 1');
   });
 
+  test('rejects missing numbered references written without a hash', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source('<!-- rule: example -->\n1. **Example** — See `rules/example.md` rule 999.'),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain('unknown rule number rules/example.md #999');
+  });
+
+  test('rejects missing numbered references separated by slashes', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source('<!-- rule: example -->\n1. **Example** — See `rules/example.md` #1/#999.'),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain('unknown rule number rules/example.md #999');
+  });
+
+  test('fails closed when a referenced rule module does not exist', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source('<!-- rule: example -->\n1. **Example** — See `rules/EXAMPLE.md` #1.'),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain('unknown rule module rules/EXAMPLE.md');
+  });
+
+  test('accepts existing numbered references in both supported formats', async () => {
+    const { exitCode, stderr } = await checkSource(
+      source(
+        '<!-- rule: example -->\n1. **Example** — See `rules/example.md` rule 1 and `rules/example.md` #1/#1.',
+      ),
+    );
+    expect(exitCode).not.toBe(0);
+    expect(stderr.toLowerCase()).toContain('missing embedding');
+  });
+
   test('rejects metadata that cannot fit in a complete MCP page', async () => {
     const { exitCode, stderr } = await checkSource(
       source('<!-- rule: example -->\n1. **Example** — Text.', 'example', 'a'.repeat(10000)),
