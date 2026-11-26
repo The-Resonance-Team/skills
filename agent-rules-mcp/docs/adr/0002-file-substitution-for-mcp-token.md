@@ -1,0 +1,3 @@
+# Authenticate OpenCode with OAuth; keep the bearer token for CI
+
+OpenCode's interactive `agent-rules-mcp` entry uses OAuth with `rules:read rules:write` (see ADR 0003); the static read-only bearer token remains only as the `AGENT_RULES_MCP_TOKEN` GitHub secret and a local eval env var. We removed the duplicate `{file:...}`-based CI entry on 2026-11-25 because the persistent `opencode serve --service` process had already started with an empty token, and two entries for one Worker invited the same 401 again. The verification seam is `opencode mcp list` printing `agent-rules-mcp connected` — no unit test covers the CLI-to-daemon handoff.

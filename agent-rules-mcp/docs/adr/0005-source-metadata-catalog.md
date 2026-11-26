@@ -1,0 +1,3 @@
+# Source-file metadata for the rules catalog
+
+Rule modules and workflows own their catalog metadata in YAML frontmatter with stable slug anchors for numbered rules, because agents need individual rule retrieval and an index of mandatory guidance without a router repeating scope and triggers. The build validates metadata, references, and token limits and checks the generated artifacts; PR checks use committed embeddings without production credentials. The catalog stays bundled with the Worker and is published by a successful deployment from `main`; `CONTEXT.md` is removed, and its URL is a breaking change that requires consumers to migrate to the MCP.

@@ -1,15 +1,17 @@
 ---
-name: qa
-description: Full UI/UX QA pass over a web product's frontends — bring up the stack with seeded data, screenshot every route at 3 device widths, vision-audit the PNGs with parallel review agents, fix presentational findings, and report a triaged list. Use when asked to QA the UI, run a screenshot sweep, audit responsive/UX issues across apps, or re-verify UI fixes with screenshots.
+id: "wf-qa"
+name: "QA Sweep Workflow"
+kind: "workflow"
+description: "Full UI/UX QA pass over a web product's frontends — bring up the stack with seeded data, screenshot every route at 3 device widths, vision-audit the PNGs with parallel review agents, fix presentational findings, and report a triaged list. Use when asked to QA the UI, run a screenshot sweep, audit responsive/UX issues across apps, or re-verify UI fixes with screenshots."
+scope: "Full UI/UX QA pass: seeded stack, 3-device screenshot sweep, parallel vision audit, presentational fixes, triaged report."
+priority: "mandatory"
 ---
 
 # QA Sweep Workflow
 
-Screenshot every route of every frontend at desktop/tablet/mobile, vision-audit the captures with parallel review agents, fix presentational findings under the standards in `rules/qa.md`:
-
-```
-https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/qa.md
-```
+Screenshot every route of every frontend at desktop/tablet/mobile, vision-audit
+the captures with parallel review agents, and fix presentational findings under
+the applicable `rules/qa.md` rules loaded through the rules MCP.
 
 Then report a triaged remaining-issues list. The reference run (VibeHost, 2026-10-25: 375 shots, ~35 findings, 2 fix rounds) shapes every step below.
 
@@ -42,11 +44,8 @@ A seeded sweep only proves the happy path renders — the error UI is never exer
 
 ### 3b. Real-user functional pass
 
-Run the functional browser pass under `rules/real-user-qa.md`:
-
-```
-https://raw.githubusercontent.com/The-Resonance-Team/skills/main/rules/real-user-qa.md
-```
+Run the functional browser pass under the applicable `rules/real-user-qa.md`
+rules loaded through the rules MCP.
 
 Use browse MCP for the signed-in session and chrome-devtools MCP for console and network evidence; record both in one coverage matrix. **Completion criterion:** every affected route, control, mutation, state, and viewport has a row with URL, result, and evidence.
 

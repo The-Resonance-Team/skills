@@ -1,11 +1,10 @@
 ---
-name: claude-design-to-nextjs
-description: >-
-  Convert Claude Design (.dc.html) zip exports and product specs into
-  pixel-perfect Next.js/React pages using team rules, domain modeling, two-axis
-  code review, and live Chrome DevTools MCP verification. Use when converting a
-  Claude Design export or zip to Next.js/React, auditing design vs spec gaps, or
-  verifying pixel-perfect UI parity.
+id: "wf-claude-design-to-nextjs"
+name: "Claude Design to Next.js/React Workflow"
+kind: "workflow"
+description: "Convert Claude Design (.dc.html) zip exports and product specs into pixel-perfect Next.js/React pages using team rules, domain modeling, two-axis code review, and live Chrome DevTools MCP verification. Use when converting a Claude Design export or zip to Next.js/React, auditing design vs spec gaps, or verifying pixel-perfect UI parity."
+scope: "Convert Claude Design (`.dc.html`) exports or specs into pixel-perfect Next.js/React pages verified with Chrome DevTools MCP. Includes zip intake to `apps/<app>` and a conversion method check."
+priority: "mandatory"
 ---
 
 # Claude Design to Next.js/React Workflow

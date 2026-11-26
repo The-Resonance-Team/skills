@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "opencode-codemode-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "secrets": {
+    "required": ["MCP_TOKEN", "APPROVAL_TOKEN", "CLOUDFLARE_API_TOKEN"],
+  },
+  "ratelimits": [
+    { "name": "REQUEST_LIMIT", "namespace_id": "1011", "simple": { "limit": 120, "period": 60 } },
+    { "name": "START_LIMIT", "namespace_id": "1012", "simple": { "limit": 10, "period": 60 } },
+  ],
+  "worker_loaders": [{ "binding": "LOADER" }],
+  "durable_objects": {
+    "bindings": [{ "name": "DEPLOYMENTS", "class_name": "Deployment" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Deployment"] }],
+  "workflows": [
+    {
+      "name": "codemode-fixture-deployment",
+      "binding": "WORKFLOWS",
+      "class_name": "DynamicWorkflow",
+      "concurrency": { "limit": 5 },
+    },
+  ],
+  "vars": {
+    "TARGET_ACCOUNT_ID": "",
+    "TARGET_WORKER_NAME": "",
+  },
+}

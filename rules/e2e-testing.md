@@ -1,49 +1,83 @@
+---
+id: "e2e-testing"
+name: "E2E Testing Rules — Playwright against a real API"
+kind: "rule"
+description: "Applies to any repo running Playwright e2e tests against a real backend and real seeded data. Consumers running only unit tests omit this file."
+scope: "Repos with Playwright e2e tests against a real API"
+priority: "mandatory"
+---
 # E2E Testing Rules — Playwright against a real API
+
+<!-- rule: module-context -->
+0. **Module context** — Apply this context when the module applies.
 
 Applies to any repo running Playwright e2e tests against a real backend and real seeded data. Consumers running only unit tests omit this file.
 
 ## Locators & data correlation (mandatory)
 
+<!-- rule: getbytextstr-is-substring-ca -->
 1. **`getByText(str)` is substring + case-insensitive by default — pass `{ exact: true }` or scope to a container** — Never trust `page.getByText('Kiểm định').first()` on a page where headings or related cards contain the same substring:
 
    ```ts
    const badge = page.getByText('Kiểm định', { exact: true }).first();
    ```
 
+<!-- rule: correlate-api-fetched-entiti -->
 2. **Correlate API-fetched entities with their exact UI container** — When asserting on an entity fetched via `GET /things?limit=1`, scope the UI locator to that entity's unique id/href/title rather than `.first()` on a generic card class (sort order or related-item grids may render a different entity first).
+<!-- rule: first-is-valid-when-multiple -->
 3. **`.first()` IS valid when multiple domain items legitimately share a display label** — Booking *any* available slot at `"09:00"` across multiple staff uses `.first()`; a strict-mode failure on identical valid labels means the locator was over-constrained for the domain.
+<!-- rule: headless-overlay-click-fallb -->
 4. **Headless overlay click fallback** — When a `.click()` on a confirmed-visible sheet/portal option silently no-ops in headless mode, use `.focus()` followed by ` page.keyboard.press('Enter')`.
+<!-- rule: replicate-the-apps-client-ma -->
 5. **Replicate the app's client mapper when injecting state directly** — Before calling `page.evaluate((p) => store.go('itemDetail', p), payload)`, transform the raw API response through the same field renames and defaults (`images: raw.photos ?? []`) the real client mapper applies so tests never trigger false-positive crashes on raw wire shapes.
+<!-- rule: search-wider-pages-when-seed -->
 6. **Search wider pages when seed data is sparse** — When only a subset of seeded entities carries a relation (e.g. videos on 3 of 20 trainers), fetch `?limit=20`, loop until a qualifying entity is found, and `expect(match).toBeTruthy()` before testing the flow.
 
 ## Documenting unfixed bugs & copy-dependent assertions (mandatory)
 
+<!-- rule: wrap-genuine-out-of-scope-ap -->
 7. **Wrap genuine out-of-scope app bugs in `test.fail()`, never weaken assertions** — Keep the strict assertion intact and call `test.fail()` with a comment naming the bug/follow-up. CI stays green now and turns red automatically once the underlying bug is fixed (signaling removal of `test.fail()`).
+<!-- rule: avoid-literal-copy-assertion -->
 8. **Avoid literal copy assertions where role/testid works; sweep `**/*.spec.ts` on copy rewrites** — Asserting literal UI text couples specs to wording changes. Prefer role/testid locators unless copy itself is under test; whenever `rules/i18n.md` (#14) renames catalog copy, grep and update `**/*.spec.ts` in the same commit (Precedent: "Trainer nổi bật" → "HLV nổi bật" broke 3 specs post-merge).
 
 ## Environment & parallel workers (mandatory)
 
+<!-- rule: match-cis-production-buildst -->
 9. **Match CI's production build+start command locally** — Framework dev-mode checks (e.g. Next.js instant-navigation validation) can abort routes that production builds serve cleanly.
+<!-- rule: pin-localhost-vs-127001-iden -->
 10. **Pin `localhost` vs `127.0.0.1` identically across `baseURL`, `webServer.url`, and API env vars** — Browsers treat `localhost` and `127.0.0.1` as separate origins; an `httpOnly` login cookie set on one silently misses page loads on the other, bouncing every authenticated test back to `/login`.
+<!-- rule: idempotent-seed-data-and-pre -->
 11. **Idempotent seed data & pre-run reset** — Reset and reseed before every full run when specs perform unrollback-able mutations (password changes, account creation) or use sequential IDs.
+<!-- rule: free-known-ports-before-full -->
 12. **Free known ports before full and isolated runs** — Kill stale listeners (`lsof -tiTCP:<port> -sTCP:LISTEN | xargs -r kill`) and clear leftover `BASE_URL` env overrides so `webServer` never attaches to a stale server from a prior run.
+<!-- rule: configure-mode-serial-when-t -->
 13. **Configure `{ mode: 'serial' }` when tests in a `describe` share `beforeAll` state** — Under `fullyParallel`, Playwright scatters tests in one `describe` across workers (`beforeAll` runs once per worker); add `test.describe.configure({ mode: 'serial' })` whenever tests share setup or sequence.
+<!-- rule: distinguish-workers1-content -->
 14. **Distinguish `--workers=1` contention from real failures** — Re-run a suspect failure in isolation with `--workers=1` against a clean server: if it passes, it is shared-DB parallel contention (document it); if it still fails, fix the test helper or app code before shipping.
+<!-- rule: browser-jobs-select-a-capabl -->
 14b. **Browser jobs select a capable runner and install the browser in the job** — Do not assume a self-hosted pool is homogeneous: a host with a `PREEMPT_RT` kernel can hang every Chrome build at startup (100% CPU, no CDP). Require a capability label (`runs-on: [self-hosted, linux, playwright]`) and run `bunx playwright install chromium` in the job — a no-op on provisioned hosts, a recovery path after a cache wipe. Precedent: Ecopick 2026-11 — 120 specs failed on `sang-server-3`; the xiro runners were labelled `playwright`.
 
 ## Coverage manifests (mandatory, when tracked)
 
+<!-- rule: exclude-screenshot-only-smok -->
 15. **Exclude screenshot-only smoke specs, include shared flow helpers (`helpers/flows.ts`), and triage dual-matcher disagreements** — Run both a loose substring matcher and a strict path-regex matcher (`:param` → `[^/'"\`]+`), print every row where they disagree, and inspect each disagreement by hand.
 
 ## One topology, one fixture, one persona (mandatory)
 
+<!-- rule: one-supportenvts-owns-every -->
 16. **One `support/env.ts` owns every origin and port** — Specs import `E2E_API_URL`, `E2E_WEB_URL`, `E2E_PORTAL_URL`, `E2E_MINIAPP_URL`, and the port map from one module. No `http://localhost:NNNN` literal in a spec. `E2E_BASE_URL` must actually redirect the browser and the API destination; when the suite owns its listeners, pin the API URL and refuse a runner-level override. Precedent: Ecopick 2026-11 — 25 specs carried private copies and `E2E_BASE_URL` changed nothing.
+<!-- rule: one-persona-registry-shared -->
 17. **One persona registry, shared with the seed** — Names, emails, roles, landing routes, and the password live in one module imported by `auth.setup`, the seed's protected-account guard, and the specs (`rules/fixtures.md` #5). Mint storage states only for personas a spec actually uses.
+<!-- rule: one-test-fixture-wraps-test -->
 18. **One test fixture wraps `test` with coverage** — Every spec imports `test`/`expect` from `support/fixtures`, never from `@playwright/test` directly. The wrapper records navigations and API hits for every spec, so coverage is not opt-in by import path. A pure API spec still uses the same fixture.
+<!-- rule: skip-do-not-pass-when-a-fixt -->
 19. **Skip, do not pass, when a fixture is absent** — A paid/full-path spec that needs a receiver, plan, or provider row calls `test.skip(true, '<missing fixture>')` when the row is absent. Assert cleanup before the test ends; never `.catch(() => null)` it away. An unknown role or account fails loudly instead of falling back to `PLAYER`. Keep the gated-route list equal to the app's gated page list; a missing route is a silent hole.
+<!-- rule: removing-testfail-requires-a -->
 20. **Removing `test.fail()` requires a fix or a linked bug** — A drift check that fails is a red test, not a reason to delete the marker. Fix the product copy/behavior, or keep `test.fail()` with a comment naming the issue. Never remove it only to make CI green. Precedent: Ecopick 2026-11 — the certified-paddle badge differed between card and detail; the marker was removed before the copy was unified.
 
 ## Guardrail wiring (mandatory)
 
+<!-- rule: the-browser-suite-runs-in-ci -->
 21. **The browser suite runs in CI** — A suite that CI never runs is a local habit, not a check. Add a path-filtered job that starts the fixture and app services, waits for health, installs or selects a browser, and runs `test:e2e` and its variant scripts. Keep the pre-commit hook fast; the full browser run belongs in CI. Precedent: owobot-tools 2026-11 — 42 cases existed in `apps/console`, but CI ran only lint, typecheck, test, and build; the real-user pass was requested three times before it became a gate.
+<!-- rule: one-command-owns-the-fixture -->
 22. **One command owns the fixture stack** — `test:e2e` starts the mock API and the app, waits for both health endpoints, and stops them on exit. A manual mock server plus a manual dev server invites stale ports and duplicate-server errors. If the Playwright browser download stalls, pin the installed Chrome channel in the config instead of retrying the download.

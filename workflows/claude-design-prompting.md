@@ -1,12 +1,10 @@
 ---
-name: claude-design-prompting
-description: >-
-  Interview the user to discover UI/UX design demand, generate multi-surface
-  Claude Design prompts that open with the correct trigger prefix and balance
-  creative freedom with production copy, responsive, and CRUD guardrails, audit
-  .dc.html exports, and generate in-place patch prompts. Use when writing prompts for Claude Design or AI UI generators,
-  grilling the user on app/portal features before design, or auditing a .dc.html
-  archive for production readiness.
+id: "wf-claude-design-prompting"
+name: "Claude Design Prompting & Production Audit Workflow"
+kind: "workflow"
+description: "Interview the user to discover UI/UX design demand, generate multi-surface Claude Design prompts that open with the correct trigger prefix and balance creative freedom with production copy, responsive, and CRUD guardrails, audit .dc.html exports, and generate in-place patch prompts. Use when writing prompts for Claude Design or AI UI generators, grilling the user on app/portal features before design, or auditing a .dc.html archive for production readiness."
+scope: "Grill the user on design demand, generate multi-surface Claude Design prompts (creative freedom + copy/responsive/CRUD guardrails), and audit `.dc.html` exports across CRUD, copy/UX, and responsive axes."
+priority: "mandatory"
 ---
 
 # Claude Design Prompting & Production Audit Workflow
@@ -46,7 +44,7 @@ Interview the user along the frontier (`❓ **Q1** - **<Title>**: ... ➡️ **R
 
 Write one self-contained markdown prompt per surface in `docs/drafts/claude-design-prompts.md`. Balance **creative latitude** (letting Claude Design's design priors shine) with **non-negotiable production guardrails**:
 
-- **Trigger prefix — open every prompt with the right one** (`CONTEXT.md#terms`): Claude Design sets the deliverable type from a fixed opening phrase. Selecting a template fills this phrase; the same phrase as the first pasted line selects that deliverable type. Use this map:
+- **Trigger prefix — open every prompt with the right one**: Claude Design sets the deliverable type from a fixed opening phrase. Selecting a template fills this phrase; the same phrase as the first pasted line selects that deliverable type. Use this map:
 
   | Template button | Trigger prefix |
   | --- | --- |

@@ -1,0 +1,124 @@
+name: mcp-checks
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        type: string
+        required: true
+      deploy:
+        type: boolean
+        default: false
+    secrets:
+      CLOUDFLARE_API_TOKEN:
+        required: false
+      CLOUDFLARE_ACCOUNT_ID:
+        required: false
+      AGENT_RULES_MCP_TOKEN:
+        required: false
+      ACCESS_CLIENT_SECRET:
+        required: false
+      AGENT_RULES_GITHUB_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-checks-${{ inputs.package }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !inputs.deploy }}
+
+jobs:
+  check:
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ${{ inputs.package }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2.1.0
+        with:
+          bun-version-file: ${{ inputs.package }}/package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install dashboard dependencies
+        if: inputs.package == 'agent-rules-mcp'
+        working-directory: agent-rules-mcp/ui
+        run: bun install --frozen-lockfile
+
+      - name: Build catalog and embeddings
+        if: inputs.deploy && inputs.package == 'agent-rules-mcp'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: bun run build
+
+      - name: Format check
+        run: bun run format:check
+      - name: Lint
+        run: bun run lint
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Verify dashboard
+        if: inputs.package == 'agent-rules-mcp'
+        working-directory: agent-rules-mcp/ui
+        run: |
+          bun run typecheck
+          bun run build
+          bunx astryx doctor --built dist
+
+      - name: Check generated files and required recall
+        if: inputs.package == 'agent-rules-mcp'
+        run: |
+          bun run build:check
+          bun run eval:check
+
+      - name: Check stable catalog IDs
+        if: inputs.package == 'agent-rules-mcp'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            echo "Missing catalog base commit" >&2
+            exit 1
+          fi
+          if git cat-file -e "$BASE_SHA:agent-rules-mcp/generated/catalog.json" 2>/dev/null; then
+            BASE_FILE="$RUNNER_TEMP/rules-base.json"
+            git show "$BASE_SHA:agent-rules-mcp/generated/catalog.json" > "$BASE_FILE"
+          else
+            BASE_FILE="$RUNNER_TEMP/rules-base.md"
+            git show "$BASE_SHA:CONTEXT.md" > "$BASE_FILE"
+          fi
+          bun scripts/check-ids.ts "$BASE_FILE" generated/catalog.json id-migrations.json
+
+      - name: Guard workflow configuration
+        working-directory: .
+        run: bun test ./.github/tests
+
+      - name: Test
+        run: bun run test
+      - name: Bundle Worker
+        run: bunx wrangler deploy --dry-run
+
+      - name: Deploy Worker
+        if: inputs.deploy && inputs.package == 'agent-rules-mcp' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          MCP_TOKEN: ${{ secrets.AGENT_RULES_MCP_TOKEN }}
+          ACCESS_CLIENT_SECRET: ${{ secrets.ACCESS_CLIENT_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.AGENT_RULES_GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$MCP_TOKEN" | bunx wrangler secret put MCP_TOKEN
+          printf '%s' "$ACCESS_CLIENT_SECRET" | bunx wrangler secret put ACCESS_CLIENT_SECRET
+          printf '%s' "$GITHUB_TOKEN" | bunx wrangler secret put GITHUB_TOKEN
+          SOURCE_DIGEST=$(bun -e 'console.log(JSON.parse(await Bun.file("generated/catalog.json").text()).sourceDigest)')
+          ARTIFACT_DIGEST=$(shasum -a 256 generated/catalog.json | cut -d ' ' -f 1)
+          bunx wrangler deploy --tag "$GITHUB_SHA" --message "source=$SOURCE_DIGEST artifact=$ARTIFACT_DIGEST"

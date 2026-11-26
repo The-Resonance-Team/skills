@@ -22,6 +22,7 @@ Key numbers:
 - Zero Trust: **50 users**, **24-hour log retention**
 - Zaraz: **1,000,000 events/month** in product docs
 - REST API: **1,200 requests per 5 minutes** per user
+- Email Sending: free to **verified destination addresses** on Workers Free
 
 ## 2. Visual map
 
@@ -91,7 +92,8 @@ flowchart TB
 | Security | Custom edge certificates | Not on Free plan | Business or Enterprise. Advanced Certificate Manager is a paid add-on. | [S2] |
 | Security | Client certificates | 100 active certificates per zone with Cloudflare-managed CA | Access mTLS is not on Free. Service tokens are available. | [S2] |
 | Email | Email Routing | Inbound email has no published daily cap; 30 domains per zone; 200 rules per domain; 200 destination addresses per account | Maximum inbound message size 25 MiB. Older “10,000/day” figure is not in current docs. | [S27] |
-| Email | Arbitrary-recipient Email Sending | Not on Free | Paid plan includes 3,000/month. | [S27] |
+| Email | Email Sending to verified destination addresses | Free on Workers Free; no published cap | Onboard sending domains and send through the Workers binding, REST API, or SMTP. Sends do not count toward monthly quota or daily sending limits. These messages now appear in Email Sending logs and analytics, not Email Routing analytics. | [S40] |
+| Email | Email Sending to arbitrary recipients | Not on Free | Workers Paid includes 3,000/month. Unverified recipients return `E_RECIPIENT_PLAN_RESTRICTED` on Free. | [S27], [S40] |
 | Observability | Zaraz events | 1,000,000 events/month | Product doc states this. The pricing page shows a dash. Use the product doc value. | [S28], [S1] |
 | Network | Cloudflare Tunnel | 1,000 tunnels; 25 active replicas per tunnel; 50,000 routes; 1,000 virtual networks | No traffic cap is published. Available on all plans. | [S35] |
 | Zero Trust | Access seats | 50 users | Free forever. Includes ZTNA, SWG, DEX, and flow monitoring. | [S3] |
@@ -152,6 +154,7 @@ flowchart TB
 - Dynamic Workers
 - Workers for Platforms request, CPU, and script use
 - Containers
+- Email Sending to arbitrary recipients
 - Workers Trace Events Logpush
 - Remote Browser Isolation, email security, and SASE network services
 
@@ -240,3 +243,4 @@ Source: [S37]
 - [S37] <https://github.com/cloudflare/mcp> — Cloudflare API MCP server setup and tools.
 - [S38] <https://developers.cloudflare.com/warp-client/> — WARP overview and paid WARP+ service.
 - [S39] <https://developers.cloudflare.com/containers/platform/pricing/> — Containers pricing. Free is N/A; included allocation belongs to Workers Paid.
+- [S40] <https://developers.cloudflare.com/changelog/post/2026-11-24-email-sending-workers-free> — Email Sending on Workers Free; verified recipient sends are free and appear in Email Sending analytics.

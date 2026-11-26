@@ -1,6 +1,6 @@
 /**
  * Pi stand-in for OpenCode `instructions[]`.
- * Loads the two standing files at session start (5s timeout, last-good cache, local clone).
+ * Loads the profile at session start (5s timeout, last-good cache, local clone).
  * Does not load per-scope `rules/*.md` or `workflows/*.md`.
  */
 import * as fs from "node:fs";
@@ -9,7 +9,7 @@ import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const RAW = "https://raw.githubusercontent.com/The-Resonance-Team/skills/main";
-const FILES = ["profiles/xirothedev.md", "CONTEXT.md"] as const;
+const FILES = ["profiles/xirothedev.md"] as const;
 const TIMEOUT_MS = 5000;
 
 type Via = "remote" | "cache" | "clone" | "missing";
@@ -89,7 +89,7 @@ export async function loadTeamRules(): Promise<TeamRulesLoad> {
 	const via: Via =
 		remote === FILES.length ? "remote" : cache > 0 ? "cache" : clone > 0 ? "clone" : "missing";
 	const text = [
-		"Standing team rules are already in this section. Do not fetch these two files again. Fetch only the `rules/*.md` and `workflows/*.md` rows in the router whose scope matches this repository and task.",
+		"The profile is in this section. The rules MCP must be configured and available before affected coding work; if it is unavailable, report the problem and pause.",
 		...parts,
 	].join("\n\n");
 	return { text, via };

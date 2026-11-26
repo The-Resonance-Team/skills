@@ -4,8 +4,11 @@ Portable standing instructions for all devices. Loaded via native `instructions[
 
 ## Engineering Rules & Workflows (The-Resonance-Team/skills)
 
-Router `CONTEXT.md` is already loaded via native `instructions[]`; do not re-fetch it.
-Fetch and follow every `rules/*.md` module and `workflows/*.md` procedure from its tables whose scope matches this repository and current task (`rules/general.md` for all projects, plus e.g. `rules/nestjs.md` for NestJS APIs, `rules/frontend.md` for web/portal). Use raw URLs from its tables so guidance stays up to date. Offline fallback: `~/workspace/skills/CONTEXT.md`. Do not load every module into context — per-scope only.
+Before coding, use `agent-rules-mcp` to page through the mandatory rule and workflow metadata until `nextOffset` is null. For each applicable entry, inspect its index by ID and follow `nextItemOffset` until null. Load each applicable module's context and rules by stable ID, and load applicable workflows as ordered steps. Search the catalog for additional relevant guidance. Follow mandatory guidance over recommended guidance and higher-level instructions over team guidance.
+
+When equally ranked applicable rules conflict, stop the affected work, show the conflict, and ask the user to choose. Once the user resolves the current task, continue and propose the agreed rule patch for human approval; the published catalog changes only after merge and deployment. An unattended agent must stop rather than guess.
+
+If the MCP is unavailable, report the outage and pause affected coding work. Use an individual raw rule URL only when the user explicitly directs it.
 
 ## Tooling & accounts
 

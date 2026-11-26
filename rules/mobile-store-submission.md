@@ -1,4 +1,15 @@
+---
+id: "mobile-store-submission"
+name: "Mobile Store Submission — rejection prevention for iOS and Android"
+kind: "rule"
+description: "Applies to repos that build a native iOS or Android app and submit it to the Apple App Store or Google Play. Include this module only for those apps. `rules/miniapp.md` covers Zalo Mini App. `rules/frontend.md` covers web clients."
+scope: "Native iOS/Android store submission and rejection prevention"
+priority: "mandatory"
+---
 # Mobile Store Submission — rejection prevention for iOS and Android
+
+<!-- rule: module-context -->
+0. **Module context** — Apply this context when the module applies.
 
 Applies to repos that build a native iOS or Android app and submit it to the Apple App Store or Google Play. Include this module only for those apps. `rules/miniapp.md` covers Zalo Mini App. `rules/frontend.md` covers web clients.
 
@@ -6,10 +17,14 @@ Applies to repos that build a native iOS or Android app and submit it to the App
 
 ## Before a submission
 
+<!-- rule: complete-the-checklist-for-e -->
 1. **Complete the checklist for each target store** — Read the playbook pre-submission checklist before each store submission. Use the Apple section for iOS. Use the Google Play section for Android. Record the result.
+<!-- rule: do-not-submit-with-an-open-f -->
 2. **Do not submit with an open failure** — Fix every failed checklist item before you upload the build. Do not submit while a known failure is open.
 
 ## After a rejection
 
+<!-- rule: map-each-rejection-to-one-gu -->
 3. **Map each rejection to one guideline and one fix** — When a store rejects a build, record the exact store guideline, the trigger, and the fix. Use the Apple or Google Play rejection map for the first pass. Use the appeal playbook when you contest the decision.
+<!-- rule: primary-sources-govern-every -->
 4. **Primary sources govern every rule claim** — Use the Apple App Review Guidelines and the Google Play policy center for any statement about a store rule. Use the playbook only as a practitioner aid. When the two source types disagree, follow the store source.

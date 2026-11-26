@@ -1,0 +1,28 @@
+name: deploy-agent-rules-mcp
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "rules/**"
+      - "workflows/**"
+      - "agent-rules-mcp/**"
+      - .github/workflows/_mcp-checks.yml
+      - .github/workflows/deploy-agent-rules-mcp.yml
+      - ".github/tests/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-rules-mcp-deploy
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_mcp-checks.yml
+    with:
+      package: agent-rules-mcp
+      deploy: true
+    secrets: inherit

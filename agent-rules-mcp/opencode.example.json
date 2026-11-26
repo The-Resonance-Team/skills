@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "agent-rules-mcp": {
+        "type": "remote",
+        "url": "https://YOUR-WORKER.workers.dev/mcp",
+        "oauth": {
+          "scope": "rules:read rules:write"
+        }
+      }
+    }
+  }
+}
