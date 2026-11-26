@@ -17,24 +17,24 @@ Applies to `apps/api`-style NestJS services in the organization. Include this fi
 
 > **NestJS authority**: the official [nestjs/agent-skills](https://github.com/nestjs/agent-skills) on branch `master` owns current Nest APIs and first-party packages. Read these raw files before writing Nest code. This module keeps only organization decisions and incident-proven rules; where a rule here overlaps a skill, the skill is the authority.
 >
-> Skills: [nestjs](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs) · [nestjs-auth](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-auth) · [nestjs-data](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-data) · [nestjs-feature](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-feature) · [nestjs-production](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-production) · [nestjs-testing](https://github.com/nestjs/agent-skills/tree/master/skills/nestjs-testing).
+> Skills: [nestjs](https://github.com/nestjs/agent-skills/tree/master/plugins/nestjs/skills/nestjs) · [nestjs-auth](https://github.com/nestjs/agent-skills/tree/master/plugins/nestjs/skills/nestjs-auth) · [nestjs-data](https://github.com/nestjs/agent-skills/tree/master/plugins/nestjs/skills/nestjs-data) · [nestjs-feature](https://github.com/nestjs/agent-skills/tree/master/plugins/nestjs/skills/nestjs-feature) · [nestjs-production](https://github.com/nestjs/agent-skills/tree/master/plugins/nestjs/skills/nestjs-production) · [nestjs-testing](https://github.com/nestjs/agent-skills/tree/master/plugins/nestjs/skills/nestjs-testing).
 >
-> - Base — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs/SKILL.md
-> - Docs map — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs/references/docs-map.md
-> - Auth — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-auth/SKILL.md
-> - Auth · authentication — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-auth/references/authentication.md
-> - Auth · authorization — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-auth/references/authorization.md
-> - Data — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-data/SKILL.md
-> - Data · reference — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-data/references/data.md
-> - Feature — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-feature/SKILL.md
-> - Feature · structure — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-feature/references/structure.md
-> - Feature · http — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-feature/references/http.md
-> - Feature · validation — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-feature/references/validation.md
-> - Feature · modules — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-feature/references/modules.md
-> - Production — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-production/SKILL.md
-> - Production · reference — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-production/references/production.md
-> - Testing — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-testing/SKILL.md
-> - Testing · reference — https://raw.githubusercontent.com/nestjs/agent-skills/master/skills/nestjs-testing/references/testing.md
+> - Base — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs/SKILL.md
+> - Docs map — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs/references/docs-map.md
+> - Auth — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-auth/SKILL.md
+> - Auth · authentication — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-auth/references/authentication.md
+> - Auth · authorization — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-auth/references/authorization.md
+> - Data — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-data/SKILL.md
+> - Data · reference — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-data/references/data.md
+> - Feature — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-feature/SKILL.md
+> - Feature · structure — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-feature/references/structure.md
+> - Feature · http — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-feature/references/http.md
+> - Feature · validation — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-feature/references/validation.md
+> - Feature · modules — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-feature/references/modules.md
+> - Production — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-production/SKILL.md
+> - Production · reference — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-production/references/production.md
+> - Testing — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-testing/SKILL.md
+> - Testing · reference — https://raw.githubusercontent.com/nestjs/agent-skills/master/plugins/nestjs/skills/nestjs-testing/references/testing.md
 
 ## DTO validation & wire contract (mandatory)
 
